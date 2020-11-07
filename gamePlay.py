@@ -9,10 +9,12 @@ import random as r
 ROTATION_COOLDOWN = 20
 
 class GamePlay:
-    def __init__(self):
+    def __init__(self, primaryNode = True):
         try:
-            edgeLength, numObstacles, numPowerups = self.settings()
-            self.startPlaySpace(edgeLength, numObstacles, numPowerups)
+            if primaryNode:
+                args = self.settings()
+            else: args = (0, 0, 0, 0)
+            self.startPlaySpace(args)
         except:
             print("An error occurred initializing GamePlay")
     
@@ -20,14 +22,14 @@ class GamePlay:
         try:
             print("This will prompt a player for the game settings")
             # use mic to get edgeLength, numObstacles, numPowerups, this is dummy
-            edgeLength, numObstacles, numPowerups = (0, 0, 0)
-            return edgeLength, numObstacles, numPowerups
+            numPlayers, edgeLength, numObstacles, numPowerups = (0, 0, 0, 0)
+            return numPlayers, edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
     
-    def startPlaySpace(self, edgeLength, numObstacles, numPowerups):
+    def startPlaySpace(self, args):
         try:
-            playSpace = PlaySpace(edgeLength, numObstacles, numPowerups)
+            self.playSpace = PlaySpace(args)
         except:
             print("An error occurred generating the playspace")
             
@@ -51,14 +53,16 @@ class PlaySpace:
     def __init__(self, numPlayers, edgeLength, numObstacles, numPowerups):
         try:
             self.edgeLength = edgeLength
-            self.placeObstacles(numObstacles)
-            self.placePowerUps(numPowerups)
+            if numObstacles: self.placeObstacles(numObstacles)
+            if numPowerups: self.placePowerUps(numPowerups)
             
             self.verticalAxis = 1
             self.horizontalAxis = 2
             self.rotationCoolDownRemaining = 0
             
-            self.playersNotIt = self.placePlayers(numPlayers)
+            if numPlayers:
+                self.numPlayers = numPlayers
+                self.playersNotIt = self.placePlayers(numPlayers)
 
         except:
             print("An error occurred initializing PlaySpace")
