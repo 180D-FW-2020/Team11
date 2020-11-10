@@ -31,9 +31,9 @@ class Reciever:
         
        # print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
         message = msg.payload.decode()
-        playerID = message[1]
-        Direction = message[4]
-        Rotation = message [7]
+        playerID = int(message[1])
+        Direction = int(message[4])
+        Rotation = int(message[7])
         print("player ID : ", {playerID}, ", Direction: ",{Direction}, "Rotation :", {Rotation})
         self.received = True
 
