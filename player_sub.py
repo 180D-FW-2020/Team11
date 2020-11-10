@@ -29,7 +29,13 @@ class Reciever:
 
     def __on_message(self, client, userdata, msg):
         
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
+       # print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
+        message = msg.payload.decode()
+        playerID = message[1]
+        Direction = message[4]
+        Rotation = message [7]
+        print("player ID : ", {playerID}, ", Direction: ",{Direction}, "Rotation :", {Rotation})
+        self.received = True
 
     def __init__(self):
         self.client = mqtt_client.Client(client_id)
@@ -37,14 +43,20 @@ class Reciever:
         self.client.on_message = self.__on_message
         self.client.connect(broker, port)
         self.topic = topic
+        self.received = False
         print(self.topic)
 
         self.client.connect_async('mqtt.eclipse.org')
 
-    def recieve(self, duration= 0):
+    def recieve(self, duration):
             if duration == 0:
                 self.client.loop_start()
                 while True:
+                    pass
+                self.client.loop_stop()
+            if duration == -1:
+                self.client.loop_start()
+                while self.received == False:
                     pass
                 self.client.loop_stop()
             else:
@@ -57,6 +69,6 @@ class Reciever:
 
 if __name__ == '__main__':
     player1 = Reciever()
-    player1.recieve(20)
+    player1.recieve(0)
 
 
