@@ -83,9 +83,13 @@ class PlaySpace:
             self.edgeLength = edgeLength
             self.obstacles = []
             self.powerUps = []
+<<<<<<< Updated upstream:gameplay.py
             self.message = ""
             self.sender = Transmitter("team11/nodetoPC")
             #sender.update("all player xyz and it, plane of referance")
+=======
+            self.sender = Trasmitter("team11/nodetopi")
+>>>>>>> Stashed changes:gamePlay.py
             if numObstacles: self.placeObstacles(numObstacles)
             if numPowerups: self.placePowerUps(numPowerups)
 
@@ -122,7 +126,13 @@ class PlaySpace:
                     it = False
                     playersNotIt.append(i)
                 players.append(Player(i, x, y, z, it))
+<<<<<<< Updated upstream:gameplay.py
 
+=======
+                self.sender.update("new player postion, it")
+                self.sender.send()
+            
+>>>>>>> Stashed changes:gamePlay.py
             return players, playersNotIt
         except:
             print("An error occurred placing players")
@@ -165,8 +175,13 @@ class PlaySpace:
             # If collision is a tag, do the tagging stuff
             # If collision is obstacle/wall/non tag player bump, do nothing
             # Otherwise move. If there's a powerup there, pick it up
+<<<<<<< Updated upstream:gameplay.py
             #sender.update("playerID , updated locations")
             #send.send()
+=======
+            self.sender.update("new player postion")
+            self.sender.send()
+>>>>>>> Stashed changes:gamePlay.py
             if(tag):
                 tag.setIt()
                 player.setNotIt()
@@ -191,8 +206,13 @@ class PlaySpace:
         try:
             print("This will attempt to rotate the playspace")
             # write this
+<<<<<<< Updated upstream:gameplay.py
              #sender.update("playerID , updated rotation")
             #send.send()
+=======
+            self.sender.update("new referance plane")
+            self.sender.send()
+>>>>>>> Stashed changes:gamePlay.py
             pass
         except:
             print("An error occurred rotating", rotation, "from player", player)
