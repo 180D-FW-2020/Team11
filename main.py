@@ -104,6 +104,7 @@ def centralNodeProcess():
             
         message = game.pack()
         client.update(message)
+        client.send()
 
 def displayProcess(pc):
     '''
