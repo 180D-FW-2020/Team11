@@ -1,5 +1,5 @@
 import random
-
+import re
 from paho.mqtt import client as mqtt_client
 
 
@@ -22,30 +22,29 @@ class Reciever:
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            self.client.subscribe(topic)
+            self.client.subscribe(self.topic)
             print("Connected to Player Communication Channel!")
         else:
             print("Failed to connect, return code %d\n", rc)
 
     def __on_message(self, client, userdata, msg):
         
-       # print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
+        print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
         message = msg.payload.decode()
-        playerID = int(message[1])
-        Direction = int(message[4])
-        Rotation = int(message[7])
-        print("player ID : ", {playerID}, ", Direction: ",{Direction}, "Rotation :", {Rotation})
+       # info = re.findall(r'\d+', message)
+       # playerID = int(info[0])
+       # Direction = int(info[1])
+       # Rotation = int(info[2])
+       # print("player ID : ", {playerID}, ", Direction: ",{Direction}, "Rotation :", {Rotation})
         self.received = True
 
-    def __init__(self):
+    def __init__(self, topic):
         self.client = mqtt_client.Client(client_id)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.__on_message
         self.client.connect(broker, port)
         self.topic = topic
         self.received = False
-        print(self.topic)
-
         self.client.connect_async('mqtt.eclipse.org')
 
     def recieve(self, duration):
@@ -68,7 +67,8 @@ class Reciever:
 
 
 if __name__ == '__main__':
-    player1 = Reciever()
+
+    player1 = Reciever("ece180d/team11")
     player1.recieve(0)
 
 
