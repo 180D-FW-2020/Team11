@@ -69,17 +69,11 @@ class PlaySpace:
             self.edgeLength = edgeLength
             self.obstacles = []
             self.powerUps = []
-            self.sender = Transmitter("team11/nodetopi")
-            
             if numObstacles: self.placeObstacles(numObstacles)
             if numPowerups: self.placePowerUps(numPowerups)
             
             self.verticalAxis = 1
             self.horizontalAxis = 2
-            
-            self.sender.update("verticalaxis ", self.verticalAxis, "horizontal axis" , self.horizontalAxis)
-            self.sender.send()
-            
             self.rotationCoolDownRemaining = 0
             
             if numPlayers:
@@ -102,11 +96,7 @@ class PlaySpace:
             for i in range (1, numPlayers+1):
                 # Get a random position a reasonable distance from other players
                 # with respect to edge length. Don't use origin, this is dummy code
-                
-               # self.sender.update("playerIDs and xyz coord")
-              #  self.sender.send()
-                x, y, z = (0, 0, 0)      
-
+                x, y, z = (0, 0, 0)                
                 if(i == playerIt): it = True
                 else:
                     it = False
@@ -149,8 +139,6 @@ class PlaySpace:
             # If collision is a tag, do the tagging stuff
             # If collision is obstacle/wall/non tag player bump, do nothing
             # Otherwise move. If there's a powerup there, pick it up
-            # self.sender.update("playerIDs and xyz coord")
-              #  self.sender.send()
             if(tag):
                 self.players[tag - 1].setIt()
                 self.players[playerId - 1].setNotIt()
@@ -166,8 +154,6 @@ class PlaySpace:
         '''
         try:
             # write this
-            # self.sender.update("new plane of referance")
-              #  self.sender.send()
             pass
         except:
             print("An error occurred rotating", rotation)
