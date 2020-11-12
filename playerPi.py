@@ -5,9 +5,12 @@ Created on Fri Nov  6 22:58:48 2020
 @author: zefyr
 """
 
-import sys
-import math
-import IMU
+imuWorking = False
+
+if imuWorking:
+    import sys
+    import math
+    import IMU
 
 # IMU values
 RAD_TO_DEG = 57.29578
@@ -24,6 +27,7 @@ class PlayerPi:
         try:
             # This is a dummy number, how do we set each player number distinctly
             # without hardcoding?
+            
             self.playerId = 1
             self.imu = BerryIMU()
         except:
@@ -47,8 +51,10 @@ class PlayerPi:
         '''
         try:
             #0 is a dummy value, this should be updated with message packing code
-            message = 0
-            return message
+            package = {'playerId': self.playerId,
+                       'direction': 0,
+                       'rotation': rotation}
+            return package
         except:
             print("Error sending package to primary node")
     
@@ -72,22 +78,23 @@ class PlayerPi:
 class BerryIMU:
     def __init__(self):
         try:
-            self.acc_medianTable1X = [1] * ACC_MEDIANTABLESIZE
-            self.acc_medianTable1Y = [1] * ACC_MEDIANTABLESIZE
-            self.acc_medianTable1Z = [1] * ACC_MEDIANTABLESIZE
-            self.acc_medianTable2X = [1] * ACC_MEDIANTABLESIZE
-            self.acc_medianTable2Y = [1] * ACC_MEDIANTABLESIZE
-            self.acc_medianTable2Z = [1] * ACC_MEDIANTABLESIZE
-            
-            self.oldXAccRawValue = 0
-            self.oldYAccRawValue = 0
-            self.oldZAccRawValue = 0
-            
-            IMU.detectIMU()     #Detect if BerryIMU is connected.
-            if(IMU.BerryIMUversion == 99):
-                print(" No BerryIMU found... exiting ")
-                sys.exit()
-            IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
+            if imuWorking:
+                self.acc_medianTable1X = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable1Y = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable1Z = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable2X = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable2Y = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable2Z = [1] * ACC_MEDIANTABLESIZE
+                
+                self.oldXAccRawValue = 0
+                self.oldYAccRawValue = 0
+                self.oldZAccRawValue = 0
+                
+                IMU.detectIMU()     #Detect if BerryIMU is connected.
+                if(IMU.BerryIMUversion == 99):
+                    print(" No BerryIMU found... exiting ")
+                    sys.exit()
+                IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
         except:
             print("Error initializing IMU")
             
@@ -98,7 +105,8 @@ class BerryIMU:
         '''
         try:
             #Loop until retrieving a rotation
-            while True:
+            
+            while imuWorking:
                 #Read the accelerometer,gyroscope and magnetometer values
                 ACCx = IMU.readACCx()
                 ACCy = IMU.readACCy()
@@ -159,11 +167,20 @@ class BerryIMU:
             
                 rotation = 0
                 #Simple classifier
-                if roll > 50 and abs(pitch) < 30: rotation = "v"
-                elif roll < -50 and abs(pitch) < 30: rotation = "^"
-                elif pitch > 50 and abs(roll) < 30: rotation = "<"
-                elif pitch < -50 and abs(roll) < 30: rotation = ">"
+                if roll > 50 and abs(pitch) < 30: rotation = 'v'
+                elif roll < -50 and abs(pitch) < 30: rotation = '^'
+                elif pitch > 50 and abs(roll) < 30: rotation = '<'
+                elif pitch < -50 and abs(roll) < 30: rotation = '>'
                 
+                if rotation:
+                    return rotation
+            while not imuWorking:
+                val = input()
+                if val == 'w': rotation = '^'
+                elif val == 's': rotation = 'v'
+                elif val == 'a': rotation = '<'
+                elif val == 'd': rotation = '>'
+                else: rotation = 0
                 if rotation:
                     return rotation
         except:
