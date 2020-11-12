@@ -22,7 +22,7 @@ class Transmitter:
     def __init__(self, topic):
         self.client = mqtt_client.Client()
         self.topic = topic
-        self.message = {"messages" :[]}
+        self.message = []
 
         self.client.on_connect = self.on_connect
         self.client.connect(broker, port)
@@ -42,8 +42,7 @@ class Transmitter:
      #   self.message.append(PlayerID)
       #  self.message.append(Direction)
       #  self.message.append(Rotation)
-        
-
+      
     def send(self):
         self.client.loop_start()
         self.client.publish(self.topic, json.dumps(self.message), qos=1)

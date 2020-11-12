@@ -70,13 +70,16 @@ class PlaySpace:
             self.obstacles = []
             self.powerUps = []
             self.sender = Transmitter("team11/nodetopi")
+            
             if numObstacles: self.placeObstacles(numObstacles)
             if numPowerups: self.placePowerUps(numPowerups)
             
             self.verticalAxis = 1
             self.horizontalAxis = 2
+            
             self.sender.update("verticalaxis ", self.verticalAxis, "horizontal axis" , self.horizontalAxis)
             self.sender.send()
+            
             self.rotationCoolDownRemaining = 0
             
             if numPlayers:
@@ -99,6 +102,7 @@ class PlaySpace:
             for i in range (1, numPlayers+1):
                 # Get a random position a reasonable distance from other players
                 # with respect to edge length. Don't use origin, this is dummy code
+                
                # self.sender.update("playerIDs and xyz coord")
               #  self.sender.send()
                 x, y, z = (0, 0, 0)      

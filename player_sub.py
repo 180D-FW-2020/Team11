@@ -45,7 +45,6 @@ class Reciever:
         self.client.connect(broker, port)
         self.topic = topic
         self.received = False
-
         self.client.connect_async('mqtt.eclipse.org')
 
     def recieve(self, duration):
@@ -68,6 +67,7 @@ class Reciever:
 
 
 if __name__ == '__main__':
+
     player1 = Reciever("ece180d/team11")
     player1.recieve(0)
 
