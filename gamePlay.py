@@ -13,9 +13,8 @@ class GamePlay:
         try:
             if primaryNode:
                 args = self.settings()
-            else: args = (numPlayers, 0, 0, 0)
-            
-            self.playSpace = PlaySpace(numPlayers, args)
+            else: args = 0, 0, 0        
+            self.playSpace = PlaySpace(numPlayers, *args)
         except:
             print("An error occurred initializing GamePlay")
     
@@ -34,7 +33,7 @@ class GamePlay:
         except:
             print("An error occurred getting settings")
     
-    def unpack(self):
+    def unpack(self, package):
         '''
         Unpacks message from a pc or pi containing a player number with a
         rotation or direction.
@@ -43,23 +42,25 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            playerId, rotation, direction = (0, 0, 0)
-            return playerId, rotation, direction
+            return package['playerId'], package['rotation'], package['direction']
         except:
             print("An error occurred getting player input")
     
     def pack(self):
         '''
-        Packs message for pc and pi containing updates for the display, permission
-        to send more messages, or both. Permission to send more messages is
-        specific to the node: pc may have permission while pi is still on cooldown.
+        Packs initial load of playspace for players.
         
         Returns message for transmission.
         '''
         try:
             #0 is a dummy value, this should be updated with message packing code
-            message = 0
-            return message
+            package = self.playSpace.__dict__
+            p = []
+            for player in self.playSpace.players:
+                p.append(player.__dict__)
+            package['players'] = p
+            package['messageType'] = 'init'
+            return package
         except:
             print("An error occurred updating nodes")
             
@@ -69,17 +70,13 @@ class PlaySpace:
             self.edgeLength = edgeLength
             self.obstacles = []
             self.powerUps = []
-            self.sender = Transmitter("team11/nodetopi")
             
             if numObstacles: self.placeObstacles(numObstacles)
             if numPowerups: self.placePowerUps(numPowerups)
             
-            self.verticalAxis = 1
-            self.horizontalAxis = 2
-            
-            self.sender.update("verticalaxis ", self.verticalAxis, "horizontal axis" , self.horizontalAxis)
-            self.sender.send()
-            
+            self.verticalAxis = 'x'
+            self.horizontalAxis = 'y'
+                        
             self.rotationCoolDownRemaining = 0
             
             if numPlayers:
@@ -103,8 +100,6 @@ class PlaySpace:
                 # Get a random position a reasonable distance from other players
                 # with respect to edge length. Don't use origin, this is dummy code
                 
-               # self.sender.update("playerIDs and xyz coord")
-              #  self.sender.send()
                 x, y, z = (0, 0, 0)      
 
                 if(i == playerIt): it = True
@@ -141,33 +136,49 @@ class PlaySpace:
             
     def movePlayer(self, playerId, direction):
         '''
-        Takes a player ID and direction and checks if a move is possible.
+        Takes a player ID and direction and checks if a move is possible. If yes,
+        makes the move and returns info about the move.
         '''
         try:
             # First check for collision
             collision, tag, powerup = self.checkCollision(playerId, direction)
-            # If collision is a tag, do the tagging stuff
-            # If collision is obstacle/wall/non tag player bump, do nothing
-            # Otherwise move. If there's a powerup there, pick it up
-            # self.sender.update("playerIDs and xyz coord")
-              #  self.sender.send()
-            if(tag):
+            # If collision is a tag, do the tagging stuff but don't move player
+            if tag:
                 self.players[tag - 1].setIt()
                 self.players[playerId - 1].setNotIt()
                 if tag.PlayerId in self.playersNotIt:
                     self.playersNotIt.remove(tag)
+                displayUpdates = {'messageType': 'tag',
+                                  'tagged': tag,
+                                  'untagged': playerId}
+            # If collision is obstacle/wall/non tag player bump, do nothing
+            elif collision:
+                displayUpdates = 0
+            # Otherwise move. If there's a powerup there, pick it up
+            else:
+                if direction == '^':
+                    self.players[playerId - 1].position[self.verticalAxis] += 1
+                elif direction == 'v':
+                    self.players[playerId - 1].position[self.verticalAxis] -= 1
+                if direction == '<':
+                    self.players[playerId - 1].position[self.horizontalAxis] -= 1
+                if direction == '>':
+                    self.players[playerId - 1].position[self.horizontalAxis] += 1
+                displayUpdates = {'messageType': 'move',
+                                  'playerId': playerId,
+                                  'position': self.players[playerId - 1].position}
                 
+            return displayUpdates                
+        
         except:
             print("An error occurred moving player", playerId, ":", direction)
 
     def rotatePlaySpace(self, rotation):
         '''
-        Takes a rotation, rotates the playspace.
+        Takes a rotation, rotates the playspace, returns movement information.
         '''
         try:
             # write this
-            # self.sender.update("new plane of referance")
-              #  self.sender.send()
             pass
         except:
             print("An error occurred rotating", rotation)
@@ -214,9 +225,7 @@ class Player:
     def __init__(self, playerId, x, y, z, it):
         try:
             self.playerId = playerId;
-            self.x = x
-            self.y = y
-            self.z = z
+            self.position = {'x': x, 'y': y, 'z': z}
             self.it = it
         except:
             print("An error occurred initializing Player")
@@ -226,9 +235,9 @@ class Player:
         Sets the player position values
         '''
         try:
-            self.x = x
-            self.y = y
-            self.z = z
+            self.position['x'] = x
+            self.position['y'] = y
+            self.position['z'] = z
         except:
             print("An error occurred updating player position")
 

@@ -6,6 +6,9 @@ Created on Fri Nov  6 22:58:30 2020
 """
 
 import gamePlay as g
+import string as s
+
+cameraWorking = False
 
 class PlayerPC:
     '''
@@ -56,9 +59,10 @@ class PlayerPC:
         Returns the message for transmission.
         '''
         try:
-            #0 is a dummy value, this should be updated with message packing code
-            message = 0
-            return message
+            package = {'playerId': self.playerId,
+                       'direction': direction,
+                       'rotation': 0}
+            return package
         except:
             print("Error sending package to primary node")
     
@@ -77,10 +81,20 @@ class PlayerPC:
             # canSend will usually be updated to true, but there may be cases
             # in which it should not be.
             # 1 is a dummy value
+            if package['messageType'] == 'move':
+                self.playSpace.players[package['playerId'] - 1].position = package['position']
+            elif package['messageType'] == 'tag':
+                self.playSpace.players[package['tagged'] - 1].it = True
+                self.playSpace.players[package['playerId'] - 1].it = False
+            elif package['messageType'] == 'init':
+                self.playSpace.__dict__= package
+                for player in self.playSpace.players:
+                    for j in self.playSpace.players[player].__dict__:
+                        j = package['players'][player][j]
             canSend = 1
             # If any updates result in a display update, set displayUpdate to
-            # true so it will update
-            self.displayUpdate = True
+            # true so it will update     
+            
             return canSend
         except:
             print("Error getting package from primary node")
@@ -108,9 +122,22 @@ class Camera:
         returns it.
         '''
         try:
-            # All the getting direction stuff. 0 is a dummy number
-            direction = 0
-            return direction
+            # Update this to incorporate camera code, this will do for now though
+            while cameraWorking:
+                #classify stuff, replace dummy code
+                direction = 0
+                if direction:
+                    return direction
+            while not cameraWorking:
+                pass
+                # val = int(input())
+                # if val == 8: direction = '^'
+                # elif val == 2: direction = 'v'
+                # elif val == 4: direction = '<'
+                # elif val == 6: direction = '>'
+                # else: direction = 0
+                # if direction:
+                #     return direction
         except:
             print("Error getting direction from camera")
             
