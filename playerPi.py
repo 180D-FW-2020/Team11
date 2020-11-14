@@ -175,13 +175,14 @@ class BerryIMU:
                 if rotation:
                     return rotation
             while not imuWorking:
-                val = input()
-                if val == 'w': rotation = '^'
-                elif val == 's': rotation = 'v'
-                elif val == 'a': rotation = '<'
-                elif val == 'd': rotation = '>'
-                else: rotation = 0
-                if rotation:
-                    return rotation
+                pass
+                # val = input()
+                # if val == 'w': rotation = '^'
+                # elif val == 's': rotation = 'v'
+                # elif val == 'a': rotation = '<'
+                # elif val == 'd': rotation = '>'
+                # else: rotation = 0
+                # if rotation:
+                #     return rotation
         except:
             print("Error getting rotation from IMU")
