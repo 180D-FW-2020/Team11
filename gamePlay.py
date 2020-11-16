@@ -76,8 +76,8 @@ class PlaySpace:
             if numObstacles: self.placeObstacles(numObstacles)
             if numPowerups: self.placePowerUps(numPowerups)
             
-            self.verticalAxis = 'x'
-            self.horizontalAxis = 'y'
+            self.verticalAxis = [0,1,0]
+            self.horizontalAxis = [1,0,0]
                         
             self.rotationCoolDownRemaining = 0
             
