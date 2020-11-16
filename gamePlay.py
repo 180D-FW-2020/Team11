@@ -5,8 +5,10 @@ Created on Fri Nov  6 20:46:40 2020
 @author: zefyr
 """
 import random as r
+import numpy as np
 
 ROTATION_COOLDOWN = 20
+ITSPEED = 2
 
 class GamePlay:
     def __init__(self, numPlayers, primaryNode = True):
@@ -156,14 +158,17 @@ class PlaySpace:
                 displayUpdates = 0
             # Otherwise move. If there's a powerup there, pick it up
             else:
+                if self.players[playerId - 1].it: speed = ITSPEED
+                else: speed = 1
+                
                 if direction == '^':
-                    self.players[playerId - 1].position[self.verticalAxis] += 1
+                    self.players[playerId - 1].position += speed*self.verticalAxis
                 elif direction == 'v':
-                    self.players[playerId - 1].position[self.verticalAxis] -= 1
-                if direction == '<':
-                    self.players[playerId - 1].position[self.horizontalAxis] -= 1
-                if direction == '>':
-                    self.players[playerId - 1].position[self.horizontalAxis] += 1
+                    self.players[playerId - 1].position -= speed*self.verticalAxis
+                elif direction == '<':
+                    self.players[playerId - 1].position -= speed*self.horizontalAxis
+                elif direction == '>':
+                    self.players[playerId - 1].position += speed*self.horizontalAxis
                 displayUpdates = {'messageType': 'move',
                                   'playerId': playerId,
                                   'position': self.players[playerId - 1].position}
@@ -178,8 +183,20 @@ class PlaySpace:
         Takes a rotation, rotates the playspace, returns movement information.
         '''
         try:
-            # write this
-            pass
+            newAxis = np.cross(self.horizontalAxis, self.verticalAxis)
+            if rotation == '^':
+                self.verticalAxis = -1 * newAxis
+            elif rotation == 'v':
+                self.verticalAxis = newAxis
+            elif rotation == '<':
+                self.horizontalAxis = newAxis
+            elif rotation == '>':
+                self.horizontalAxis = -1 * newAxis
+            displayUpdates = {'messageType': 'rotate',
+                                  'horizontal': self.horizontalAxis,
+                                  'vertical': self.verticalAxis}
+                
+            return displayUpdates  
         except:
             print("An error occurred rotating", rotation)
     
@@ -225,21 +242,21 @@ class Player:
     def __init__(self, playerId, x, y, z, it):
         try:
             self.playerId = playerId;
-            self.position = {'x': x, 'y': y, 'z': z}
+            self.position = [x, y, z]
             self.it = it
         except:
             print("An error occurred initializing Player")
     
-    def setPosition(self, x, y, z):
-        '''
-        Sets the player position values
-        '''
-        try:
-            self.position['x'] = x
-            self.position['y'] = y
-            self.position['z'] = z
-        except:
-            print("An error occurred updating player position")
+    # def setPosition(self, x, y, z):
+    #     '''
+    #     Sets the player position values
+    #     '''
+    #     try:
+    #         self.position['x'] = x
+    #         self.position['y'] = y
+    #         self.position['z'] = z
+    #     except:
+    #         print("An error occurred updating player position")
 
     def setIt(self):
         '''
