@@ -18,7 +18,7 @@ port = 1883
 topic = "ece180d/team11"
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 
-class Reciever:
+class Receiver:
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -47,7 +47,7 @@ class Reciever:
         self.received = False
         self.client.connect_async('mqtt.eclipse.org')
 
-    def recieve(self, duration):
+    def receive(self, duration):
             if duration == 0:
                 self.client.loop_start()
                 while True:
@@ -68,7 +68,7 @@ class Reciever:
 
 if __name__ == '__main__':
 
-    player1 = Reciever("ece180d/team11")
-    player1.recieve(0)
+    player1 = Receiver("ece180d/team11")
+    player1.receive(0)
 
 
