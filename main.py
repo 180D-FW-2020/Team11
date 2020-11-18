@@ -11,6 +11,7 @@ import playerPC
 import player_sub as sub
 import player_client as cli
 from threading import Thread
+import multiprocessing
 
 # Should have better way to set these values than hard coding
 isPi = False
