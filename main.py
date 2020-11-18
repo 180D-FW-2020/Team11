@@ -17,6 +17,7 @@ else: import playerPC
 import player_sub as sub
 import player_client as cli
 from threading import Thread
+import cv2
 
 nodeToPrimary = "ece180d/team11/nodeToPrimary"
 primaryToNode = "ece180d/team11/primaryToNode"
@@ -123,9 +124,12 @@ def displayProcess(pc):
     '''
     Updates the display as needed.
     '''
-    
     while True:
-        if pc.displayUpdate: pc.updateDisplay()
+        if pc.displayUpdate:
+            pc.updateDisplay()
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
 
 ### Select processes to run for instance
 if __name__ == '__main__':

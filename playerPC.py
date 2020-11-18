@@ -6,9 +6,17 @@ Created on Fri Nov  6 22:58:30 2020
 """
 
 import gamePlay as g
-import string as s
+import numpy as np
+import cv2
 
 cameraWorking = False
+
+player1c = (255, 99, 174)
+player2c = (0, 127, 255)
+player3c = (255, 0, 255)
+player4c = (255, 255, 0)
+playerColors = [player1c, player2c, player3c, player4c]
+itColor = (255, 198, 220)
 
 class PlayerPC:
     '''
@@ -104,8 +112,29 @@ class PlayerPC:
         Prints current contents of local playSpace to player's screen.
         '''
         try:
-            print("Update display")
+            display = np.zeros((1000,1000,3), np.uint8)
+            dist = int(1000/(self.playSpace.edgeLength + 2))
+            
+            for i in range(self.playSpace.edgeLength + 1):
+                display = cv2.line(display, ((i+1)*dist,dist), ((i+1)*dist,1000-dist),(0,255,0),10)
+            for i in range(self.playSpace.edgeLength + 1):
+                display = cv2.line(display, (dist,(i+1)*dist), (1000-dist,(i+1)*dist),(0,255,0),10)
             # Prints current state of playspace based on received package
+            for i, player in enumerate(self.playSpace.players):
+                hpos = np.dot(self.playSpace.horizontalAxis, player.position)
+                if hpos<0:
+                    hpos = self.playSpace.edgeLength + hpos + 1
+                    print(hpos)
+                vpos = -1*np.dot(self.playSpace.verticalAxis, player.position)
+                if vpos<0:
+                    vpos = self.playSpace.edgeLength + vpos + 1
+                display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
+                                      int(dist/3), playerColors[i], -1)
+                if player.it:
+                    display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
+                                      int(dist/3), itColor, int(dist/10))
+            cv2.imshow('display',display)
+            self.displayUpdate = False
         except:
             print("Error updating display")
 
