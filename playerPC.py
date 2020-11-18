@@ -134,6 +134,7 @@ class PlayerPC:
                     display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
                                       int(dist/3), itColor, int(dist/10))
             cv2.imshow('display',display)
+            self.displayUpdate = False
         except:
             print("Error updating display")
 

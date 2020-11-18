@@ -5,7 +5,7 @@ Created on Fri Nov  6 22:58:48 2020
 @author: zefyr
 """
 
-imuWorking = False
+imuWorking = True
 
 if imuWorking:
     import sys
