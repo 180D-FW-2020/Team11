@@ -18,6 +18,7 @@ import player_sub as sub
 import player_client as cli
 from threading import Thread
 import cv2
+import multiprocessing
 
 nodeToPrimary = "ece180d/team11/nodeToPrimary"
 primaryToNode = "ece180d/team11/primaryToNode"
@@ -39,15 +40,19 @@ def piProcess():
     canSend = True
     
     while True:
+        receiverProcess = Thread(target= subscriber.receive(), args= (-1,))
+        receiverProcess.start()
         if canSend:
             rotation = pi.getRotation()
             package = pi.pack(rotation)
             client.update(package)
-            client.send()
+            senderProcess = Thread(target= client.send())
+            senderProcess.start()
             canSend = False
-        else:
-            message = subscriber.receive(-1)
-            canSend = pi.unpack(message)
+        receiverProcess.join()
+        canSend = pi.unpack(subscriber.message)
+        if (senderProcess.is_alive):
+            senderProcess.join()
 
 def pcProcess():
     '''
@@ -73,16 +78,20 @@ def pcProcess():
     display.start()
     
     while True:
+        receiverProcess = Thread(target= subscriber.receive(), args= (-1,))
+        receiverProcess.start()
         if canSend:
             print("pc checking for direction")
             direction = pc.getDirection()
             package = pc.pack(direction)
             client.update(package)
-            client.send()
+            senderProcess = Thread(target= client.send())
+            senderProcess.start()
             canSend = False
-        else:
-            message = subscriber.receive(-1)
-            canSend = pc.unpack(message)
+        receiverProcess.join()
+        canSend = pi.unpack(subscriber.message)
+        if (senderProcess.is_alive):
+            senderProcess.join()
             
 def centralNodeProcess():
     '''
@@ -106,7 +115,9 @@ def centralNodeProcess():
     
     while True:
         print("central looking for message")
-        message = subscriber.receive(-1)
+        receiverProcess = Thread(target= subscriber.receive(-1))
+        receiverProcess.join()
+        message = subscriber.message
         playerId, direction, rotation = game.unpack(message)
         if (direction):
             message = game.playSpace.movePlayer(playerId, direction)
@@ -118,7 +129,8 @@ def centralNodeProcess():
         
         if message:
             client.update(message)
-            client.send()
+            senderProcess = Thread(target= client.send)
+            senderProcess.join()
 
 def displayProcess(pc):
     '''
@@ -140,8 +152,8 @@ if __name__ == '__main__':
             print("An error occurred with pi processes")
     elif isPrimary:
         try:
-            central = Thread(target=centralNodeProcess)
-            player = Thread(target=pcProcess)
+            central = multiprocessing.Process(target=centralNodeProcess)
+            player = multiprocessing.Process(target=pcProcess)
             central.start()
             player.start()
         except:
