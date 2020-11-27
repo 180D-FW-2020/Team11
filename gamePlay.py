@@ -13,6 +13,8 @@ ITSPEED = 2
 class GamePlay:
     def __init__(self, numPlayers, primaryNode = True):
         try:
+            self.gameOver = False
+            
             if primaryNode:
                 args = self.settings()
             else: args = 0, 0, 0        
@@ -185,13 +187,13 @@ class PlaySpace:
         try:
             newAxis = np.cross(self.horizontalAxis, self.verticalAxis)
             if rotation == '^':
-                self.verticalAxis = -1 * newAxis
+                self.verticalAxis = (-1 * newAxis).tolist()
             elif rotation == 'v':
-                self.verticalAxis = newAxis
+                self.verticalAxis = (newAxis).tolist()
             elif rotation == '<':
-                self.horizontalAxis = newAxis
+                self.horizontalAxis = (newAxis).tolist()
             elif rotation == '>':
-                self.horizontalAxis = -1 * newAxis
+                self.horizontalAxis = (-1 * newAxis).tolist()
             displayUpdates = {'messageType': 'rotate',
                                   'horizontal': self.horizontalAxis,
                                   'vertical': self.verticalAxis}
@@ -246,17 +248,6 @@ class Player:
             self.it = it
         except:
             print("An error occurred initializing Player")
-    
-    # def setPosition(self, x, y, z):
-    #     '''
-    #     Sets the player position values
-    #     '''
-    #     try:
-    #         self.position['x'] = x
-    #         self.position['y'] = y
-    #         self.position['z'] = z
-    #     except:
-    #         print("An error occurred updating player position")
 
     def setIt(self):
         '''

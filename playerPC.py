@@ -36,6 +36,8 @@ class PlayerPC:
             #light version of playSpace for display only
             self.playSpace = g.PlaySpace(numPlayers, 0, 0, 0)
             
+            self.gameOver = False
+            
         except:
             print("An error occurred initializing PlayerPC")
             
@@ -89,17 +91,17 @@ class PlayerPC:
             # canSend will usually be updated to true, but there may be cases
             # in which it should not be.
             # 1 is a dummy value
-            if package['messageType'] == 'move':
-                self.playSpace.players[package['playerId'] - 1].position = package['position']
-            elif package['messageType'] == 'tag':
-                self.playSpace.players[package['tagged'] - 1].it = True
-                self.playSpace.players[package['playerId'] - 1].it = False
-            elif package['messageType'] == 'init':
-                self.playSpace.__dict__= package
-                for player in self.playSpace.players:
-                    for j in self.playSpace.players[player].__dict__:
-                        j = package['players'][player][j]
-            canSend = 1
+            # if package['messageType'] == 'move':
+            #     self.playSpace.players[package['playerId'] - 1].position = package['position']
+            # elif package['messageType'] == 'tag':
+            #     self.playSpace.players[package['tagged'] - 1].it = True
+            #     self.playSpace.players[package['playerId'] - 1].it = False
+            # elif package['messageType'] == 'init':
+            #     self.playSpace.__dict__= package
+            #     for player in self.playSpace.players:
+            #         for j in self.playSpace.players[player].__dict__:
+            #             j = package['players'][player][j]
+            canSend = True
             # If any updates result in a display update, set displayUpdate to
             # true so it will update     
             
