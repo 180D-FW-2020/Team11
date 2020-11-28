@@ -5,11 +5,10 @@ Created on Fri Nov  6 22:58:48 2020
 @author: zefyr
 """
 
-imuWorking = True
-
-if imuWorking:
-    import sys
-    import math
+import settings
+import sys
+import math
+if settings.isPi:
     import IMU
 
 # IMU values
@@ -30,6 +29,9 @@ class PlayerPi:
             
             self.playerId = 1
             self.imu = BerryIMU()
+            self.gameOver = False
+            self.canSend = True
+            
         except:
             print("An error occurred initializing PlayerPi")
             
@@ -70,15 +72,16 @@ class PlayerPi:
             # playerPC, so this is just looking for the current rotation
             # cooldown state. If on cooldown rotation, the pi can't send.
             # 1 is a dummy value
-            canSend = 1
-            return canSend
+            #if package['messageType'] == 'pi':
+            #    self.canSend = package['canSend']
+            return True
         except:
             print("Error getting package from primary node")
 
 class BerryIMU:
     def __init__(self):
         try:
-            if imuWorking:
+            if settings.isPi:
                 self.acc_medianTable1X = [1] * ACC_MEDIANTABLESIZE
                 self.acc_medianTable1Y = [1] * ACC_MEDIANTABLESIZE
                 self.acc_medianTable1Z = [1] * ACC_MEDIANTABLESIZE
@@ -106,7 +109,7 @@ class BerryIMU:
         try:
             #Loop until retrieving a rotation
             
-            while imuWorking:
+            while settings.isPi:
                 #Read the accelerometer,gyroscope and magnetometer values
                 ACCx = IMU.readACCx()
                 ACCy = IMU.readACCy()
@@ -171,10 +174,9 @@ class BerryIMU:
                 elif roll < -50 and abs(pitch) < 30: rotation = '^'
                 elif pitch > 50 and abs(roll) < 30: rotation = '<'
                 elif pitch < -50 and abs(roll) < 30: rotation = '>'
-                
                 if rotation:
                     return rotation
-            while not imuWorking:
+            while not settings.isPi:
                 pass
                 # val = input()
                 # if val == 'w': rotation = '^'
