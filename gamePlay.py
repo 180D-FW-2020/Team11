@@ -6,21 +6,22 @@ Created on Fri Nov  6 20:46:40 2020
 """
 import random as r
 import numpy as np
+import traceback
+import comms
 
 ROTATION_COOLDOWN = 20
 ITSPEED = 2
 
 class GamePlay:
-    def __init__(self, numPlayers, primaryNode = True):
+    def __init__(self, numPlayers):
         try:
             self.gameOver = False
             
-            if primaryNode:
-                args = self.settings()
-            else: args = 0, 0, 0        
+            args = self.settings()
             self.playSpace = PlaySpace(numPlayers, *args)
         except:
             print("An error occurred initializing GamePlay")
+            traceback.print_exc() 
     
     def settings(self):
         '''
@@ -32,10 +33,11 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            edgeLength, numObstacles, numPowerups = (0, 0, 0)
+            edgeLength, numObstacles, numPowerups = (10, 0, 0)
             return edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
+            traceback.print_exc() 
     
     def unpack(self, package):
         '''
@@ -45,10 +47,25 @@ class GamePlay:
         Returns playerId, rotation, and direction.
         '''
         try:
-            # These are dummy values
-            return package['playerId'], package['rotation'], package['direction']
+            topic, message = package
+            
+            if topic == comms.piConfirmation:
+                return message['playerId'], True, False
+            elif topic == comms.pcConfirmation:
+                return message['playerId'], False, True
+            elif topic == comms.direction:
+                return self.playSpace.movePlayer(message['playerId'],
+                                                    message['val'])
+            elif topic == comms.rotation:
+                return self.playSpace.rotatePlaySpace(message['val'])
+            
+            else:
+                # Unplanned case
+                print("A message was received without direction or rotation")
+            
         except:
             print("An error occurred getting player input")
+            traceback.print_exc() 
     
     def pack(self):
         '''
@@ -57,16 +74,10 @@ class GamePlay:
         Returns message for transmission.
         '''
         try:
-            #0 is a dummy value, this should be updated with message packing code
-            package = self.playSpace.__dict__
-            p = []
-            for player in self.playSpace.players:
-                p.append(player.__dict__)
-            package['players'] = p
-            package['messageType'] = 'init'
-            return package
+            return self.playSpace.__dict__
         except:
-            print("An error occurred updating nodes")
+            print("An error occurred packing the playspace")
+            traceback.print_exc() 
             
 class PlaySpace:
     def __init__(self, numPlayers, edgeLength, numObstacles, numPowerups):
@@ -89,6 +100,7 @@ class PlaySpace:
 
         except:
             print("An error occurred initializing PlaySpace")
+            traceback.print_exc() 
             
     def placePlayers(self, numPlayers):
         '''
@@ -104,17 +116,24 @@ class PlaySpace:
                 # Get a random position a reasonable distance from other players
                 # with respect to edge length. Don't use origin, this is dummy code
                 
-                x, y, z = (0, 0, 0)      
-
+                if self.edgeLength:
+                    position = [r.randrange(1, self.edgeLength + 1, 1),
+                                r.randrange(1, self.edgeLength + 1, 1),
+                                r.randrange(1, self.edgeLength + 1, 1)]
+                else: position = [0, 0, 0]
+                
                 if(i == playerIt): it = True
                 else:
                     it = False
                     playersNotIt.append(i)
-                players.append(Player(i, x, y, z, it))
+                players.append({'playerId': i,
+                                'position': position,
+                                'it': it})
             
             return players, playersNotIt
         except:
             print("An error occurred placing players")
+            traceback.print_exc() 
             
     def placeObstacles(self, numObstacles):
         '''
@@ -126,6 +145,7 @@ class PlaySpace:
             pass
         except:
             print("An error occurred placing obstacles")
+            traceback.print_exc() 
     
     def placePowerUps(self, numPowerUps):
         '''
@@ -137,6 +157,7 @@ class PlaySpace:
             pass
         except:
             print("An error occurred placing powerups")
+            traceback.print_exc() 
             
     def movePlayer(self, playerId, direction):
         '''
@@ -148,12 +169,11 @@ class PlaySpace:
             collision, tag, powerup = self.checkCollision(playerId, direction)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
-                self.players[tag - 1].setIt()
-                self.players[playerId - 1].setNotIt()
+                self.players[tag - 1]['it'] = True
+                self.players[playerId - 1]['it'] = False
                 if tag.PlayerId in self.playersNotIt:
                     self.playersNotIt.remove(tag)
-                displayUpdates = {'messageType': 'tag',
-                                  'tagged': tag,
+                displayUpdates = {'tagged': tag,
                                   'untagged': playerId}
             # If collision is obstacle/wall/non tag player bump, do nothing
             elif collision:
@@ -164,21 +184,21 @@ class PlaySpace:
                 else: speed = 1
                 
                 if direction == '^':
-                    self.players[playerId - 1].position += speed*self.verticalAxis
+                    self.players[playerId - 1]['position'] += speed*self.verticalAxis
                 elif direction == 'v':
-                    self.players[playerId - 1].position -= speed*self.verticalAxis
+                    self.players[playerId - 1]['position'] -= speed*self.verticalAxis
                 elif direction == '<':
-                    self.players[playerId - 1].position -= speed*self.horizontalAxis
+                    self.players[playerId - 1]['position'] -= speed*self.horizontalAxis
                 elif direction == '>':
-                    self.players[playerId - 1].position += speed*self.horizontalAxis
-                displayUpdates = {'messageType': 'move',
-                                  'playerId': playerId,
-                                  'position': self.players[playerId - 1].position}
+                    self.players[playerId - 1]['position'] += speed*self.horizontalAxis
+                displayUpdates = {'playerId': playerId,
+                                  'position': self.players[playerId - 1]['position']}
                 
-            return displayUpdates                
+            return comms.move, displayUpdates                
         
         except:
             print("An error occurred moving player", playerId, ":", direction)
+            traceback.print_exc() 
 
     def rotatePlaySpace(self, rotation):
         '''
@@ -194,13 +214,13 @@ class PlaySpace:
                 self.horizontalAxis = (newAxis).tolist()
             elif rotation == '>':
                 self.horizontalAxis = (-1 * newAxis).tolist()
-            displayUpdates = {'messageType': 'rotate',
-                                  'horizontal': self.horizontalAxis,
-                                  'vertical': self.verticalAxis}
+            displayUpdates = {'horizontalAxis': self.horizontalAxis,
+                                  'verticalAxis': self.verticalAxis}
                 
-            return displayUpdates  
+            return comms.axes, displayUpdates  
         except:
             print("An error occurred rotating", rotation)
+            traceback.print_exc() 
     
     def checkCollision(self, player, direction):
         '''
@@ -221,6 +241,7 @@ class PlaySpace:
             return collision, tag, powerup
         except:
             print("An error occurred checking collision")
+            traceback.print_exc() 
     
     def setRotationCoolDown(self):
         '''
@@ -230,6 +251,7 @@ class PlaySpace:
             self.rotationCoolDownRemaining = ROTATION_COOLDOWN
         except:
             print("An error occurred setting the rotation cooldown")
+            traceback.print_exc() 
     
     def rotationCoolDown(self):
         '''
@@ -238,34 +260,35 @@ class PlaySpace:
         try:
             if(self.rotationCoolDownRemaining>0): self.rotationCoolDownRemaining -= 1
         except:
-            print("An error occurred decrementing the rotation cooldown")        
+            print("An error occurred decrementing the rotation cooldown")
+            traceback.print_exc() 
             
-class Player:
-    def __init__(self, playerId, x, y, z, it):
-        try:
-            self.playerId = playerId;
-            self.position = [x, y, z]
-            self.it = it
-        except:
-            print("An error occurred initializing Player")
+# class Player:
+#     def __init__(self, playerId, x, y, z, it):
+#         try:
+#             self.playerId = playerId;
+#             self.position = [x, y, z]
+#             self.it = it
+#         except:
+#             print("An error occurred initializing Player")
 
-    def setIt(self):
-        '''
-        Sets the player as It
-        '''
-        try:
-            if(not self.it):
-                self.it = True
-            else: print("Tagged person was already it, something went wrong")
-        except:
-            print("An error occurred updating who is it")
+#     def setIt(self):
+#         '''
+#         Sets the player as It
+#         '''
+#         try:
+#             if(not self.it):
+#                 self.it = True
+#             else: print("Tagged person was already it, something went wrong")
+#         except:
+#             print("An error occurred updating who is it")
 
-    def setNotIt(self):
-        '''
-        Sets the player as Not It
-        '''
-        try:
-            if(self.it): self.it = False
-            else: print("Tagged person was already not it, something went wrong")
-        except:
-            print("An error occurred updating who is it")
+#     def setNotIt(self):
+#         '''
+#         Sets the player as Not It
+#         '''
+#         try:
+#             if(self.it): self.it = False
+#             else: print("Tagged person was already not it, something went wrong")
+#         except:
+#             print("An error occurred updating who is it")

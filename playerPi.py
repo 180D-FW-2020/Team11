@@ -8,6 +8,7 @@ Created on Fri Nov  6 22:58:48 2020
 import settings
 import sys
 import math
+import traceback
 if settings.isPi:
     import IMU
 
@@ -34,6 +35,7 @@ class PlayerPi:
             
         except:
             print("An error occurred initializing PlayerPi")
+            traceback.print_exc() 
             
     def getRotation(self):
         '''
@@ -43,22 +45,25 @@ class PlayerPi:
             rotation = self.imu.getRotation()
             return rotation
         except:
-            print("Error getting direction information from the camera")
+            print("Error getting rotation information from the IMU")
+            traceback.print_exc() 
     
-    def pack(self, rotation):
+    def pack(self, val):
         '''
-        Packs a message for the central node containing player number and rotation.
+        Packs a message for the central node containing player number and a
+        value, which may be a confirmation of intial message receipt, or a
+        rotation.
         
         Returns the message for transmission.
         '''
         try:
             #0 is a dummy value, this should be updated with message packing code
-            package = {'playerId': self.playerId,
-                       'direction': 0,
-                       'rotation': rotation}
-            return package
+            message = {'playerId': self.playerId,
+                       'val': val}
+            return message
         except:
             print("Error sending package to primary node")
+            traceback.print_exc() 
     
     def unpack(self, package):
         '''
@@ -77,6 +82,7 @@ class PlayerPi:
             return True
         except:
             print("Error getting package from primary node")
+            traceback.print_exc() 
 
 class BerryIMU:
     def __init__(self):
@@ -100,6 +106,7 @@ class BerryIMU:
                 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
         except:
             print("Error initializing IMU")
+            traceback.print_exc() 
             
     def getRotation(self):
         '''
@@ -188,3 +195,4 @@ class BerryIMU:
                 #     return rotation
         except:
             print("Error getting rotation from IMU")
+            traceback.print_exc() 
