@@ -222,7 +222,7 @@ class PlaySpace:
             print("An error occurred rotating", rotation)
             traceback.print_exc() 
     
-    def checkCollision(self, player, direction):
+    def checkCollision(self, playerId, direction):
         '''
         Takes a player and direction, figures out if they are going to run into 
         stuff.
@@ -236,8 +236,46 @@ class PlaySpace:
 
         '''
         try:
-            # These are dummy vals
-            collision, tag, powerup = (0,0,0)
+            if self.players[playerId - 1].it: speed = ITSPEED
+            else: speed = 1
+            collision = False
+            tag = False
+            powerup = False
+
+            #check to see if collision with edge                
+            if direction == '^':
+                location = self.players[playerId - 1]['position'] + speed*self.verticalAxis
+                if (location >= (self.edgeLength + 1)):
+                    collision = True
+            elif direction == 'v':
+                location = self.players[playerId - 1]['position'] - speed*self.verticalAxis
+                if (location <= 0):
+                    collision = True
+            elif direction == '<':
+                location = self.players[playerId - 1]['position'] - speed*self.horizontalAxis
+                if (location <= 0):
+                    collision = True
+            elif direction == '>':
+                location = self.players[playerId - 1]['position'] + speed*self.horizontalAxis
+                if (location >= (self.edgeLength + 1)):
+                    collision = True
+            
+            #check to see if tag by it
+            if (self.players[playerId - 1]['it']):
+                for i in self.playersNotIt:
+                    if ((self.players[i-1]['position'] > self.players[playerId - 1]['position']) and (self.players[i-1]['position'] <= location)):
+                        tag = True
+                    elif ((self.players[i-1]['position'] < self.players[playerId - 1]['position']) and (self.players[i-1]['position'] >= location)):
+                        tag = True
+            
+            #check to see if not it players collide with each other or if collide with it resulting in tag
+            elif (self.players[playerId - 1]['it'] == False):
+                for i in range(len(self.players)):
+                    if ((self.players[i]['position'] == location) and (self.players[i]['it'] == False)):
+                        collision = True
+                    elif ((self.players[i]['it'] == True) and (abs(location - self.players[i]['position']) < 1)):
+                        tag = True
+            
             return collision, tag, powerup
         except:
             print("An error occurred checking collision")
