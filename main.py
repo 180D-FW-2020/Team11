@@ -3,6 +3,7 @@
 Created on Mon Nov  9 12:54:08 2020
 
 @author: zefyr
+
 """
 
 # Should have better way to set these values than hard coding
@@ -14,16 +15,17 @@ import gamePlay as g
 if settings.isPi: import playerPi
 else: import playerPC
 import comms
-from threading import Thread, Lock
+from threading import Thread
 import cv2
 import multiprocessing
 import random
 import time
+import traceback
 
 verbose = True
 
-nodeToPrimary = "ece180d/team11/nodeToPrimary"
-primaryToNode = "ece180d/team11/primaryToNode"
+#nodeToPrimary = "ece180d/team11/nodeToPrimary"
+#primaryToNode = "ece180d/team11/primaryToNode"
             
 def piProcess():
     '''
@@ -37,8 +39,10 @@ def piProcess():
     stop = False
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiver = comms.Receiver(primaryToNode, clientId)
-    transmitter = comms.Transmitter(nodeToPrimary)
+    receiver = comms.Receiver((comms.initial,
+                               comms.cooldown),
+                              clientId)
+    transmitter = comms.Transmitter()
     receiver.start()
     
     #First, get initial load with full playspace info
@@ -52,7 +56,7 @@ def piProcess():
             
     # Send handshake to confirm receipt of first load
     package = pi.pack(displayReceived)
-    transmitter.transmit(package)
+    transmitter.transmit(comms.piConfirmation, package)
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
@@ -78,7 +82,7 @@ def piTransmit(transmitter, pi, stop):
         if pi.canSend:
             rotation = pi.getRotation()
             package = pi.pack(rotation)
-            transmitter.transmit(package)
+            transmitter.transmit(comms.rotation, package)
             pi.canSend = False
 
 def pcProcess():
@@ -96,8 +100,12 @@ def pcProcess():
     stop = False
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiver = comms.Receiver(primaryToNode, clientId)
-    transmitter = comms.Transmitter(nodeToPrimary)
+    receiver = comms.Receiver((comms.initial,
+                               comms.move,
+                               comms.tag,
+                               comms.axes),
+                              clientId)
+    transmitter = comms.Transmitter()
     receiver.start()
     
     #First, get initial load with full playspace info
@@ -106,13 +114,13 @@ def pcProcess():
         # Keep checking for an initial load
         if len(receiver.packages):
             
-            # Gets true if initial load received, false and deletes message
-            # from queue otherwise
+            # If message is initial load, displayReceived will be True
             displayReceived = pc.unpack(receiver.packages.pop(0))
+            pc.updateDisplay()
             
     # Send handshake to confirm receipt of first load
     package = pc.pack(displayReceived)
-    transmitter.transmit(package)
+    transmitter.transmit(comms.pcConfirmation, package)
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
@@ -124,10 +132,10 @@ def pcProcess():
     while not pc.gameOver:
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
-        if pc.displayUpdate:
+        #if pc.displayUpdate:
             pc.updateDisplay()
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     cv2.destroyAllWindows()
     
     stop = True
@@ -142,7 +150,7 @@ def pcTransmit(transmitter, pc, stop):
     while not pc.gameOver and not stop():
         direction = pc.getDirection()
         package = pc.pack(direction)
-        transmitter.transmit(package)
+        transmitter.transmit(comms.direction, package)
     
 def centralNodeProcess():
     '''
@@ -155,11 +163,15 @@ def centralNodeProcess():
     if verbose: print("Starting central process")
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiver = comms.Receiver(nodeToPrimary, clientId)
-    transmitter = comms.Transmitter(primaryToNode)
+    receiver = comms.Receiver((comms.piConfirmation,
+                               comms.pcConfirmation,
+                               comms.direction,
+                               comms.rotation),
+                              clientId)
+    transmitter = comms.Transmitter()
     receiver.start()
     
-    game = g.GamePlay(numPlayers, primaryNode = True)
+    game = g.GamePlay(numPlayers)
 
     initialPackage = game.pack()
     
@@ -171,7 +183,7 @@ def centralNodeProcess():
     while devicesPending:
         
         # Transmit the initial playspace info
-        transmitter.transmit(initialPackage)
+        transmitter.transmit(comms.initial, initialPackage)
         
         # Check if any packages in the queue
         if len(receiver.packages):
@@ -179,6 +191,7 @@ def centralNodeProcess():
             # If yes, unpack the first one and use to identify which device is
             # now connected
             playerId, pi, pc = game.unpack(receiver.packages.pop(0))
+            
             if pi:
                 pis.remove(playerId)
                 if verbose:
@@ -196,18 +209,18 @@ def centralNodeProcess():
     
     # Then start the game
     while not game.gameOver:
+        
+        # Poll for messages in queue
         if len(receiver.packages):
-            playerId, rotation, direction = game.unpack(receiver.packages.pop(0))
-            message = 0
-            if (direction):
-                message = game.playSpace.movePlayer(playerId, direction)
-            elif (rotation):
-                message = game.playSpace.rotatePlaySpace(rotation)
-            else:
-                # This shouldn't happen
-                print("A message was received without direction or rotation")
+            
+            # On receipt, get the first message and do stuff relevant to the
+            # message topic
+            topic, message = game.unpack(receiver.packages.pop(0))
+                        
+            # Generally this should result in some outbound message
             if message:
-                transmitter.transmit(message)
+                transmitter.transmit(topic, message)
+            else: print("No outbound message to send")
     
     receiver.stop()
 
@@ -220,6 +233,7 @@ if __name__ == '__main__':
             piProcess()
         except:
             print("An error occurred with pi processes")
+            traceback.print_exc() 
     elif settings.isPrimary:
         try:
             if verbose: print("will run central stuff")
@@ -231,6 +245,7 @@ if __name__ == '__main__':
             player.start()
         except:
             print("An error occurred with primary node processes")
+            traceback.print_exc() 
     else:
         # Only other case is this is the playerPC
         try:
@@ -238,3 +253,4 @@ if __name__ == '__main__':
             pcProcess()
         except:
             print("An error occurred with non primary node processes")
+            traceback.print_exc() 

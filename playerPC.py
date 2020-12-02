@@ -8,6 +8,8 @@ Created on Fri Nov  6 22:58:30 2020
 import gamePlay as g
 import numpy as np
 import cv2
+import traceback
+import comms
 
 cameraWorking = False
 
@@ -40,6 +42,7 @@ class PlayerPC:
             
         except:
             print("An error occurred initializing PlayerPC")
+            traceback.print_exc() 
             
     def getDirection(self):
         '''
@@ -50,6 +53,7 @@ class PlayerPC:
             return direction
         except:
             print("Error getting direction information from the camera")
+            traceback.print_exc() 
 
     def getCommand(self):
         ''' 
@@ -60,21 +64,23 @@ class PlayerPC:
             return command
         except:
             print("Error getting command information from microphone")
+            traceback.print_exc() 
             
-    def pack(self, direction):
+    def pack(self, val):
         '''
-        Packs a message for the central node containing player number, direction,
-        and command.
+        Packs a message for the central node containing player number and a
+        value, which may be a confirmation of initial message receipt, a 
+        direction, or a command.
         
         Returns the message for transmission.
         '''
         try:
-            package = {'playerId': self.playerId,
-                       'direction': direction,
-                       'rotation': 0}
-            return package
+            message = {'playerId': self.playerId,
+                       'val': val}
+            return message
         except:
             print("Error sending package to primary node")
+            traceback.print_exc() 
     
     def unpack(self, package):
         '''
@@ -91,23 +97,23 @@ class PlayerPC:
             # canSend will usually be updated to true, but there may be cases
             # in which it should not be.
             # 1 is a dummy value
-            # if package['messageType'] == 'move':
-            #     self.playSpace.players[package['playerId'] - 1].position = package['position']
-            # elif package['messageType'] == 'tag':
-            #     self.playSpace.players[package['tagged'] - 1].it = True
-            #     self.playSpace.players[package['playerId'] - 1].it = False
-            # elif package['messageType'] == 'init':
-            #     self.playSpace.__dict__= package
-            #     for player in self.playSpace.players:
-            #         for j in self.playSpace.players[player].__dict__:
-            #             j = package['players'][player][j]
-            canSend = True
-            # If any updates result in a display update, set displayUpdate to
-            # true so it will update     
-            
-            return canSend
+            topic, message = package
+            if topic == comms.move:
+                self.playSpace.players[message['playerId'] - 1].position = message['position']
+            elif topic == comms.axes:
+                self.playSpace.verticalAxis = message['verticalAxis']
+                self.playSpace.horizontalAxis = message['horizontalAxis']
+            elif topic == comms.tag:
+                self.playSpace.players[message['tagged'] - 1].it = True
+                self.playSpace.players[message['playerId'] - 1].it = False
+            elif topic == comms.initial:
+                self.playSpace.__dict__= message
+                # Return True for initial message
+                return True
+            return False
         except:
             print("Error getting package from primary node")
+            traceback.print_exc() 
         
     def updateDisplay(self):
         '''
@@ -123,22 +129,23 @@ class PlayerPC:
                 display = cv2.line(display, (dist,(i+1)*dist), (1000-dist,(i+1)*dist),(0,255,0),10)
             # Prints current state of playspace based on received package
             for i, player in enumerate(self.playSpace.players):
-                hpos = np.dot(self.playSpace.horizontalAxis, player.position)
+                hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
                 if hpos<0:
                     hpos = self.playSpace.edgeLength + hpos + 1
                     print(hpos)
-                vpos = -1*np.dot(self.playSpace.verticalAxis, player.position)
+                vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
                 if vpos<0:
                     vpos = self.playSpace.edgeLength + vpos + 1
                 display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
                                       int(dist/3), playerColors[i], -1)
-                if player.it:
+                if player['it']:
                     display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
                                       int(dist/3), itColor, int(dist/10))
             cv2.imshow('display',display)
             self.displayUpdate = False
         except:
             print("Error updating display")
+            traceback.print_exc() 
 
 class Camera:
     def __init__(self):
@@ -146,6 +153,7 @@ class Camera:
             pass
         except:
             print("Error initializing camera")
+            traceback.print_exc() 
             
     def getDirection(self):
         '''
@@ -171,6 +179,7 @@ class Camera:
                 #     return direction
         except:
             print("Error getting direction from camera")
+            traceback.print_exc() 
             
 class Microphone:
     def __init__(self):
@@ -178,6 +187,7 @@ class Microphone:
             pass
         except:
             print("Error initializing microphone")
+            traceback.print_exc() 
             
     def getCommand(self):
         '''
@@ -190,3 +200,4 @@ class Microphone:
             return command
         except:
             print("Error getting command from microphone")
+            traceback.print_exc() 
