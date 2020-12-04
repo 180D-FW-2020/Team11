@@ -89,8 +89,8 @@ class PlaySpace:
             if numObstacles: self.placeObstacles(numObstacles)
             if numPowerups: self.placePowerUps(numPowerups)
             
-            self.verticalAxis = [0,1,0]
-            self.horizontalAxis = [1,0,0]
+            self.verticalAxis = np.array([0,1,0])
+            self.horizontalAxis = np.array([1,0,0])
                         
             self.rotationCoolDownRemaining = 0
             
@@ -117,10 +117,10 @@ class PlaySpace:
                 # with respect to edge length. Don't use origin, this is dummy code
                 
                 if self.edgeLength:
-                    position = [r.randrange(1, self.edgeLength + 1, 1),
+                    position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1),
-                                r.randrange(1, self.edgeLength + 1, 1)]
-                else: position = [0, 0, 0]
+                                r.randrange(1, self.edgeLength + 1, 1)])
+                else: position = np.array([0, 0, 0])
                 
                 if(i == playerIt): it = True
                 else:
@@ -180,7 +180,7 @@ class PlaySpace:
                 displayUpdates = 0
             # Otherwise move. If there's a powerup there, pick it up
             else:
-                if self.players[playerId - 1].it: speed = ITSPEED
+                if self.players[playerId - 1]['it']: speed = ITSPEED
                 else: speed = 1
                 
                 if direction == '^':
@@ -207,13 +207,13 @@ class PlaySpace:
         try:
             newAxis = np.cross(self.horizontalAxis, self.verticalAxis)
             if rotation == '^':
-                self.verticalAxis = (-1 * newAxis).tolist()
+                self.verticalAxis = -1 * newAxis
             elif rotation == 'v':
-                self.verticalAxis = (newAxis).tolist()
+                self.verticalAxis = newAxis
             elif rotation == '<':
-                self.horizontalAxis = (newAxis).tolist()
+                self.horizontalAxis = newAxis
             elif rotation == '>':
-                self.horizontalAxis = (-1 * newAxis).tolist()
+                self.horizontalAxis = -1 * newAxis
             displayUpdates = {'horizontalAxis': self.horizontalAxis,
                                   'verticalAxis': self.verticalAxis}
                 
