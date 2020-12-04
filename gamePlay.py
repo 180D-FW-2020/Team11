@@ -166,7 +166,7 @@ class PlaySpace:
         '''
         try:
             # First check for collision
-            collision, tag, powerup = self.checkCollision(playerId, direction)
+            collision, tag, powerup, overlap = self.checkCollision(playerId, direction)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
                 self.players[tag - 1]['it'] = True
@@ -233,31 +233,37 @@ class PlaySpace:
          - tag: if the moving player is it and the obstacle is another
              player, this is the other playerId, else 0
          - powerup: if the obstacle is a powerup, this is the index for it
-
+         - overlap: the number of spaces that can be moved until player overlaps with object colliding into
         '''
         try:
             if self.players[playerId - 1]['it']: speed = ITSPEED
             else: speed = 1
-            collision = False
-            tag = False
-            powerup = False
-            index = -1
+            collision = 0
+            tag = 0
+            powerup = 0
+            overlap = -1
+            playArea = self.horizontalAxis + self.verticalAxis
+            initloc = self.players[playerId-1]['position']*playArea
 
             #set future location                
             if direction == '^':
                 axis = self.verticalAxis
+                inverse = self.horizontalAxis
                 location = self.players[playerId - 1]['position']*self.verticalAxis + speed*self.verticalAxis
 
             elif direction == 'v':
                 axis = self.verticalAxis
+                inverse = self.horizontalAxis
                 location = self.players[playerId - 1]['position']*self.verticalAxis - speed*self.verticalAxis
 
             elif direction == '<':
                 axis = self.horizontalAxis
+                inverse = self.verticalAxis
                 location = self.players[playerId - 1]['position']*self.horizontalAxis - speed*self.horizontalAxis
 
             elif direction == '>':
                 axis = self.horizontalAxis
+                inverse = self.verticalAxis
                 location = self.players[playerId - 1]['position']*self.horizontalAxis + speed*self.horizontalAxis
             
             #get the position index that is changing
@@ -266,27 +272,57 @@ class PlaySpace:
                     index = i
 
             # check if collision with edges of playspace
-            if (abs(location[index]) >= (self.edgeLength + 1)) or (abs(location[index]) < 1):
+            if (abs(location[index]) > (self.edgeLength)):
                 collision = True
+                overlap = abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1))
+                return collision, tag, powerup, overlap
+            elif (location[index] == 0):
+                collision = True
+                if (self.players[playerId - 1]['it']):
+                    overlap = 2
+                else:
+                    overlap = 1
+            elif (self.players[playerId - 1]['it']) and (self.players[playerId - 1]['position'][index] > 0) and (location[index] < 0):
+                collision = True
+                overlap = 1
 
-            
+
             #check to see if tag by it
             if (self.players[playerId - 1]['it']):
                 for i in self.playersNotIt:
-                    if ((self.players[i-1]['position'][index] > self.players[playerId - 1]['position'][index]) and (self.players[i-1]['position'][index] <= location[index])):
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.players[i-1]['position']*playArea)
+                    distance = myloc - yourloc
+                    difference = initloc - yourloc
+                    if (np.linalg.norm(distance) < 1):
                         tag = True
-                    elif ((self.players[i-1]['position'][index] < self.players[playerId - 1]['position'][index]) and (self.players[i-1]['position'][index] >= location[index])):
-                        tag = True
-            
-            #check to see if not it players collide with each other or if collide with it resulting in tag
-            elif (self.players[playerId - 1]['it'] == False):
-                for i in range(len(self.players)):
-                    if ((self.players[i]['position'][index] == location[index]) and (self.players[i]['it'] == False)):
                         collision = True
-                    elif ((self.players[i]['it'] == True) and (abs(location[index] - self.players[i]['position'][index]) < 1)):
+                        overlap = np.linalg.norm(difference)
+                    elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and (np.linalg.norm(difference - distance) == ITSPEED):
                         tag = True
+                        collision = True
+                        overlap = np.linalg.norm(difference)
+
+
             
-            return collision, tag, powerup
+
+            #check to see if not it players collide with each other or if collide with it resulting in tag
+
+            if (self.players[playerId - 1]['it'] == False):
+                for i in range(len(self.players)):
+                    if (i != (playerId - 1)):
+                        myloc = (location + inverse*self.players[playerId - 1]['position'])
+                        yourloc = (self.players[i]['position']*playArea)
+                        distance = myloc - yourloc
+                        if (yourloc == myloc) and (self.players[i]['it'] == False):
+                            collision = True
+                            overlap = 1
+                        elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
+                            tag = True
+                            collision = True
+                            overlap = 1
+            
+            return collision, tag, powerup, overlap
         except:
             print("An error occurred checking collision")
             traceback.print_exc() 
@@ -340,3 +376,12 @@ class PlaySpace:
 #             else: print("Tagged person was already not it, something went wrong")
 #         except:
 #             print("An error occurred updating who is it")
+
+if __name__ == '__main__':
+    myp = PlaySpace(4,10,0,0)
+    myp.players[0]['position'] = np.array([5,10,5])
+    myp.players[1]['position'] = np.array([1,1,1])
+    myp.players[2]['position'] = np.array([3,3,3])
+    myp.players[3]['position'] = np.array([7,7,7])
+    print(myp.players)
+    print(myp.checkCollision(1, '^'))
