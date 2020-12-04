@@ -236,44 +236,54 @@ class PlaySpace:
 
         '''
         try:
-            if self.players[playerId - 1].it: speed = ITSPEED
+            if self.players[playerId - 1]['it']: speed = ITSPEED
             else: speed = 1
             collision = False
             tag = False
             powerup = False
+            index = -1
 
-            #check to see if collision with edge                
+            #set future location                
             if direction == '^':
-                location = self.players[playerId - 1]['position'] + speed*self.verticalAxis
-                if (location >= (self.edgeLength + 1)):
-                    collision = True
+                axis = self.verticalAxis
+                location = self.players[playerId - 1]['position']*self.verticalAxis + speed*self.verticalAxis
+
             elif direction == 'v':
-                location = self.players[playerId - 1]['position'] - speed*self.verticalAxis
-                if (location <= 0):
-                    collision = True
+                axis = self.verticalAxis
+                location = self.players[playerId - 1]['position']*self.verticalAxis - speed*self.verticalAxis
+
             elif direction == '<':
-                location = self.players[playerId - 1]['position'] - speed*self.horizontalAxis
-                if (location <= 0):
-                    collision = True
+                axis = self.horizontalAxis
+                location = self.players[playerId - 1]['position']*self.horizontalAxis - speed*self.horizontalAxis
+
             elif direction == '>':
-                location = self.players[playerId - 1]['position'] + speed*self.horizontalAxis
-                if (location >= (self.edgeLength + 1)):
-                    collision = True
+                axis = self.horizontalAxis
+                location = self.players[playerId - 1]['position']*self.horizontalAxis + speed*self.horizontalAxis
+            
+            #get the position index that is changing
+            for i in range(len(axis)):
+                if axis[i] == 1:
+                    index = i
+
+            # check if collision with edges of playspace
+            if (abs(location[index]) >= (self.edgeLength + 1)) or (abs(location[index]) < 1):
+                collision = True
+
             
             #check to see if tag by it
             if (self.players[playerId - 1]['it']):
                 for i in self.playersNotIt:
-                    if ((self.players[i-1]['position'] > self.players[playerId - 1]['position']) and (self.players[i-1]['position'] <= location)):
+                    if ((self.players[i-1]['position'][index] > self.players[playerId - 1]['position'][index]) and (self.players[i-1]['position'][index] <= location[index])):
                         tag = True
-                    elif ((self.players[i-1]['position'] < self.players[playerId - 1]['position']) and (self.players[i-1]['position'] >= location)):
+                    elif ((self.players[i-1]['position'][index] < self.players[playerId - 1]['position'][index]) and (self.players[i-1]['position'][index] >= location[index])):
                         tag = True
             
             #check to see if not it players collide with each other or if collide with it resulting in tag
             elif (self.players[playerId - 1]['it'] == False):
                 for i in range(len(self.players)):
-                    if ((self.players[i]['position'] == location) and (self.players[i]['it'] == False)):
+                    if ((self.players[i]['position'][index] == location[index]) and (self.players[i]['it'] == False)):
                         collision = True
-                    elif ((self.players[i]['it'] == True) and (abs(location - self.players[i]['position']) < 1)):
+                    elif ((self.players[i]['it'] == True) and (abs(location[index] - self.players[i]['position'][index]) < 1)):
                         tag = True
             
             return collision, tag, powerup
