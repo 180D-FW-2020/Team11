@@ -182,22 +182,72 @@ class Camera:
             traceback.print_exc() 
             
 class Microphone:
-    def __init__(self):
-        try:
-            pass
-        except:
-            print("Error initializing microphone")
-            traceback.print_exc() 
+    def __init__(self, phrases):
+		self.phrases = phrases
+		self.active = False
+
+	def listen(self):
+		self.active = True
+
+	def stop(self):
+		self.active = False
             
     def getCommand(self):
         '''
         Listens for a voice command, and when one is found, classifies and
         returns it.
         '''
-        try:
-            # All the getting command stuff. 0 is a dummy number
-            command = 0
-            return command
-        except:
-            print("Error getting command from microphone")
-            traceback.print_exc() 
+        if self.active:
+			r = sr.Recognizer()
+
+			with sr.Microphone() as source:
+				r.adjust_for_ambient_noise(source)
+
+				
+				print("Please say something...")
+
+				audio = r.listen(source)
+
+				mic_input = ""
+
+        		try:
+            		# All the getting command stuff. 0 is a dummy number
+            		command = r.recognize_google(audio)
+
+					#start timing					
+					start = time.time()
+
+
+					print("You said : \n " + command)
+
+					
+					#stop timing
+					# stop = time.time()
+
+					#calculate delta
+					# delta = stop - start
+					# delta_str = str(delta)
+					# entry = [mic_input,delta_str]
+					# print(entry)
+
+					# print("\n")
+
+
+					# words_times.append(entry)
+
+					
+
+
+					#Check for conditionals
+					for key in self.phrases:
+						if(key.lower() in command.lower()):
+							self.phrases[key]()
+
+            		return command
+
+        		except:
+            		print("Error getting command from microphone")
+            		traceback.print_exc() 
+
+
+            		
