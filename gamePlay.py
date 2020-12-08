@@ -58,7 +58,8 @@ class GamePlay:
                                                     message['val'])
             elif topic == comms.rotation:
                 return self.playSpace.rotatePlaySpace(message['val'])
-            
+            elif topic == comms.command:
+                print(message['val'])
             else:
                 # Unplanned case
                 print("A message was received without direction or rotation")

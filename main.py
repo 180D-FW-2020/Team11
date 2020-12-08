@@ -124,8 +124,10 @@ def pcProcess():
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
-    transmit = Thread(target=pcTransmit, args = (transmitter, pc, lambda:stop,))
-    transmit.start()
+    transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
+    transmitDirection.start()
+    transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
+    transmitCommand.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -139,10 +141,11 @@ def pcProcess():
     cv2.destroyAllWindows()
     
     stop = True
-    transmit.join()
+    transmitDirection.join()
+    transmitCommand.join()
     receiver.stop()
 
-def pcTransmit(transmitter, pc, stop):
+def pcTransmitDirection(transmitter, pc, stop):
     '''
     Separate thread for receiving player input on PC and transmitting it to 
     central.
@@ -151,6 +154,16 @@ def pcTransmit(transmitter, pc, stop):
         direction = pc.getDirection()
         package = pc.pack(direction)
         transmitter.transmit(comms.direction, package)
+        
+def pcTransmitCommand(transmitter, pc, stop):
+    '''
+    Separate thread for receiving player input on PC and transmitting it to 
+    central.
+    '''
+    while not pc.gameOver and not stop():
+        command = pc.getCommand()
+        package = pc.pack(command)
+        transmitter.transmit(command, package)
     
 def centralNodeProcess():
     '''
@@ -166,6 +179,7 @@ def centralNodeProcess():
     receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
+                               comms.command,
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
