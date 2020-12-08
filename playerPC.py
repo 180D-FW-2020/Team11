@@ -208,7 +208,7 @@ class Microphone:
 
 				audio = r.listen(source)
 
-				mic_input = ""
+				command = ""
 
         		try:
             		# All the getting command stuff. 0 is a dummy number
