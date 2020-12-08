@@ -214,28 +214,8 @@ class Microphone:
             		# All the getting command stuff. 0 is a dummy number
             		command = r.recognize_google(audio)
 
-					#start timing					
-					start = time.time()
-
 
 					print("You said : \n " + command)
-
-					
-					#stop timing
-					# stop = time.time()
-
-					#calculate delta
-					# delta = stop - start
-					# delta_str = str(delta)
-					# entry = [mic_input,delta_str]
-					# print(entry)
-
-					# print("\n")
-
-
-					# words_times.append(entry)
-
-					
 
 
 					#Check for conditionals
@@ -250,4 +230,3 @@ class Microphone:
             		traceback.print_exc() 
 
 
-            		
