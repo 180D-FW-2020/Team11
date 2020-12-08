@@ -126,8 +126,8 @@ def pcProcess():
     # sending to central, while current process gets display updates
     transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
     transmitDirection.start()
-    transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
-    transmitCommand.start()
+    #transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
+    #transmitCommand.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -163,7 +163,7 @@ def pcTransmitCommand(transmitter, pc, stop):
     while not pc.gameOver and not stop():
         command = pc.getCommand()
         package = pc.pack(command)
-        transmitter.transmit(command, package)
+        transmitter.transmit(comms.command, package)
     
 def centralNodeProcess():
     '''

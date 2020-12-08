@@ -37,7 +37,7 @@ class PlayerPC:
             # without hardcoding?
             self.playerId = playerId
             self.camera = Camera()
-            self.microphone = Microphone()
+            self.microphone = Microphone(None)
             self.displayUpdate = False
             
             #light version of playSpace for display only
@@ -104,13 +104,13 @@ class PlayerPC:
             # 1 is a dummy value
             topic, message = package
             if topic == comms.move:
-                self.playSpace.players[message['playerId'] - 1].position = message['position']
+                self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
             elif topic == comms.axes:
                 self.playSpace.verticalAxis = message['verticalAxis']
                 self.playSpace.horizontalAxis = message['horizontalAxis']
             elif topic == comms.tag:
-                self.playSpace.players[message['tagged'] - 1].it = True
-                self.playSpace.players[message['playerId'] - 1].it = False
+                self.playSpace.players[message['tagged'] - 1]['it'] = True
+                self.playSpace.players[message['playerId'] - 1]['it'] = False
             elif topic == comms.initial:
                 self.playSpace.__dict__= message
                 # Return True for initial message
