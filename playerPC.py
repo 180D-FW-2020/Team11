@@ -10,6 +10,7 @@ import numpy as np
 import cv2
 import traceback
 import comms
+import speech_recognition as sr
 
 cameraWorking = False
 
