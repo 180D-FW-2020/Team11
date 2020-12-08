@@ -10,15 +10,20 @@ import numpy as np
 import cv2
 import traceback
 import comms
+import speech_recognition as sr
 
 cameraWorking = False
 
+## Display dummy values
 player1c = (255, 99, 174)
 player2c = (0, 127, 255)
 player3c = (255, 0, 255)
 player4c = (255, 255, 0)
 playerColors = [player1c, player2c, player3c, player4c]
 itColor = (255, 198, 220)
+
+## Commands
+
 
 class PlayerPC:
     '''
@@ -32,7 +37,7 @@ class PlayerPC:
             # without hardcoding?
             self.playerId = playerId
             self.camera = Camera()
-            self.microphone = Microphone()
+            self.microphone = Microphone(None)
             self.displayUpdate = False
             
             #light version of playSpace for display only
@@ -99,13 +104,13 @@ class PlayerPC:
             # 1 is a dummy value
             topic, message = package
             if topic == comms.move:
-                self.playSpace.players[message['playerId'] - 1].position = message['position']
+                self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
             elif topic == comms.axes:
                 self.playSpace.verticalAxis = message['verticalAxis']
                 self.playSpace.horizontalAxis = message['horizontalAxis']
             elif topic == comms.tag:
-                self.playSpace.players[message['tagged'] - 1].it = True
-                self.playSpace.players[message['playerId'] - 1].it = False
+                self.playSpace.players[message['tagged'] - 1]['it'] = True
+                self.playSpace.players[message['playerId'] - 1]['it'] = False
             elif topic == comms.initial:
                 self.playSpace.__dict__= message
                 # Return True for initial message
@@ -183,14 +188,14 @@ class Camera:
             
 class Microphone:
     def __init__(self, phrases):
-		self.phrases = phrases
-		self.active = False
+        self.phrases = phrases
+        self.active = False
 
-	def listen(self):
-		self.active = True
+    def listen(self):
+        self.active = True
 
-	def stop(self):
-		self.active = False
+    def stop(self):
+        self.active = False
             
     def getCommand(self):
         '''
@@ -198,56 +203,35 @@ class Microphone:
         returns it.
         '''
         if self.active:
-			r = sr.Recognizer()
+            r = sr.Recognizer()
 
-			with sr.Microphone() as source:
-				r.adjust_for_ambient_noise(source)
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source)
 
-				
-				print("Please say something...")
+                
+                print("Please say something...")
 
-				audio = r.listen(source)
+                audio = r.listen(source)
 
-				mic_input = ""
+                command = ""
 
-        		try:
-            		# All the getting command stuff. 0 is a dummy number
-            		command = r.recognize_google(audio)
-
-					#start timing					
-					start = time.time()
+                try:
+                    # All the getting command stuff. 0 is a dummy number
+                    command = r.recognize_google(audio)
 
 
-					print("You said : \n " + command)
-
-					
-					#stop timing
-					# stop = time.time()
-
-					#calculate delta
-					# delta = stop - start
-					# delta_str = str(delta)
-					# entry = [mic_input,delta_str]
-					# print(entry)
-
-					# print("\n")
+                    print("You said : \n " + command)
 
 
-					# words_times.append(entry)
+                    #Check for conditionals
+                    for key in self.phrases:
+                        if(key.lower() in command.lower()):
+                            self.phrases[key]()
 
-					
+                    return command
 
-
-					#Check for conditionals
-					for key in self.phrases:
-						if(key.lower() in command.lower()):
-							self.phrases[key]()
-
-            		return command
-
-        		except:
-            		print("Error getting command from microphone")
-            		traceback.print_exc() 
+                except:
+                    print("Error getting command from microphone")
+                    traceback.print_exc() 
 
 
-            		

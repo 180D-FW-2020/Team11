@@ -58,7 +58,8 @@ class GamePlay:
                                                     message['val'])
             elif topic == comms.rotation:
                 return self.playSpace.rotatePlaySpace(message['val'])
-            
+            elif topic == comms.command:
+                print(message['val'])
             else:
                 # Unplanned case
                 print("A message was received without direction or rotation")
@@ -74,7 +75,12 @@ class GamePlay:
         Returns message for transmission.
         '''
         try:
-            return self.playSpace.__dict__
+            message = self.playSpace
+            for p in message.players:
+                p['position'] = p['position'].tolist()
+            message.verticalAxis = message.verticalAxis.tolist()
+            message.horizontalAxis = message.horizontalAxis.tolist()
+            return message.__dict__
         except:
             print("An error occurred packing the playspace")
             traceback.print_exc() 
@@ -192,7 +198,7 @@ class PlaySpace:
                 elif direction == '>':
                     self.players[playerId - 1]['position'] += speed*self.horizontalAxis
                 displayUpdates = {'playerId': playerId,
-                                  'position': self.players[playerId - 1]['position']}
+                                  'position': self.players[playerId - 1]['position'].tolist()}
                 
             return comms.move, displayUpdates                
         
@@ -214,8 +220,8 @@ class PlaySpace:
                 self.horizontalAxis = newAxis
             elif rotation == '>':
                 self.horizontalAxis = -1 * newAxis
-            displayUpdates = {'horizontalAxis': self.horizontalAxis,
-                                  'verticalAxis': self.verticalAxis}
+            displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
+                                  'verticalAxis': self.verticalAxis.tolist()}
                 
             return comms.axes, displayUpdates  
         except:
