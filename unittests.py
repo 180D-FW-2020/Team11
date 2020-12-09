@@ -50,12 +50,72 @@ class TestPlaySpace(unittest.TestCase):
         pass
     
     ## function not yet implemented, untestable
-    def testCheckCollision(self):
-        pass
     
+    def testCheckCollisionWithEdge(self):
+        self.p.players[0]['position'] = np.array([5,10,5])
+        self.p.players[1]['position'] = np.array([1,1,1])
+        self.p.players[2]['position'] = np.array([3,3,3])
+        self.p.players[3]['position'] = np.array([7,7,7])
+        self.p.movePlayer(0, '^')
+        expectedMovement = np.array([5,10,5])
+        expectedReturn = np.array([1,0,0,1])
+        self.assertTrue(np.array_equal(expectedMovement, self.p.players[0]['position']),
+                         msg = '{}'.format(self.p.players))
+        print(self.p.checkCollision(1, '^'))
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '^')),
+                         msg = '{}'.format(self.p.checkCollision(1, '^')))
+
+        self.p.players[1]["it"] = True
+        expectedMovement = np.array([1,1,1])
+        expectedReturn = np.array([1,0,0,1])
+        self.p.movePlayer(1, '<')
+        self.assertTrue(np.array_equal(expectedMovement, self.p.players[1]['position']),
+                         msg = '{}'.format(self.p.players))
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(2, '<')),
+                         msg = '{}'.format(self.p.checkCollision(2,'<')))
+
+        print(self.p.checkCollision(2, '<'))
+        expectedReturn = np.array([1,0,0,1])
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(2, '<')),
+                         msg = '{}'.format(self.p.checkCollision(2,'<')))
+        
+        self.p.players[3]['position'] = np.array([9,7,7])
+        self.p.players[3]['it'] = True
+        expectedReturn = np.array([1,0,0,2])
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+                         msg = '{}'.format(self.p.checkCollision(4,'>')))
+        
+        self.p.players[1]['position'] = np.array([2,1,1])
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(2, '<')),
+                         msg = '{}'.format(self.p.checkCollision(2,'<')))
+
+    def testCheckCollisionWithPlayers(self):
+        self.p.players[0]['position'] = np.array([5,1,5])
+        self.p.players[1]['position'] = np.array([4,1,1])
+        self.p.players[2]['position'] = np.array([3,9,3])
+        self.p.players[3]['position'] = np.array([2,9,7])
+        expectedReturn = np.array([0,0,0,-1])
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(2, '<')),
+                         msg = '{}'.format(self.p.checkCollision(2,'<')))
+
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
+                         msg = '{}'.format(self.p.checkCollision(3,'>')))
+            
+        expectedReturn = np.array([1,0,0,1])
+        self.p.players[3]['it'] = False
+        self.p.players[2]['it'] = False
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+                         msg = '{}'.format(self.p.checkCollision(3,'<')))
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, 'v')),
+                         msg = '{}'.format(self.p.checkCollision(1,'<')))
+
+
+        
+
     ## movePlayer depends on checkCollision implementation. While that method
     ## is not yet implemented, only testMovePlayer is testable, and it will
     ## move players regardless of collisions
+    '''
     def testMovePlayerMoveUpNotIt(self):
         playerNum = 1
         self.p.players[playerNum - 1]['position'] = np.array([5,5,5])
@@ -126,11 +186,35 @@ class TestPlaySpace(unittest.TestCase):
         self.p.movePlayer(playerNum, '>')
         expected = np.array([5+gamePlay.ITSPEED,5,5])
         self.assertTrue(np.array_equal(expected, self.p.players[playerNum - 1]['position']),
-                         msg = '{}'.format(self.p.players))
+                         msg = '{}'.format(self.p.players)) 
     
+    '''
+
     ## pending checkCollision implementation
     def testMovePlayerTag(self):
-        pass
+        self.p.players[0]['position'] = np.array([5,1,5])
+        self.p.players[1]['position'] = np.array([4,1,1])
+        self.p.players[2]['position'] = np.array([3,9,3])
+        self.p.players[3]['position'] = np.array([2,9,7])
+        expectedReturn = np.array([0,0,0,-1])
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(2, '<')),
+                         msg = '{}'.format(self.p.checkCollision(2,'<')))
+
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
+                         msg = '{}'.format(self.p.checkCollision(3,'>')))
+            
+        expectedReturn = np.array([1,1,0,1])
+        self.p.players[3]['it'] = True
+        self.p.players[2]['it'] = False
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+                         msg = '{}'.format(self.p.checkCollision(3,'<')))
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+                         msg = '{}'.format(self.p.checkCollision(4,'>')))
+        self.p.players[2]['position'] = np.array([4,9,3])
+        expectedReturn = np.array([1,1,0,2])
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+                         msg = '{}'.format(self.p.checkCollision(4,'>')))
+        
     
     ## pending checkCollision implementation
     def testMovePlayerPowerup(self):

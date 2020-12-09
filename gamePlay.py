@@ -241,7 +241,7 @@ class PlaySpace:
             collision = 0
             tag = 0
             powerup = 0
-            overlap = -1
+            overlap = int(-1)
             playArea = self.horizontalAxis + self.verticalAxis
             initloc = self.players[playerId-1]['position']*playArea
 
@@ -274,17 +274,17 @@ class PlaySpace:
             # check if collision with edges of playspace
             if (abs(location[index]) > (self.edgeLength)):
                 collision = True
-                overlap = abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1))
+                overlap = int(abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1)))
                 return collision, tag, powerup, overlap
             elif (location[index] == 0):
                 collision = True
                 if (self.players[playerId - 1]['it']):
-                    overlap = 2
+                    overlap = int(2)
                 else:
                     overlap = 1
             elif (self.players[playerId - 1]['it']) and (self.players[playerId - 1]['position'][index] > 0) and (location[index] < 0):
                 collision = True
-                overlap = 1
+                overlap = int(1)
 
 
             #check to see if tag by it
@@ -297,11 +297,11 @@ class PlaySpace:
                     if (np.linalg.norm(distance) < 1):
                         tag = True
                         collision = True
-                        overlap = np.linalg.norm(difference)
+                        overlap = int(np.linalg.norm(difference))
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and (np.linalg.norm(difference - distance) == ITSPEED):
                         tag = True
                         collision = True
-                        overlap = np.linalg.norm(difference)
+                        overlap = int(np.linalg.norm(difference))
 
 
             
@@ -314,7 +314,7 @@ class PlaySpace:
                         myloc = (location + inverse*self.players[playerId - 1]['position'])
                         yourloc = (self.players[i]['position']*playArea)
                         distance = myloc - yourloc
-                        if (yourloc == myloc) and (self.players[i]['it'] == False):
+                        if (yourloc == myloc).all() and (self.players[i]['it'] == False):
                             collision = True
                             overlap = 1
                         elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
@@ -385,3 +385,14 @@ if __name__ == '__main__':
     myp.players[3]['position'] = np.array([7,7,7])
     print(myp.players)
     print(myp.checkCollision(1, '^'))
+    
+    myp.players[0]['position'] = np.array([5,10,5])
+    myp.players[1]['position'] = np.array([4,1,1])
+    myp.players[2]['position'] = np.array([3,9,3])
+    myp.players[3]['position'] = np.array([2,9,7])
+    
+    myp.players[3]['it'] = False
+    print(myp.players)
+    print(myp.checkCollision(3, '<'))
+    myp.players[2]['position'] = np.array([3,1,3])
+
