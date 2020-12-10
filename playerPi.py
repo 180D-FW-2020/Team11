@@ -9,6 +9,7 @@ import settings
 import sys
 import math
 import traceback
+import comms
 if settings.isPi:
     import IMU
 
@@ -31,7 +32,7 @@ class PlayerPi:
             self.playerId = 1
             self.imu = BerryIMU()
             self.gameOver = False
-            self.canSend = True
+            self.coolDown = False
             
         except:
             print("An error occurred initializing PlayerPi")
@@ -67,19 +68,21 @@ class PlayerPi:
     
     def unpack(self, package):
         '''
-        Unpacks message from the central node to obtain permission to send more
-        messages.
+        Unpacks message from the central node to determine current cooldown state.
         
-        Return true to give permission to PC to transmit messages again.
+        Return true if it's the initial package, for handshake.
         '''
         try:
             # Message data may contain info that is only relevant for the
             # playerPC, so this is just looking for the current rotation
             # cooldown state. If on cooldown rotation, the pi can't send.
-            # 1 is a dummy value
-            #if package['messageType'] == 'pi':
-            #    self.canSend = package['canSend']
-            return True
+            
+            topic, message = package
+            
+            if topic in (comms.axes, comms.coolDown):
+                self.coolDown = message['coolDown']
+            elif topic == comms.initial:
+                return True
         except:
             print("Error getting package from primary node")
             traceback.print_exc() 
@@ -114,75 +117,90 @@ class BerryIMU:
         returns it.
         '''
         try:
-            #Loop until retrieving a rotation
             
-            while settings.isPi:
-                #Read the accelerometer,gyroscope and magnetometer values
-                ACCx = IMU.readACCx()
-                ACCy = IMU.readACCy()
-                ACCz = IMU.readACCz()
+            if settings.isPi:
+                self.acc_medianTable1X = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable1Y = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable1Z = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable2X = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable2Y = [1] * ACC_MEDIANTABLESIZE
+                self.acc_medianTable2Z = [1] * ACC_MEDIANTABLESIZE
                 
-                ###############################################
-                #### Apply low pass filter ####
-                ###############################################
-                ACCx =  ACCx  * ACC_LPF_FACTOR + self.oldXAccRawValue*(1 - ACC_LPF_FACTOR);
-                ACCy =  ACCy  * ACC_LPF_FACTOR + self.oldYAccRawValue*(1 - ACC_LPF_FACTOR);
-                ACCz =  ACCz  * ACC_LPF_FACTOR + self.oldZAccRawValue*(1 - ACC_LPF_FACTOR);
-            
-                self.oldXAccRawValue = ACCx
-                self.oldYAccRawValue = ACCy
-                self.oldZAccRawValue = ACCz
+                self.oldXAccRawValue = 0
+                self.oldYAccRawValue = 0
+                self.oldZAccRawValue = 0
                 
-                #########################################
-                #### Median filter for accelerometer ####
-                #########################################
-                # cycle the table
-                for x in range (ACC_MEDIANTABLESIZE-1,0,-1 ):
-                    self.acc_medianTable1X[x] = self.acc_medianTable1X[x-1]
-                    self.acc_medianTable1Y[x] = self.acc_medianTable1Y[x-1]
-                    self.acc_medianTable1Z[x] = self.acc_medianTable1Z[x-1]
-            
-                # Insert the lates values
-                self.acc_medianTable1X[0] = ACCx
-                self.acc_medianTable1Y[0] = ACCy
-                self.acc_medianTable1Z[0] = ACCz
-            
-                # Copy the tables
-                acc_medianTable2X = self.acc_medianTable1X[:]
-                acc_medianTable2Y = self.acc_medianTable1Y[:]
-                acc_medianTable2Z = self.acc_medianTable1Z[:]
-            
-                # Sort table 2
-                acc_medianTable2X.sort()
-                acc_medianTable2Y.sort()
-                acc_medianTable2Z.sort()
-            
-                # The middle value is the value we are interested in
-                ACCx = acc_medianTable2X[int(ACC_MEDIANTABLESIZE/2)];
-                ACCy = acc_medianTable2Y[int(ACC_MEDIANTABLESIZE/2)];
-                ACCz = acc_medianTable2Z[int(ACC_MEDIANTABLESIZE/2)];
+                #Loop until retrieve a rotation
+                while True:
+                    
+                    #Read the accelerometer,gyroscope and magnetometer values
+                    ACCx = IMU.readACCx()
+                    ACCy = IMU.readACCy()
+                    ACCz = IMU.readACCz()
+                    
+                    ###############################################
+                    #### Apply low pass filter ####
+                    ###############################################
+                    ACCx =  ACCx  * ACC_LPF_FACTOR + self.oldXAccRawValue*(1 - ACC_LPF_FACTOR);
+                    ACCy =  ACCy  * ACC_LPF_FACTOR + self.oldYAccRawValue*(1 - ACC_LPF_FACTOR);
+                    ACCz =  ACCz  * ACC_LPF_FACTOR + self.oldZAccRawValue*(1 - ACC_LPF_FACTOR);
                 
-                #Normalize accelerometer raw values.
-                accXnorm = ACCx/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-                accYnorm = ACCy/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-                #accZnorm = ACCz/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-            
-            
-                #Calculate pitch and roll            
-                pitch = math.asin(accXnorm)*RAD_TO_DEG
-                roll = math.asin(accYnorm)*RAD_TO_DEG
-                #zdir is not yaw. Corresponds to pi/2 rad or 90 deg when IMU is upright, negative when upside down.
-                #zdir = math.asin(accZnorm)*RAD_TO_DEG
-                #roll = -math.asin(accYnorm/math.cos(pitch))*RAD_TO_DEG
-            
-                rotation = 0
-                #Simple classifier
-                if roll > 50 and abs(pitch) < 30: rotation = 'v'
-                elif roll < -50 and abs(pitch) < 30: rotation = '^'
-                elif pitch > 50 and abs(roll) < 30: rotation = '<'
-                elif pitch < -50 and abs(roll) < 30: rotation = '>'
-                if rotation:
-                    return rotation
+                    self.oldXAccRawValue = ACCx
+                    self.oldYAccRawValue = ACCy
+                    self.oldZAccRawValue = ACCz
+                    
+                    #########################################
+                    #### Median filter for accelerometer ####
+                    #########################################
+                    # cycle the table
+                    for x in range (ACC_MEDIANTABLESIZE-1,0,-1 ):
+                        self.acc_medianTable1X[x] = self.acc_medianTable1X[x-1]
+                        self.acc_medianTable1Y[x] = self.acc_medianTable1Y[x-1]
+                        self.acc_medianTable1Z[x] = self.acc_medianTable1Z[x-1]
+                
+                    # Insert the lates values
+                    self.acc_medianTable1X[0] = ACCx
+                    self.acc_medianTable1Y[0] = ACCy
+                    self.acc_medianTable1Z[0] = ACCz
+                
+                    # Copy the tables
+                    acc_medianTable2X = self.acc_medianTable1X[:]
+                    acc_medianTable2Y = self.acc_medianTable1Y[:]
+                    acc_medianTable2Z = self.acc_medianTable1Z[:]
+                
+                    # Sort table 2
+                    acc_medianTable2X.sort()
+                    acc_medianTable2Y.sort()
+                    acc_medianTable2Z.sort()
+                
+                    # The middle value is the value we are interested in
+                    ACCx = acc_medianTable2X[int(ACC_MEDIANTABLESIZE/2)];
+                    ACCy = acc_medianTable2Y[int(ACC_MEDIANTABLESIZE/2)];
+                    ACCz = acc_medianTable2Z[int(ACC_MEDIANTABLESIZE/2)];
+                    
+                    #Normalize accelerometer raw values.
+                    accXnorm = ACCx/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
+                    accYnorm = ACCy/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
+                    #accZnorm = ACCz/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
+                
+                
+                    #Calculate pitch and roll            
+                    pitch = math.asin(accXnorm)*RAD_TO_DEG
+                    roll = math.asin(accYnorm)*RAD_TO_DEG
+                    #zdir is not yaw. Corresponds to pi/2 rad or 90 deg when IMU is upright, negative when upside down.
+                    #zdir = math.asin(accZnorm)*RAD_TO_DEG
+                    #roll = -math.asin(accYnorm/math.cos(pitch))*RAD_TO_DEG
+                
+                    rotation = 0
+                    #Simple classifier
+                    if roll > 50 and abs(pitch) < 30: rotation = 'v'
+                    elif roll < -50 and abs(pitch) < 30: rotation = '^'
+                    elif pitch > 50 and abs(roll) < 30: rotation = '<'
+                    elif pitch < -50 and abs(roll) < 30: rotation = '>'
+                    
+                    if rotation:
+                        print('found rotation', rotation)
+                        return rotation
             while not settings.isPi:
                 pass
                 # val = input()

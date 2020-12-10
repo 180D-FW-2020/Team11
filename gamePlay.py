@@ -8,9 +8,11 @@ import random as r
 import numpy as np
 import traceback
 import comms
+import datetime
+import settings
+import copy
 
-ROTATION_COOLDOWN = 20
-ITSPEED = 2
+ITSPEED = 2 #spaces
 
 class GamePlay:
     def __init__(self, numPlayers):
@@ -19,6 +21,7 @@ class GamePlay:
             
             args = self.settings()
             self.playSpace = PlaySpace(numPlayers, *args)
+            
         except:
             print("An error occurred initializing GamePlay")
             traceback.print_exc() 
@@ -75,12 +78,12 @@ class GamePlay:
         Returns message for transmission.
         '''
         try:
-            message = self.playSpace
-            for p in message.players:
+            message = copy.deepcopy(self.playSpace.__dict__)
+            for p in message['players']:
                 p['position'] = p['position'].tolist()
-            message.verticalAxis = message.verticalAxis.tolist()
-            message.horizontalAxis = message.horizontalAxis.tolist()
-            return message.__dict__
+            message['verticalAxis'] = message['verticalAxis'].tolist()
+            message['horizontalAxis'] = message['horizontalAxis'].tolist()
+            return message
         except:
             print("An error occurred packing the playspace")
             traceback.print_exc() 
@@ -98,7 +101,7 @@ class PlaySpace:
             self.verticalAxis = np.array([0,1,0])
             self.horizontalAxis = np.array([1,0,0])
                         
-            self.rotationCoolDownRemaining = 0
+            self.rotationCoolDownTime = 0
             
             if numPlayers:
                 self.numPlayers = numPlayers
@@ -221,8 +224,9 @@ class PlaySpace:
             elif rotation == '>':
                 self.horizontalAxis = -1 * newAxis
             displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
-                                  'verticalAxis': self.verticalAxis.tolist()}
-                
+                                  'verticalAxis': self.verticalAxis.tolist(),
+                                  'coolDown': True}
+            self.setRotationCoolDown()
             return comms.axes, displayUpdates  
         except:
             print("An error occurred rotating", rotation)
@@ -289,23 +293,41 @@ class PlaySpace:
     
     def setRotationCoolDown(self):
         '''
-        Starts the rotation cooldown
+        Sets the rotation cooldown to end a designated time after now
         '''
         try:
-            self.rotationCoolDownRemaining = ROTATION_COOLDOWN
+            self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = settings.ROTATION_COOLDOWN)
         except:
             print("An error occurred setting the rotation cooldown")
             traceback.print_exc() 
     
-    def rotationCoolDown(self):
+    def rotationCoolDownRemaining(self):
         '''
-        Counts down the rotation cooldown.
+        Checks if the cooldown is active. Return true if yes, false if no
         '''
         try:
-            if(self.rotationCoolDownRemaining>0): self.rotationCoolDownRemaining -= 1
+            # Check if a cooldown is even in place. If not, abort. This should
+            # be an edge case: the method should only be called when a cooldown
+            # is known to be active
+            if not self.rotationCoolDownTime:
+                if settings.verbose:
+                    print("rotationCoolDownRemaining called without checking",
+                          "if cooldown in place.")
+                return False, 0, 0
+            
+            # If cooldown is in place, check to see if it ended before now. If
+            # yes, the cooldown is over, so zero out the cooldown and return false
+            elif self.rotationCoolDownTime < datetime.datetime.now():
+                self.rotationCoolDownTime = 0
+                message = {'coolDown': False}
+                return False, comms.coolDown, message
+            
+            # Otherwise the cooldown is still active, so return true and keep things going
+            else:
+                return True, 0, 0
         except:
             print("An error occurred decrementing the rotation cooldown")
-            traceback.print_exc() 
+            traceback.print_exc()
             
 # class Player:
 #     def __init__(self, playerId, x, y, z, it):

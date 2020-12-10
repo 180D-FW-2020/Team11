@@ -8,8 +8,6 @@ Created on Mon Nov  9 12:54:08 2020
 
 # Should have better way to set these values than hard coding
 
-numPlayers = 1
-
 import settings
 import gamePlay as g
 if settings.isPi: import playerPi
@@ -22,17 +20,13 @@ import random
 import time
 import traceback
 
-verbose = True
-
-#nodeToPrimary = "ece180d/team11/nodeToPrimary"
-#primaryToNode = "ece180d/team11/primaryToNode"
             
 def piProcess():
     '''
     Processes run on the pi. This detects a rotation on the pi, sends it,
     and then waits for permission to detect a new rotation.
     '''
-    if verbose: print("Starting pi process")
+    if settings.verbose: print("Starting pi process")
     
     pi = playerPi.PlayerPi(settings.playerId)
     displayReceived = False
@@ -40,7 +34,8 @@ def piProcess():
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
-                               comms.cooldown),
+                               comms.coolDown,
+                               comms.axes),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -79,11 +74,15 @@ def piTransmit(transmitter, pi, stop):
     central.
     '''
     while not pi.gameOver and not stop():
-        if pi.canSend:
+        if not pi.coolDown:
             rotation = pi.getRotation()
             package = pi.pack(rotation)
             transmitter.transmit(comms.rotation, package)
-            pi.canSend = False
+            
+            # The cooldown will also be set by a message returned from central,
+            # but this is here to ensure the pi doesn't send new rotation info
+            # before that return message is received
+            pi.coolDown = True
 
 def pcProcess():
     '''
@@ -93,9 +92,9 @@ def pcProcess():
     that the display just updates when display information is updated from a
     received message.
     '''   
-    if verbose: print("Starting pc process")
+    if settings.verbose: print("Starting pc process")
     
-    pc = playerPC.PlayerPC(settings.playerId, numPlayers)
+    pc = playerPC.PlayerPC(settings.playerId, settings.numPlayers)
     displayReceived = False
     stop = False
     
@@ -103,7 +102,8 @@ def pcProcess():
     receiver = comms.Receiver((comms.initial,
                                comms.move,
                                comms.tag,
-                               comms.axes),
+                               comms.axes,
+                               comms.coolDown),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -126,6 +126,8 @@ def pcProcess():
     # sending to central, while current process gets display updates
     transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
     transmitDirection.start()
+    
+    ## transmitCommand methods not yet fully implemented
     #transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
     #transmitCommand.start()
     
@@ -142,7 +144,7 @@ def pcProcess():
     
     stop = True
     transmitDirection.join()
-    transmitCommand.join()
+    #transmitCommand.join()
     receiver.stop()
 
 def pcTransmitDirection(transmitter, pc, stop):
@@ -173,7 +175,7 @@ def centralNodeProcess():
     When a message is received, the PlaySpace and game state are updated, and
     a message is sent to player PCs and Pi's indicating the update.
     '''
-    if verbose: print("Starting central process")
+    if settings.verbose: print("Starting central process")
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.piConfirmation,
@@ -185,14 +187,14 @@ def centralNodeProcess():
     transmitter = comms.Transmitter()
     receiver.start()
     
-    game = g.GamePlay(numPlayers)
+    game = g.GamePlay(settings.numPlayers)
 
     initialPackage = game.pack()
     
     # Send initial message until all devices confirm receipt
     devicesPending = True
-    pcs = [i for i in range(1, numPlayers+1)]
-    pis = [i for i in range(1, numPlayers+1)]
+    pcs = [i for i in range(1, settings.numPlayers+1)]
+    pis = [i for i in range(1, settings.numPlayers+1)]
     
     while devicesPending:
         
@@ -208,18 +210,18 @@ def centralNodeProcess():
             
             if pi:
                 pis.remove(playerId)
-                if verbose:
+                if settings.verbose:
                     print("Player {}'s pi has arrived.".format(playerId))
             elif pc:
                 pcs.remove(playerId)
-                if verbose:
+                if settings.verbose:
                     print("Player {}'s pc has arrived.".format(playerId))
         
         # Repeat until no devices left to join
         devicesPending = len(pcs)+len(pis)
         time.sleep(1)
     
-    if verbose: print("All player devices connected")
+    if settings.verbose: print("All player devices connected")
     
     # Then start the game
     while not game.gameOver:
@@ -234,7 +236,21 @@ def centralNodeProcess():
             # Generally this should result in some outbound message
             if message:
                 transmitter.transmit(topic, message)
-            else: print("No outbound message to send")
+            else:
+                if settings.verbose:
+                    print("No outbound message to send")
+        
+        # Check if a rotation cooldown is in place
+        if game.playSpace.rotationCoolDownTime:
+            
+            # If yes, check if it's now ended, in which case a message should
+            # be sent.
+            cooldown, topic, message = game.playSpace.rotationCoolDownRemaining()
+            
+            if not cooldown and message:
+                
+                # If it's now ended, send a message to announce it
+                transmitter.transmit(topic, message)
     
     receiver.stop()
 
@@ -243,14 +259,14 @@ if __name__ == '__main__':
     if settings.isPi:
         #piProcess()
         try:
-            if verbose: print("will run pi stuff")
+            if settings.verbose: print("will run pi stuff")
             piProcess()
         except:
             print("An error occurred with pi processes")
             traceback.print_exc() 
     elif settings.isPrimary:
         try:
-            if verbose: print("will run central stuff")
+            if settings.verbose: print("will run central stuff")
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
             central = multiprocessing.Process(target=centralNodeProcess)
@@ -263,7 +279,7 @@ if __name__ == '__main__':
     else:
         # Only other case is this is the playerPC
         try:
-            if verbose: print("will run pc stuff")
+            if settings.verbose: print("will run pc stuff")
             pcProcess()
         except:
             print("An error occurred with non primary node processes")

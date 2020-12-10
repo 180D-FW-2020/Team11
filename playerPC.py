@@ -93,7 +93,7 @@ class PlayerPC:
         permission to send more messages, or (usually) both. Saves to local
         instance of playSpace.
         
-        Return true to give permission to PC to transmit messages again.
+        Return true if it's the initial package, for handshake.
         '''
         try:
             # Unpack message data into self.playSpace. You can access players
@@ -108,6 +108,9 @@ class PlayerPC:
             elif topic == comms.axes:
                 self.playSpace.verticalAxis = message['verticalAxis']
                 self.playSpace.horizontalAxis = message['horizontalAxis']
+                self.playSpace.rotationCoolDownTime = message['coolDown']
+            elif topic == comms.coolDown:
+                self.playSpace.rotationCoolDownTime = message['coolDown']
             elif topic == comms.tag:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
                 self.playSpace.players[message['playerId'] - 1]['it'] = False
@@ -146,6 +149,8 @@ class PlayerPC:
                 if player['it']:
                     display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
                                       int(dist/3), itColor, int(dist/10))
+            if self.playSpace.rotationCoolDownTime:
+                display = cv2.putText(display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             cv2.imshow('display',display)
             self.displayUpdate = False
         except:

@@ -7,10 +7,10 @@ Created on Mon Nov 23 15:55:26 2020
 
 from paho.mqtt import client as mqtt_client
 import json
+import settings
 
 broker = 'broker.emqx.io'
 port = 1883
-verbose = True
 
 ### Topics ###
 initial = "ece180d/team11/init"
@@ -20,7 +20,7 @@ axes = "ece180d/team11/axes"
 direction = "ece180d/team11/direc"
 command = "ece180d/team11/command"
 rotation = "ece180d/team11/rot"
-cooldown = "ece180d/team11/cool"
+coolDown = "ece180d/team11/cool"
 piConfirmation = "ece180d/team11/piconf"
 pcConfirmation = "ece180d/team11/pcconf"
 
@@ -48,13 +48,13 @@ class Transmitter:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.connected = True
-            if verbose:
+            if settings.verbose:
                 print("Transmitter connected")
         else:
             print("Failed to connect, return code %d\n", rc)
             
     def transmit(self, topic, package):
-        if verbose:
+        if settings.verbose:
             print("Sending", package, "from", topic)
         self.client.publish(topic, json.dumps(package), qos=0)
         
@@ -105,18 +105,18 @@ class Receiver:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.client.subscribe(self.topic)
-            if verbose:
+            if settings.verbose:
                 print("Receiver connected: ", self.topic, self.clientId)
         else:
-            if verbose:
+            if settings.verbose:
                 print("Failed to connect, return code %d\n", rc)
                 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        if verbose:
+        if settings.verbose:
             print("Subscribed, mid = ", mid)
 
     def on_message(self, client, userdata, msg):
-        if verbose:
+        if settings.verbose:
             print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
         
         # Store topic and decoded dictionary payload
