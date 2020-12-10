@@ -12,7 +12,6 @@ import datetime
 import settings
 import copy
 
-ROTATION_COOLDOWN = 10 # seconds
 ITSPEED = 2 #spaces
 
 class GamePlay:
@@ -297,7 +296,7 @@ class PlaySpace:
         Sets the rotation cooldown to end a designated time after now
         '''
         try:
-            self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = ROTATION_COOLDOWN)
+            self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = settings.ROTATION_COOLDOWN)
         except:
             print("An error occurred setting the rotation cooldown")
             traceback.print_exc() 

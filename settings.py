@@ -9,4 +9,6 @@ isPi = False
 isPrimary = True
 playerId = 1
 
+ROTATION_COOLDOWN = 10 # seconds
+
 verbose = True
