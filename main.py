@@ -152,10 +152,13 @@ def pcTransmitDirection(transmitter, pc, stop):
     Separate thread for receiving player input on PC and transmitting it to 
     central.
     '''
+    frameCapture = cv2.VideoCapture(settings.camera)
+    
     while not pc.gameOver and not stop():
-        direction = pc.getDirection()
+        direction = pc.getDirection(frameCapture)
         package = pc.pack(direction)
         transmitter.transmit(comms.direction, package)
+        time.sleep(settings.motionDelay)
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''
