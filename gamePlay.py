@@ -420,34 +420,5 @@ class PlaySpace:
 #         except:
 #             print("An error occurred updating who is it")
 
-if __name__ == '__main__':
-    myp = PlaySpace(4,10,0,0)
-    myp.players[0]['position'] = np.array([5,10,5])
-    myp.players[1]['position'] = np.array([1,1,1])
-    myp.players[2]['position'] = np.array([3,3,3])
-    myp.players[3]['position'] = np.array([7,7,7])
-    print(myp.players)
-    print(myp.checkCollision(1, '^'))
-    
-    myp.players[0]['position'] = np.array([5,10,5])
-    myp.players[1]['position'] = np.array([4,1,1])
-    myp.players[2]['position'] = np.array([3,9,3])
-    myp.players[3]['position'] = np.array([2,9,7])
-    
-    myp.players[3]['it'] = False
-    print(myp.players)
-    print(myp.checkCollision(3, '<'))
-    myp.players[2]['position'] = np.array([3,1,3])
 
-    myp.players[0]['position'] = np.array([5,10,5])
-    myp.players[1]['position'] = np.array([4,1,1])
-    myp.players[2]['position'] = np.array([3,9,3])
-    myp.players[3]['position'] = np.array([1,9,7])
-    
-    myp.players[3]['it'] = True
-    myp.players[2]['it'] = False
-    print(myp.players)
-    print(myp.checkCollision(4, '>'))
-    myp.movePlayer(4, '>')
-    print(myp.players)
 
