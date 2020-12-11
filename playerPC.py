@@ -187,6 +187,7 @@ class Camera:
                 # get contours from indices
                 cntsA=[contours[i] for i in WithoutChildContour]
                 
+                direction = 0
                 for cnt in cntsA:
                     
                     area = cv2.contourArea(cnt)
@@ -204,7 +205,6 @@ class Camera:
                         
                         ratio = leftright_x/topbottom_y
                         
-                        direction = 0
                         # A horizontal to vertical ratio of about 0.48 corresponds with
                         # a vertical arrow
                         if ratio - 0.48 < 0.05:
