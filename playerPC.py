@@ -176,7 +176,7 @@ class Camera:
                 # Capture frame-by-frame
                 _, frame = frameCapture.read()
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
+                direction = 0
                 
                 img = frame[120:360, 200:440]
                 ret,thresh = cv2.threshold(img,127,255,0)
