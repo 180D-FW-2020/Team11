@@ -19,7 +19,7 @@ import multiprocessing
 import random
 import time
 import traceback
-import datetime
+
             
 def piProcess():
     '''
@@ -138,8 +138,8 @@ def pcProcess():
             pc.unpack(receiver.packages.pop(0))
         #if pc.displayUpdate:
             pc.updateDisplay()
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     cv2.destroyAllWindows()
     
     stop = True
@@ -153,26 +153,12 @@ def pcTransmitDirection(transmitter, pc, stop):
     central.
     '''
     frameCapture = cv2.VideoCapture(settings.camera)
-    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    
-    delay = datetime.datetime.now()
     
     while not pc.gameOver and not stop():
-        direction, pc.cameraImage = pc.getDirection(frameCapture)
-        #cv2.imshow('frame',pc.cameraImage)
-        pc.updateDisplay(event = False)
-        
-        if direction and datetime.datetime.now()<delay:
-            package = pc.pack(direction)
-            transmitter.transmit(comms.direction, package)
-            delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
-            
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        #time.sleep(settings.motionDelay)
-    frameCapture.release()
-    cv2.destroyAllWindows()
+        direction = pc.getDirection(frameCapture)
+        package = pc.pack(direction)
+        transmitter.transmit(comms.direction, package)
+        time.sleep(settings.motionDelay)
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''

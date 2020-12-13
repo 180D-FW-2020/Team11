@@ -9,7 +9,6 @@ import gamePlay as g
 import numpy as np
 import cv2
 import traceback
-import copy
 import comms
 import speech_recognition as sr
 
@@ -43,13 +42,7 @@ class PlayerPC:
             
             #light version of playSpace for display only
             self.playSpace = g.PlaySpace(numPlayers, 0, 0, 0)
-            self.displayBase = 0
-            self.display = 0
-            self.dist = 0
             
-            self.cameraImage = 0
-            
-            self.initialReceived = False
             self.gameOver = False
             
         except:
@@ -121,49 +114,45 @@ class PlayerPC:
             elif topic == comms.tag:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
                 self.playSpace.players[message['playerId'] - 1]['it'] = False
-            elif topic == comms.initial and not self.initialReceived:
+            elif topic == comms.initial:
                 self.playSpace.__dict__= message
-                self.dist = int(1000/(self.playSpace.edgeLength + 2))
-                self.displayBase = np.zeros((1000,1700,3), np.uint8)
-                for i in range(self.playSpace.edgeLength + 1):
-                    self.displayBase = cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
-                for i in range(self.playSpace.edgeLength + 1):
-                    self.displayBase = cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
                 # Return True for initial message
-                self.initialReceived = True
                 return True
             return False
         except:
             print("Error getting package from primary node")
             traceback.print_exc() 
         
-    def updateDisplay(self, event = True):
+    def updateDisplay(self):
         '''
         Prints current contents of local playSpace to player's screen.
         '''
         try:
-            if event:
-                self.display = copy.deepcopy(self.displayBase)
-                # Prints current state of playspace based on received package
-                for i, player in enumerate(self.playSpace.players):
-                    hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
-                    if hpos<0:
-                        hpos = self.playSpace.edgeLength + hpos + 1
-                    vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
-                    if vpos<0:
-                        vpos = self.playSpace.edgeLength + vpos + 1
-                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          int(self.dist/3), playerColors[i], -1)
-                    if player['it']:
-                        self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          int(self.dist/3), itColor, int(self.dist/10))
-                if self.playSpace.rotationCoolDownTime:
-                    self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            display = np.zeros((1000,1000,3), np.uint8)
+            dist = int(1000/(self.playSpace.edgeLength + 2))
             
-            elif type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
-                cv2.imshow('display',self.display)
-            #self.displayUpdate = False
+            for i in range(self.playSpace.edgeLength + 1):
+                display = cv2.line(display, ((i+1)*dist,dist), ((i+1)*dist,1000-dist),(0,255,0),10)
+            for i in range(self.playSpace.edgeLength + 1):
+                display = cv2.line(display, (dist,(i+1)*dist), (1000-dist,(i+1)*dist),(0,255,0),10)
+            # Prints current state of playspace based on received package
+            for i, player in enumerate(self.playSpace.players):
+                hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
+                if hpos<0:
+                    hpos = self.playSpace.edgeLength + hpos + 1
+                    print(hpos)
+                vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
+                if vpos<0:
+                    vpos = self.playSpace.edgeLength + vpos + 1
+                display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
+                                      int(dist/3), playerColors[i], -1)
+                if player['it']:
+                    display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
+                                      int(dist/3), itColor, int(dist/10))
+            if self.playSpace.rotationCoolDownTime:
+                display = cv2.putText(display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.imshow('display',display)
+            self.displayUpdate = False
         except:
             print("Error updating display")
             traceback.print_exc() 
@@ -183,90 +172,78 @@ class Camera:
         '''
         try:
             # Update this to incorporate camera code, this will do for now though
-            if cameraWorking:
+            while cameraWorking:
                 # Capture frame-by-frame
                 _, frame = frameCapture.read()
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                width = frame.shape[1]
-                length = frame.shape[0]
 
-                direction = 0
+                
                 img = frame[120:360, 200:440]
                 ret,thresh = cv2.threshold(img,127,255,0)
-                contours, hierarchy = cv2.findContours(thresh, 3, 2)
+                contours,hierarchy = cv2.findContours(thresh, 3, 2)
                 
-                if type(hierarchy) == np.ndarray:
-                    ChildContour = hierarchy[0, :,2]
-                    WithoutChildContour = (ChildContour==-1).nonzero()[0]
-                    # get contours from indices
-                    cntsA=[contours[i] for i in WithoutChildContour]
+                ChildContour = hierarchy[0, :,2]
+                WithoutChildContour = (ChildContour==-1).nonzero()[0]
+                # get contours from indices
+                cntsA=[contours[i] for i in WithoutChildContour]
+                
+                direction = 0
+                for cnt in cntsA:
                     
-                    for cnt in cntsA:
-                        
-                        area = cv2.contourArea(cnt)
-                        
-                        # Find first contour of reasonable proportion to overall size of sub image
-                        if (area/(img.size) > 0.01) and (area/(img.size) < 0.1):
+                    area = cv2.contourArea(cnt)
                     
-                            leftmost = cnt[cnt[:,:,0].argmin()][0]
-                            rightmost = cnt[cnt[:,:,0].argmax()][0]
-                            topmost = cnt[cnt[:,:,1].argmin()][0]
-                            bottommost = cnt[cnt[:,:,1].argmax()][0]
-                            
-                            leftright_x = abs((rightmost - leftmost)[0])
-                            topbottom_y = abs((bottommost - topmost)[1])
-                            
-                            ratio = leftright_x/topbottom_y
-                            
-                            # A horizontal to vertical ratio of about 0.48 corresponds with
-                            # a vertical arrow
-                            if ratio - 0.48 < 0.05:
-                                # if span from bottom to arrow wings is longer than from arrow wings to
-                                # top, it's an up arrow
-                                if abs(bottommost[1] - leftmost[1]) > abs(leftmost[1] - topmost[1]):
-                                    direction = '^'
-                                else: direction = 'v'
-                                
-                            # A horizontal to vertical ratio of about 2.10 corresponds with
-                            # a horizontal arrow
-                            elif 1/ratio - 2.10 < 0.05:
-                                # if span from right to arrow wings is longer than from arrow wings to
-                                # left, it's a left arrow
-                                if abs(rightmost[0] - topmost[0]) > abs(topmost[0] - leftmost[0]):
-                                    direction = '<'
-                                else: direction = '>'
-                                
-                            # Any other ratio is unlikely to be a reasonable orientation of our arrow
-                            else:
-                                pass
-                            
-                            # if direction found, print stuff to screen
-                            
-                            if direction:
-                                img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
-                                img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
-                                img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
-                                img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
-                                frame = cv2.putText(frame, direction, (int(frame.shape[1]/2),frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
-                                                    4, (255, 255, 255), 10)
-                            break
+                    # Find first contour of reasonable proportion to overall size of sub image
+                    if (area/(img.size) > 0.01) and (area/(img.size) < 0.1):
                 
-                frame = cv2.flip(cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2),1)
-                
-                #bound = int((frame.shape[1] - frame.shape[0])/2)
-                #frame = frame[:, bound:frame.shape[1] - bound]
-                dim = (640, 480)
-            
-                # Store the resulting frame
-                frame = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
-                frame = np.expand_dims(frame, axis=2)
-                return direction, frame
-                # cv2.imshow('frame', cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2))
-                # frame = cv2.flip(frame,1)
-                # # Display the resulting frame
-                # cv2.imshow('frame', frame)
-                # if direction:
-                #     return direction
+                        leftmost = cnt[cnt[:,:,0].argmin()][0]
+                        rightmost = cnt[cnt[:,:,0].argmax()][0]
+                        topmost = cnt[cnt[:,:,1].argmin()][0]
+                        bottommost = cnt[cnt[:,:,1].argmax()][0]
+                        
+                        leftright_x = abs((rightmost - leftmost)[0])
+                        topbottom_y = abs((bottommost - topmost)[1])
+                        
+                        ratio = leftright_x/topbottom_y
+                        
+                        # A horizontal to vertical ratio of about 0.48 corresponds with
+                        # a vertical arrow
+                        if ratio - 0.48 < 0.05:
+                            # if span from bottom to arrow wings is longer than from arrow wings to
+                            # top, it's an up arrow
+                            if abs(bottommost[1] - leftmost[1]) > abs(leftmost[1] - topmost[1]):
+                                direction = '^'
+                            else: direction = 'v'
+                            
+                        # A horizontal to vertical ratio of about 2.10 corresponds with
+                        # a horizontal arrow
+                        elif 1/ratio - 2.10 < 0.05:
+                            # if span from right to arrow wings is longer than from arrow wings to
+                            # left, it's a left arrow
+                            if abs(rightmost[0] - topmost[0]) > abs(topmost[0] - leftmost[0]):
+                                direction = '<'
+                            else: direction = '>'
+                            
+                        # Any other ratio is unlikely to be a reasonable orientation of our arrow
+                        else:
+                            pass
+                        
+                        # if direction found, print stuff to screen
+                        
+#                        if direction:
+#                            frame = cv2.putText(frame, direction, (10,frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
+#                                                2, (255, 255, 255), 2)
+#                            img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
+#                            img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
+#                            img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
+#                            img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
+#                        break
+#
+#                cv2.imshow('frame', cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2))
+#                frame = cv2.flip(frame,1)
+#                # Display the resulting frame
+#                cv2.imshow('frame', frame)
+                if direction:
+                    return direction
             while not cameraWorking:
                 pass
                 # val = int(input())
