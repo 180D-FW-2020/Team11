@@ -138,8 +138,8 @@ def pcProcess():
             pc.unpack(receiver.packages.pop(0))
         #if pc.displayUpdate:
             pc.updateDisplay()
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
     cv2.destroyAllWindows()
     
     stop = True
@@ -159,6 +159,9 @@ def pcTransmitDirection(transmitter, pc, stop):
         package = pc.pack(direction)
         transmitter.transmit(comms.direction, package)
         time.sleep(settings.motionDelay)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+             break
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''
