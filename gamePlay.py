@@ -314,19 +314,21 @@ class PlaySpace:
 
             #check to see if tag by it
             if (self.players[playerId - 1]['it']):
-                for i in self.playersNotIt:
-                    myloc = (location + inverse*self.players[playerId - 1]['position'])
-                    yourloc = (self.players[i-1]['position']*playArea)
-                    distance = myloc - yourloc
-                    difference = initloc - yourloc
-                    if (np.linalg.norm(distance) < 1):
-                        tag = i
-                        collision = True
-                        overlap = int(np.linalg.norm(difference))
-                    elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and (np.linalg.norm(difference - distance) == ITSPEED):
-                        tag = i
-                        collision = True
-                        overlap = int(np.linalg.norm(difference))
+                for i in range(len(self.players)):
+                    if (i != (playerId - 1)):
+                        myloc = (location + inverse*self.players[playerId - 1]['position'])
+                        yourloc = (self.players[i]['position']*playArea)
+                        distance = myloc - yourloc
+                        difference = initloc - yourloc
+                        movement = np.subtract(difference, distance)
+                        if (np.linalg.norm(distance) < 1):
+                            tag = i+1
+                            collision = True
+                            overlap = int(np.linalg.norm(difference))
+                        elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
+                            tag = i+1
+                            collision = True
+                            overlap = int(np.linalg.norm(difference))
 
 
             
@@ -421,4 +423,12 @@ class PlaySpace:
 #             print("An error occurred updating who is it")
 
 
-
+if __name__ == "__main__":
+    myp = PlaySpace(4,10,0,0)
+    myp.players[0]['position'] = np.array([5,2,5])
+    myp.players[1]['position'] = np.array([5,1,1])
+    myp.players[2]['position'] = np.array([3,9,3])
+    myp.players[3]['position'] = np.array([2,9,7])
+    myp.players[0]['it'] = False
+    myp.players[1]['it'] = True
+    print(myp.checkCollision(2, '^'))
