@@ -158,7 +158,7 @@ def pcTransmitDirection(transmitter, pc, stop):
     delay = datetime.datetime.now()
     
     while not pc.gameOver and not stop():
-        direction, frame = pc.getDirection(frameCapture)
+        direction, pc.cameraImage = pc.getDirection(frameCapture)
         
         if direction and datetime.datetime.now()<delay:
             package = pc.pack(direction)
