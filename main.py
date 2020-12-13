@@ -157,7 +157,7 @@ def pcTransmitDirection(transmitter, pc, stop):
     delay = datetime.datetime.now()
     
     while not pc.gameOver and not stop():
-        direction = pc.getDirection(frameCapture)
+        direction, frame = pc.getDirection(frameCapture)
         
         if direction and datetime.datetime.now()<delay:
             package = pc.pack(direction)
@@ -169,7 +169,7 @@ def pcTransmitDirection(transmitter, pc, stop):
              break
         
     frameCapture.release()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''

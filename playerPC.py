@@ -227,23 +227,24 @@ class Camera:
                             else:
                                 pass
                             
-                            # if direction found, print stuff to screen
+                            #if direction found, print stuff to screen
                             
-    #                        if direction:
-    #                            frame = cv2.putText(frame, direction, (10,frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
-    #                                                2, (255, 255, 255), 2)
-    #                            img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
-    #                            img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
-    #                            img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
-    #                            img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
-    #                        break
-    #
-    #                cv2.imshow('frame', cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2))
-    #                frame = cv2.flip(frame,1)
+                            if direction:
+                                img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
+                                img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
+                                img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
+                                img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
+                                frame = cv2.putText(frame, direction, (int(frame.shape[1]/2),frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
+                                                    4, (255, 255, 255), 10)
+                            break
+                frame = cv2.flip(cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2),1)
+    
+                    # cv2.imshow('frame', cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2))
+                    # frame = cv2.flip(frame,1)
     #                # Display the resulting frame
     #                cv2.imshow('frame', frame)
                 #if direction:
-                return direction
+                return direction, frame
             while not cameraWorking:
                 pass
                 # val = int(input())
