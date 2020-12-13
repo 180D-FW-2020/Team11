@@ -18,6 +18,7 @@ import cv2
 import multiprocessing
 import random
 import time
+import datetime
 import traceback
 
             
@@ -153,12 +154,16 @@ def pcTransmitDirection(transmitter, pc, stop):
     central.
     '''
     frameCapture = cv2.VideoCapture(settings.camera)
+    delay = datetime.datetime.now()
     
     while not pc.gameOver and not stop():
         direction = pc.getDirection(frameCapture)
-        package = pc.pack(direction)
-        transmitter.transmit(comms.direction, package)
-        time.sleep(settings.motionDelay)
+        
+        if direction and datetime.datetime.now()<delay:
+            package = pc.pack(direction)
+            transmitter.transmit(comms.direction, package)
+            time.sleep(settings.motionDelay)
+            delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
              break

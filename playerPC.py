@@ -242,8 +242,8 @@ class Camera:
     #                frame = cv2.flip(frame,1)
     #                # Display the resulting frame
     #                cv2.imshow('frame', frame)
-                if direction:
-                    return direction
+                #if direction:
+                return direction
             while not cameraWorking:
                 pass
                 # val = int(input())
