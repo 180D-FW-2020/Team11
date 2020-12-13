@@ -162,6 +162,9 @@ def pcTransmitDirection(transmitter, pc, stop):
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
              break
+         
+    frameCapture.release()
+    cv2.destroyAllWindows()
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''
