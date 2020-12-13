@@ -204,7 +204,6 @@ class Camera:
                         
                         ratio = leftright_x/topbottom_y
                         
-                        direction = 0
                         # A horizontal to vertical ratio of about 0.48 corresponds with
                         # a vertical arrow
                         if ratio - 0.48 < 0.05:
