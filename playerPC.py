@@ -162,7 +162,9 @@ class PlayerPC:
                 if self.playSpace.rotationCoolDownTime:
                     self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.imshow('display', self.display)
-                
+            else:
+                #self.display[260:740, 980:1620] = self.cameraImage
+                cv2.imshow('cam',self.cameraImage)
         except:
             print("Error updating display")
             traceback.print_exc() 
