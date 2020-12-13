@@ -11,6 +11,7 @@ import cv2
 import traceback
 import comms
 import speech_recognition as sr
+import copy
 
 cameraWorking = True
 
@@ -38,10 +39,17 @@ class PlayerPC:
             self.playerId = playerId
             self.camera = Camera()
             self.microphone = Microphone(None)
-            self.displayUpdate = False
+            #self.displayUpdate = False
             
             #light version of playSpace for display only
             self.playSpace = g.PlaySpace(numPlayers, 0, 0, 0)
+            self.displayBase = 0
+            self.display = 0
+            self.dist = 0
+            
+            self.cameraImage = 0
+            
+            self.initialReceived = False
             
             self.gameOver = False
             
@@ -116,43 +124,45 @@ class PlayerPC:
                 self.playSpace.players[message['playerId'] - 1]['it'] = False
             elif topic == comms.initial:
                 self.playSpace.__dict__= message
+                self.dist = int(1000/(self.playSpace.edgeLength + 2))
+                self.displayBase = np.zeros((1000,1700,3), np.uint8)
+                for i in range(self.playSpace.edgeLength + 1):
+                    self.displayBase = cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
+                for i in range(self.playSpace.edgeLength + 1):
+                    self.displayBase = cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
                 # Return True for initial message
+                self.initialReceived = True
                 return True
             return False
         except:
             print("Error getting package from primary node")
             traceback.print_exc() 
         
-    def updateDisplay(self):
+    def updateDisplay(self, event = True):
         '''
         Prints current contents of local playSpace to player's screen.
         '''
         try:
-            display = np.zeros((1000,1000,3), np.uint8)
-            dist = int(1000/(self.playSpace.edgeLength + 2))
-            
-            for i in range(self.playSpace.edgeLength + 1):
-                display = cv2.line(display, ((i+1)*dist,dist), ((i+1)*dist,1000-dist),(0,255,0),10)
-            for i in range(self.playSpace.edgeLength + 1):
-                display = cv2.line(display, (dist,(i+1)*dist), (1000-dist,(i+1)*dist),(0,255,0),10)
-            # Prints current state of playspace based on received package
-            for i, player in enumerate(self.playSpace.players):
-                hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
-                if hpos<0:
-                    hpos = self.playSpace.edgeLength + hpos + 1
-                    print(hpos)
-                vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
-                if vpos<0:
-                    vpos = self.playSpace.edgeLength + vpos + 1
-                display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
-                                      int(dist/3), playerColors[i], -1)
-                if player['it']:
-                    display = cv2.circle(display,(dist*hpos + int(dist/2), dist*vpos + int(dist/2)),
-                                      int(dist/3), itColor, int(dist/10))
-            if self.playSpace.rotationCoolDownTime:
-                display = cv2.putText(display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            cv2.imshow('display',display)
-            self.displayUpdate = False
+            if event:
+                self.display = copy.deepcopy(self.displayBase)
+                
+                # Prints current state of playspace based on received package
+                for i, player in enumerate(self.playSpace.players):
+                    hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
+                    if hpos<0:
+                        hpos = self.playSpace.edgeLength + hpos + 1
+                    vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
+                    if vpos<0:
+                        vpos = self.playSpace.edgeLength + vpos + 1
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                          int(self.dist/3), playerColors[i], -1)
+                    if player['it']:
+                        self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                          int(self.dist/3), itColor, int(self.dist/10))
+                if self.playSpace.rotationCoolDownTime:
+                    self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.imshow('display', self.display)
+                
         except:
             print("Error updating display")
             traceback.print_exc() 
