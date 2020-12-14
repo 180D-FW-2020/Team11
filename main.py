@@ -176,7 +176,7 @@ def pcProcess():
     #receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
-    while not pc.gameOver:
+    while not pc.gameOver and not stop():
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
             pc.updateDisplay()
