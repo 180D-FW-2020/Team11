@@ -167,7 +167,11 @@ def pcProcess():
         #time.sleep(settings.motionDelay)
     frameCapture.release()
     cv2.destroyAllWindows()
-    cv2.waitKey(1)
+    
+    # This extra waitKey is necessary for mac compatibility, or destroyAllWindows
+    # lags/fails
+    #cv2.waitKey(1)
+    
     stop = True
     packageReceipt.join()
     packageReceipt.stop()
@@ -176,6 +180,11 @@ def pcProcess():
     #receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
+    '''
+    Gets packages from central and updates the display information with the new
+    event. Does not update the display on screen, which must be handled in the 
+    main thread for Mac compatibility.
+    '''
     while not pc.gameOver and not stop():
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
@@ -184,32 +193,32 @@ def pcPackageReceipt(receiver, pc, stop):
         #     break
     #cv2.destroyAllWindows()
 
-def pcTransmitDirection(transmitter, pc, stop):
-    '''
-    Separate thread for receiving player input on PC and transmitting it to 
-    central.
-    '''
-    frameCapture = cv2.VideoCapture(settings.camera)
-    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+# def pcTransmitDirection(transmitter, pc, stop):
+#     '''
+#     Separate thread for receiving player input on PC and transmitting it to 
+#     central.
+#     '''
+#     frameCapture = cv2.VideoCapture(settings.camera)
+#     frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+#     frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     
-    delay = datetime.datetime.now()
+#     delay = datetime.datetime.now()
     
-    while not pc.gameOver and not stop():
-        direction, pc.cameraImage = pc.getDirection(frameCapture)
-        #cv2.imshow('frame',pc.cameraImage)
-        pc.updateDisplay(event = False)
+#     while not pc.gameOver and not stop():
+#         direction, pc.cameraImage = pc.getDirection(frameCapture)
+#         #cv2.imshow('frame',pc.cameraImage)
+#         pc.updateDisplay(event = False)
         
-        if direction and datetime.datetime.now()<delay:
-            package = pc.pack(direction)
-            transmitter.transmit(comms.direction, package)
-            delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
+#         if direction and datetime.datetime.now()<delay:
+#             package = pc.pack(direction)
+#             transmitter.transmit(comms.direction, package)
+#             delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
             
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        #time.sleep(settings.motionDelay)
-    frameCapture.release()
-    cv2.destroyAllWindows()
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             break
+#         #time.sleep(settings.motionDelay)
+#     frameCapture.release()
+#     cv2.destroyAllWindows()
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''
@@ -323,8 +332,8 @@ if __name__ == '__main__':
             if settings.verbose: print("will run central stuff")
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
-            central = multiprocessing.Process(target=centralNodeProcess)
             player = multiprocessing.Process(target=pcProcess)
+            central = multiprocessing.Process(target=centralNodeProcess)
             central.start()
             player.start()
         except:
