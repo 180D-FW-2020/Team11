@@ -151,7 +151,7 @@ def pcProcess():
     frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     
     delay = datetime.datetime.now()
-    
+    cv2.startWindowThread()
     while not pc.gameOver:
         direction, pc.cameraImage = pc.getDirection(frameCapture)
         #cv2.imshow('frame',pc.cameraImage)
