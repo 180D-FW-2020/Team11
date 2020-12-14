@@ -332,6 +332,9 @@ if __name__ == '__main__':
             if settings.verbose: print("will run central stuff")
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
+            
+            # player multiprocess must start first for Mac compatibility with
+            # OpenCV when displaying stuff later
             player = multiprocessing.Process(target=pcProcess)
             central = multiprocessing.Process(target=centralNodeProcess)
             central.start()
