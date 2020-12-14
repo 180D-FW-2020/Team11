@@ -167,7 +167,7 @@ def pcProcess():
         #time.sleep(settings.motionDelay)
     frameCapture.release()
     cv2.destroyAllWindows()
-    
+    cv2.waitKey(1)
     stop = True
     packageReceipt.join()
     packageReceipt.stop()
