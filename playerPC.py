@@ -38,7 +38,7 @@ class PlayerPC:
             # without hardcoding?
             self.playerId = playerId
             self.camera = Camera()
-            self.microphone = Microphone(None)
+            self.microphone = Microphone()
             self.displayUpdate = False
             
             #light version of playSpace for display only
@@ -71,6 +71,8 @@ class PlayerPC:
         ''' 
         Gets command information from the microphone.
         '''
+        v = self.microphone.listen()
+
         try:
             command = self.microphone.getCommand()
             if(command == "start"):
@@ -285,8 +287,8 @@ class Camera:
             traceback.print_exc() 
             
 class Microphone:
-    def __init__(self, phrases):
-        self.phrases = phrases
+    def __init__(self):
+        # self.phrases = phrases
         self.active = False
 
     def listen(self):
@@ -322,9 +324,9 @@ class Microphone:
 
 
                     #Check for conditionals
-                    for key in self.phrases:
-                        if(key.lower() in command.lower()):
-                            self.phrases[key]()
+                    # for key in self.phrases:
+                    #     if(key.lower() in command.lower()):
+                    #         self.phrases[key]()
 
                     return command
 

@@ -61,7 +61,7 @@ class GamePlay:
                                                     message['val'])
             elif topic == comms.rotation:
                 return self.playSpace.rotatePlaySpace(message['val'])
-            elif topic == comms.command:
+            elif topic == comms.start:
                 print(message['val'])
             else:
                 # Unplanned case
