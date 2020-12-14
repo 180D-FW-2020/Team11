@@ -18,9 +18,8 @@ import cv2
 import multiprocessing
 import random
 import time
-import datetime
 import traceback
-
+import datetime
             
 def piProcess():
     '''
@@ -125,8 +124,12 @@ def pcProcess():
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
-    transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
-    transmitDirection.start()
+    # transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
+    # transmitDirection.start()
+    
+    # Send main gameplay loop to separate thread
+    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
+    packageReceipt.start()
     
     ## transmitCommand methods not yet fully implemented
     #transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
@@ -134,20 +137,52 @@ def pcProcess():
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
+    # while not pc.gameOver:
+    #     if len(receiver.packages):
+    #         pc.unpack(receiver.packages.pop(0))
+    #     #if pc.displayUpdate:
+    #         pc.updateDisplay()
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         break
+    # cv2.destroyAllWindows()
+    
+    frameCapture = cv2.VideoCapture(settings.camera)
+    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
+    delay = datetime.datetime.now()
+    
     while not pc.gameOver:
-        if len(receiver.packages):
-            pc.unpack(receiver.packages.pop(0))
-        #if pc.displayUpdate:
-            pc.updateDisplay()
+        direction, pc.cameraImage = pc.getDirection(frameCapture)
+        #cv2.imshow('frame',pc.cameraImage)
+        pc.updateDisplay(event = False)
+        
+        if direction and datetime.datetime.now()<delay:
+            package = pc.pack(direction)
+            transmitter.transmit(comms.direction, package)
+            delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
+            
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    
+        #time.sleep(settings.motionDelay)
+    frameCapture.release()
     cv2.destroyAllWindows()
     
     stop = True
-    transmitDirection.join()
+    packageReceipt.join()
+    packageReceipt.stop()
+    #transmitDirection.join()
     #transmitCommand.join()
-    receiver.stop()
+    #receiver.stop()
+
+def pcPackageReceipt(receiver, pc, stop):
+    while not pc.gameOver:
+        if len(receiver.packages):
+            pc.unpack(receiver.packages.pop(0))
+            pc.updateDisplay()
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
+    #cv2.destroyAllWindows()
 
 def pcTransmitDirection(transmitter, pc, stop):
     '''
@@ -155,23 +190,26 @@ def pcTransmitDirection(transmitter, pc, stop):
     central.
     '''
     frameCapture = cv2.VideoCapture(settings.camera)
+    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
     delay = datetime.datetime.now()
     
     while not pc.gameOver and not stop():
         direction, pc.cameraImage = pc.getDirection(frameCapture)
+        #cv2.imshow('frame',pc.cameraImage)
         pc.updateDisplay(event = False)
         
         if direction and datetime.datetime.now()<delay:
             package = pc.pack(direction)
             transmitter.transmit(comms.direction, package)
-            time.sleep(settings.motionDelay)
             delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
-        
+            
         if cv2.waitKey(1) & 0xFF == ord('q'):
-             break
-        
+            break
+        #time.sleep(settings.motionDelay)
     frameCapture.release()
-    # cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''
