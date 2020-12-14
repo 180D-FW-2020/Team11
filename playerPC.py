@@ -24,6 +24,10 @@ playerColors = [player1c, player2c, player3c, player4c]
 itColor = (255, 198, 220)
 
 ## Commands
+phrases = {
+    "start" : comms.start,
+    "stop" : comms.stop
+}
 
 
 class PlayerPC:
@@ -75,10 +79,7 @@ class PlayerPC:
 
         try:
             command = self.microphone.getCommand()
-            if(command == "start"):
-                return comms.start
-            if(command == "stop"):
-                return comms.stop
+            return command
         except:
             print("Error getting command information from microphone")
             traceback.print_exc() 
@@ -288,8 +289,8 @@ class Camera:
             
 class Microphone:
     def __init__(self):
-        # self.phrases = phrases
         self.active = False
+        # self.valid = False
 
     def listen(self):
         self.active = True
@@ -302,36 +303,41 @@ class Microphone:
         Listens for a voice command, and when one is found, classifies and
         returns it.
         '''
-        if self.active:
-            r = sr.Recognizer()
 
-            with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source)
+        while(True):
+            if self.active:
+                r = sr.Recognizer()
 
-                
-                print("Please say something...")
+                with sr.Microphone() as source:
+                    r.adjust_for_ambient_noise(source)
 
-                audio = r.listen(source)
+                    
+                    print("Please say something...")
 
-                command = ""
+                    audio = r.listen(source)
 
-                try:
-                    # All the getting command stuff. 0 is a dummy number
-                    command = r.recognize_google(audio)
+                    command = ""
+
+                    try:
+                        # All the getting command stuff. 0 is a dummy number
+                        command = r.recognize_google(audio)
 
 
-                    print("You said : \n " + command)
+                        print("You said : \n " + command)
 
 
-                    #Check for conditionals
-                    # for key in self.phrases:
-                    #     if(key.lower() in command.lower()):
-                    #         self.phrases[key]()
+                        #Check for conditionals
+                        # for key in self.phrases:
+                        #     if(key.lower() in command.lower()):
+                        #         self.phrases[key]()
+                        for key in phrases:
+                            if(key.lower() in command.lower()):
+                                return phrases[key]
 
-                    return command
+                        
 
-                except:
-                    print("Error getting command from microphone")
-                    traceback.print_exc() 
+                    except:
+                        print("Error getting command from microphone")
+                        traceback.print_exc() 
 
 
