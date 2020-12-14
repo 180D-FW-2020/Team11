@@ -174,7 +174,7 @@ def pcProcess():
     
     stop = True
     packageReceipt.join()
-    packageReceipt.stop()
+    # packageReceipt.stop()
     #transmitDirection.join()
     #transmitCommand.join()
     #receiver.stop()
@@ -192,7 +192,7 @@ def pcPackageReceipt(receiver, pc, stop):
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
     #cv2.destroyAllWindows()
-
+    receiver.stop()
 # def pcTransmitDirection(transmitter, pc, stop):
 #     '''
 #     Separate thread for receiving player input on PC and transmitting it to 
