@@ -19,7 +19,7 @@ import multiprocessing
 import random
 import time
 import traceback
-
+import datetime
             
 def piProcess():
     '''
@@ -124,8 +124,12 @@ def pcProcess():
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
-    transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
-    transmitDirection.start()
+    # transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
+    # transmitDirection.start()
+    
+    # Send main gameplay loop to separate thread
+    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
+    packageReceipt.start()
     
     ## transmitCommand methods not yet fully implemented
     #transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
@@ -133,29 +137,88 @@ def pcProcess():
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
+    # while not pc.gameOver:
+    #     if len(receiver.packages):
+    #         pc.unpack(receiver.packages.pop(0))
+    #     #if pc.displayUpdate:
+    #         pc.updateDisplay()
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         break
+    # cv2.destroyAllWindows()
+    
+    frameCapture = cv2.VideoCapture(settings.camera)
+    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
+    delay = datetime.datetime.now()
+    cv2.startWindowThread()
     while not pc.gameOver:
-        if len(receiver.packages):
-            pc.unpack(receiver.packages.pop(0))
-        #if pc.displayUpdate:
-            pc.updateDisplay()
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        direction, pc.cameraImage = pc.getDirection(frameCapture)
+        #cv2.imshow('frame',pc.cameraImage)
+        pc.updateDisplay(event = False)
+        
+        if direction and datetime.datetime.now()<delay:
+            package = pc.pack(direction)
+            transmitter.transmit(comms.direction, package)
+            delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
+            
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        #time.sleep(settings.motionDelay)
+    frameCapture.release()
     cv2.destroyAllWindows()
     
+    # This extra waitKey is necessary for mac compatibility, or destroyAllWindows
+    # lags/fails
+    #cv2.waitKey(1)
+    
     stop = True
-    transmitDirection.join()
+    packageReceipt.join()
+    packageReceipt.stop()
+    #transmitDirection.join()
     #transmitCommand.join()
-    receiver.stop()
+    #receiver.stop()
 
-def pcTransmitDirection(transmitter, pc, stop):
+def pcPackageReceipt(receiver, pc, stop):
     '''
-    Separate thread for receiving player input on PC and transmitting it to 
-    central.
+    Gets packages from central and updates the display information with the new
+    event. Does not update the display on screen, which must be handled in the 
+    main thread for Mac compatibility.
     '''
     while not pc.gameOver and not stop():
-        direction = pc.getDirection()
-        package = pc.pack(direction)
-        transmitter.transmit(comms.direction, package)
+        if len(receiver.packages):
+            pc.unpack(receiver.packages.pop(0))
+            pc.updateDisplay()
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
+    #cv2.destroyAllWindows()
+
+# def pcTransmitDirection(transmitter, pc, stop):
+#     '''
+#     Separate thread for receiving player input on PC and transmitting it to 
+#     central.
+#     '''
+#     frameCapture = cv2.VideoCapture(settings.camera)
+#     frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+#     frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
+#     delay = datetime.datetime.now()
+    
+#     while not pc.gameOver and not stop():
+#         direction, pc.cameraImage = pc.getDirection(frameCapture)
+#         #cv2.imshow('frame',pc.cameraImage)
+#         pc.updateDisplay(event = False)
+        
+#         if direction and datetime.datetime.now()<delay:
+#             package = pc.pack(direction)
+#             transmitter.transmit(comms.direction, package)
+#             delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
+            
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             break
+#         #time.sleep(settings.motionDelay)
+#     frameCapture.release()
+#     cv2.destroyAllWindows()
         
 def pcTransmitCommand(transmitter, pc, stop):
     '''
@@ -269,8 +332,11 @@ if __name__ == '__main__':
             if settings.verbose: print("will run central stuff")
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
-            central = multiprocessing.Process(target=centralNodeProcess)
+            
+            # player multiprocess must start first for Mac compatibility with
+            # OpenCV when displaying stuff later
             player = multiprocessing.Process(target=pcProcess)
+            central = multiprocessing.Process(target=centralNodeProcess)
             central.start()
             player.start()
         except:
