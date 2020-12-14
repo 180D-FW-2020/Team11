@@ -73,7 +73,10 @@ class PlayerPC:
         '''
         try:
             command = self.microphone.getCommand()
-            return command
+            if(command == "start"):
+                return comms.start
+            if(command == "stop"):
+                return comms.stop
         except:
             print("Error getting command information from microphone")
             traceback.print_exc() 

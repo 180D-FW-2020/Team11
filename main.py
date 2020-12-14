@@ -132,8 +132,8 @@ def pcProcess():
     packageReceipt.start()
     
     ## transmitCommand methods not yet fully implemented
-    #transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
-    #transmitCommand.start()
+    transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
+    transmitCommand.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -228,7 +228,7 @@ def pcTransmitCommand(transmitter, pc, stop):
     while not pc.gameOver and not stop():
         command = pc.getCommand()
         package = pc.pack(command)
-        transmitter.transmit(comms.command, package)
+        transmitter.transmit(command, package)
     
 def centralNodeProcess():
     '''
@@ -244,7 +244,7 @@ def centralNodeProcess():
     receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
-                               comms.command,
+                               comms.start,
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
