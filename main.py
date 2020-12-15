@@ -78,6 +78,7 @@ def piTransmit(transmitter, pi, stop):
     central.
     '''
     while not pi.gameOver and not stop():
+        print("in transmit loop, current cooldown state is", pi.coolDown)
         if not pi.coolDown:
             rotation = pi.getRotation()
             package = pi.pack(rotation)
