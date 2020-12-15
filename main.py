@@ -21,7 +21,7 @@ import time
 import traceback
 import datetime
 
-testWithoutPi = True
+testWithoutPi = False
             
 def piProcess():
     '''
@@ -253,20 +253,28 @@ def centralNodeProcess():
             
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
+            try:
+                playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
+            except:
+                print("An error occurred receiving in the first central loop")
+                print(receiver.packages)
+                traceback.print_exc() 
             print(playerId)
-            if pi:
+            if pi and playerId in pis:
                 pis.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pi has arrived.".format(playerId))
-            elif pc:
+                    print("Pending pis:", pis)
+            elif pc and playerId in pcs:
                 pcs.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pc has arrived.".format(playerId))
+                    print("Pending pis:", pcs)
             elif ready and playerId in readies:
                 readies.remove(playerId)
                 if settings.verbose:
                     print("Player {} is ready.".format(playerId))
+                    print("Pending readies:", readies)
         # Repeat until no devices left to join
         devicesPending = len(pcs)+len(pis)+len(readies)
         time.sleep(1)

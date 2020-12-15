@@ -4,10 +4,10 @@ Values configured on a player/device level
 
 @author: zefyr
 """
-numPlayers = 1
+numPlayers = 3
 isPi = False
 isPrimary = True
-playerId = 1
+playerId = 3
 
 ROTATION_COOLDOWN = 10 # seconds
 motionDelay = 2 # seconds

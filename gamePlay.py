@@ -52,6 +52,7 @@ class GamePlay:
         '''
         try:
             topic, message = package
+            print("Central unpacking message:", message, topic)
             
             if self.start:
                 if topic == comms.direction:
