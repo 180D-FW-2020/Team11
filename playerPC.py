@@ -121,6 +121,7 @@ class PlayerPC:
             elif topic == comms.tag:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
                 self.playSpace.players[message['playerId'] - 1]['it'] = False
+                self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
             elif topic == comms.initial and not self.initialReceived:
                 self.playSpace.__dict__= message
                 self.dist = int(1000/(self.playSpace.edgeLength + 2))
