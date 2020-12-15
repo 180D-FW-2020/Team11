@@ -220,7 +220,7 @@ def centralNodeProcess():
     if settings.verbose: print("Starting central process")
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiver = comms.Receiver((comms.piConfirmation,
+    receiverc = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
                                comms.command,
@@ -228,7 +228,7 @@ def centralNodeProcess():
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
-    receiver.start()
+    receiverc.start()
     
     game = g.GamePlay(settings.numPlayers)
 
@@ -249,17 +249,17 @@ def centralNodeProcess():
         transmitter.transmit(comms.initial, initialPackage)
         
         # Check if any packages in the queue
-        if len(receiver.packages):
-            
+        if len(receiverc.packages):
+            if settings.verbose: print("Central first loop found", receiverc.packages)
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
-            
-            if pi:
+            playerId, pi, pc, ready = game.unpack(receiverc.packages.pop(0))
+            print(playerId)
+            if pi and playerId in pis:
                 pis.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pi has arrived.".format(playerId))
-            elif pc:
+            elif pc and playerId in pcs:
                 pcs.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pc has arrived.".format(playerId))
@@ -269,6 +269,10 @@ def centralNodeProcess():
                     print("Player {} is ready.".format(playerId))
         # Repeat until no devices left to join
         devicesPending = len(pcs)+len(pis)+len(readies)
+        if settings.verbose:
+            print("Pending pis:", pis)
+            print("Pending pis:", pcs)
+            print("Pending readies:", readies)
         time.sleep(1)
     
     game.start = True
@@ -280,11 +284,11 @@ def centralNodeProcess():
     while not game.gameOver:
         
         # Poll for messages in queue
-        if len(receiver.packages):
+        if len(receiverc.packages):
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            topic, message = game.unpack(receiver.packages.pop(0))
+            topic, message = game.unpack(receiverc.packages.pop(0))
                         
             # Generally this should result in some outbound message
             if message:
@@ -305,7 +309,7 @@ def centralNodeProcess():
                 # If it's now ended, send a message to announce it
                 transmitter.transmit(topic, message)
     
-    receiver.stop()
+    receiverc.stop()
 
 ### Select processes to run for instance
 if __name__ == '__main__':

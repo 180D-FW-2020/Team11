@@ -59,7 +59,8 @@ class GamePlay:
                                                         message['val'])
                 elif topic == comms.rotation:
                     return self.playSpace.rotatePlaySpace(message['val'])
-                else: print("Message received after game start without direction or rotation")
+                else:
+                    print("Message received after game start without direction or rotation")
             else:
                 if topic == comms.piConfirmation:
                     return message['playerId'], True, False, False
@@ -68,7 +69,9 @@ class GamePlay:
                 elif topic == comms.ready:
                     return message['playerId'], False, False, True
                 # Unplanned case
-                else: print("Message received before game start without pi or pc confirmation")
+                else:
+                    print("Message received before game start without pi or pc confirmation")
+                    return False, False, False, False
             
         except:
             print("An error occurred getting player input")
