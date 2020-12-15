@@ -355,7 +355,7 @@ class PlaySpace:
                             collision = True
                             overlap = 1
                         elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
-                            tag = playerId
+                            # tag = playerId
                             collision = True
                             overlap = 1
             
