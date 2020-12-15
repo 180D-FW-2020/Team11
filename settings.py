@@ -6,7 +6,7 @@ Values configured on a player/device level
 """
 numPlayers = 4
 isPi = False
-isPrimary = False
+isPrimary = True
 playerId = 1
 
 ROTATION_COOLDOWN = 10 # seconds

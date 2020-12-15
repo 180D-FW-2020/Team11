@@ -90,7 +90,7 @@ def piTransmit(transmitter, pi, stop):
             # The cooldown will also be set by a message returned from central,
             # but this is here to ensure the pi doesn't send new rotation info
             # before that return message is received
-            pi.coolDown = True
+            # pi.coolDown = True
 
 def pcProcess():
     '''
