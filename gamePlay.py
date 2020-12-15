@@ -189,6 +189,7 @@ class PlaySpace:
                 if tag in self.playersNotIt:
                     self.playersNotIt.remove(tag)
                 self.it = tag
+                topic = comms.tag
                 displayUpdates = {'tagged': tag,
                                   'untagged': playerId}
             # If collision is obstacle/wall/non tag player bump, do nothing
@@ -224,10 +225,11 @@ class PlaySpace:
                         self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
                     else:
                         self.players[playerId - 1]['position'] += speed*self.horizontalAxis
+                topic = comms.move
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
-            if settings.verbose: print("start of move: ", self.players[playerId-1])
-            return comms.move, displayUpdates
+            if settings.verbose: print("end of move: ", self.players[playerId-1])
+            return topic, displayUpdates
         
         except:
             print("An error occurred moving player", playerId, ":", direction)
@@ -340,9 +342,6 @@ class PlaySpace:
                             tag = i+1
                             collision = True
                             overlap = int(np.linalg.norm(difference))
-
-
-            
 
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
