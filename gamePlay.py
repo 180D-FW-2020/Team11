@@ -62,9 +62,11 @@ class GamePlay:
                 else: print("Message received after game start without direction or rotation")
             else:
                 if topic == comms.piConfirmation:
-                    return message['playerId'], True, False
+                    return message['playerId'], True, False, False
                 elif topic == comms.pcConfirmation:
-                    return message['playerId'], False, True
+                    return message['playerId'], False, True, False
+                elif topic == comms.ready:
+                    return message['playerId'], False, False, True
                 # Unplanned case
                 else: print("Message received before game start without pi or pc confirmation")
             
@@ -72,19 +74,22 @@ class GamePlay:
             print("An error occurred getting player input")
             traceback.print_exc() 
     
-    def pack(self):
+    def pack(self, message = None):
         '''
         Packs initial load of playspace for players.
         
         Returns message for transmission.
         '''
         try:
-            message = copy.deepcopy(self.playSpace.__dict__)
-            for p in message['players']:
-                p['position'] = p['position'].tolist()
-            message['verticalAxis'] = message['verticalAxis'].tolist()
-            message['horizontalAxis'] = message['horizontalAxis'].tolist()
-            return message
+            if not message:
+                message = copy.deepcopy(self.playSpace.__dict__)
+                for p in message['players']:
+                    p['position'] = p['position'].tolist()
+                message['verticalAxis'] = message['verticalAxis'].tolist()
+                message['horizontalAxis'] = message['horizontalAxis'].tolist()
+                return message
+            else:
+                return {'val': message}
         except:
             print("An error occurred packing the playspace")
             traceback.print_exc() 
@@ -194,6 +199,7 @@ class PlaySpace:
                                   'untagged': playerId}
             # If collision is obstacle/wall/non tag player bump, do nothing
             elif collision and (overlap == 1):
+                topic = 0
                 displayUpdates = 0
             # Otherwise move. If there's a powerup there, pick it up
             

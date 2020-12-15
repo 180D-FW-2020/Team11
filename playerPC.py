@@ -24,7 +24,11 @@ playerColors = [player1c, player2c, player3c, player4c]
 itColor = (255, 198, 220)
 
 ## Commands
-
+phrases = {
+    "ready" : comms.ready,
+    "start" : comms.start,
+    "stop" : comms.stop
+}
 
 class PlayerPC:
     '''
@@ -38,7 +42,7 @@ class PlayerPC:
             # without hardcoding?
             self.playerId = playerId
             self.camera = Camera()
-            self.microphone = Microphone(None)
+            self.microphone = Microphone()
             self.displayUpdate = False
             
             #light version of playSpace for display only
@@ -51,6 +55,8 @@ class PlayerPC:
             
             self.initialReceived = False
             self.gameOver = False
+            self.ready = False
+            self.start = False
             
         except:
             print("An error occurred initializing PlayerPC")
@@ -72,6 +78,7 @@ class PlayerPC:
         Gets command information from the microphone.
         '''
         try:
+            self.microphone.listen()
             command = self.microphone.getCommand()
             return command
         except:
@@ -133,6 +140,8 @@ class PlayerPC:
                 # Return True for initial message
                 self.initialReceived = True
                 return True
+            elif topic == comms.start:
+                self.start = True
             return False
         except:
             print("Error getting package from primary node")
@@ -285,8 +294,7 @@ class Camera:
             traceback.print_exc() 
             
 class Microphone:
-    def __init__(self, phrases):
-        self.phrases = phrases
+    def __init__(self):
         self.active = False
 
     def listen(self):
@@ -300,36 +308,35 @@ class Microphone:
         Listens for a voice command, and when one is found, classifies and
         returns it.
         '''
-        if self.active:
-            r = sr.Recognizer()
-
-            with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source)
-
-                
-                print("Please say something...")
-
-                audio = r.listen(source)
-
-                command = ""
-
-                try:
-                    # All the getting command stuff. 0 is a dummy number
-                    command = r.recognize_google(audio)
-
-
-                    print("You said : \n " + command)
-
-
-                    #Check for conditionals
-                    for key in self.phrases:
-                        if(key.lower() in command.lower()):
-                            self.phrases[key]()
-
-                    return command
-
-                except:
-                    print("Error getting command from microphone")
-                    traceback.print_exc() 
+        while(True):
+            if self.active:
+                r = sr.Recognizer()
+    
+                with sr.Microphone() as source:
+                    r.adjust_for_ambient_noise(source)
+    
+                    
+                    print("Please say something...")
+    
+                    audio = r.listen(source)
+    
+                    command = ""
+    
+                    try:
+                        # All the getting command stuff. 0 is a dummy number
+                        command = r.recognize_google(audio)
+    
+    
+                        print("You said : \n " + command)
+    
+    
+                        #Check for conditionals
+                        for key in phrases:
+                            if(key.lower() in command.lower()):
+                                return phrases[key]
+    
+                    except:
+                        print("Error getting command from microphone")
+                        traceback.print_exc() 
 
 

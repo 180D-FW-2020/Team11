@@ -33,6 +33,7 @@ class PlayerPi:
             self.imu = BerryIMU()
             self.gameOver = False
             self.coolDown = False
+            self.start = False
             
         except:
             print("An error occurred initializing PlayerPi")
@@ -83,6 +84,8 @@ class PlayerPi:
                 self.coolDown = message['coolDown']
             elif topic == comms.initial:
                 return True
+            elif topic == comms.start:
+                self.start = True
         except:
             print("Error getting package from primary node")
             traceback.print_exc() 
