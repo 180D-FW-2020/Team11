@@ -18,6 +18,7 @@ class GamePlay:
     def __init__(self, numPlayers):
         try:
             self.gameOver = False
+            self.start = False
             
             args = self.settings()
             self.playSpace = PlaySpace(numPlayers, *args)
@@ -52,20 +53,20 @@ class GamePlay:
         try:
             topic, message = package
             
-            if topic == comms.piConfirmation:
-                return message['playerId'], True, False
-            elif topic == comms.pcConfirmation:
-                return message['playerId'], False, True
-            elif topic == comms.direction:
-                return self.playSpace.movePlayer(message['playerId'],
-                                                    message['val'])
-            elif topic == comms.rotation:
-                return self.playSpace.rotatePlaySpace(message['val'])
-            elif topic == comms.command:
-                print(message['val'])
+            if self.start:
+                if topic == comms.direction:
+                    return self.playSpace.movePlayer(message['playerId'],
+                                                        message['val'])
+                elif topic == comms.rotation:
+                    return self.playSpace.rotatePlaySpace(message['val'])
+                else: print("Message received after game start without direction or rotation")
             else:
+                if topic == comms.piConfirmation:
+                    return message['playerId'], True, False
+                elif topic == comms.pcConfirmation:
+                    return message['playerId'], False, True
                 # Unplanned case
-                print("A message was received without direction or rotation")
+                else: print("Message received before game start without pi or pc confirmation")
             
         except:
             print("An error occurred getting player input")
@@ -177,14 +178,18 @@ class PlaySpace:
         makes the move and returns info about the move.
         '''
         try:
+            if settings.verbose: print("start of move: ", self.players[playerId-1])
             # First check for collision
             collision, tag, powerup, overlap = self.checkCollision(playerId, direction)
+            if settings.verbose: print("collision info: ", collision, tag, powerup, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
                 self.players[tag - 1]['it'] = True
                 self.players[self.it - 1]['it'] = False
                 if tag in self.playersNotIt:
                     self.playersNotIt.remove(tag)
+                self.it = tag
+                topic = comms.tag
                 displayUpdates = {'tagged': tag,
                                   'untagged': playerId}
             # If collision is obstacle/wall/non tag player bump, do nothing
@@ -192,33 +197,39 @@ class PlaySpace:
                 displayUpdates = 0
             # Otherwise move. If there's a powerup there, pick it up
             
-            if self.players[playerId - 1]['it']: speed = ITSPEED
-            else: speed = 1
-            
-            if direction == '^':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] += (overlap-1)*self.verticalAxis
-                else:
-                    self.players[playerId - 1]['position'] += speed*self.verticalAxis
-            elif direction == 'v':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] -= (overlap-1)*self.verticalAxis
-                else:
-                    self.players[playerId - 1]['position'] -= speed*self.verticalAxis
-            elif direction == '<':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] -= (overlap-1)*self.horizontalAxis
-                else:
-                    self.players[playerId - 1]['position'] -= speed*self.horizontalAxis
-            elif direction == '>':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
-                else:
-                    self.players[playerId - 1]['position'] += speed*self.horizontalAxis
-            displayUpdates = {'playerId': playerId,
-                                'position': self.players[playerId - 1]['position'].tolist()}
+            else:
+                if self.players[playerId - 1]['it']: speed = ITSPEED
+                else: speed = 1
                 
-            return comms.move, displayUpdates                
+                if direction == '^':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] += (overlap-1)*self.verticalAxis
+                    else:
+                        self.players[playerId - 1]['position'] += speed*self.verticalAxis
+                elif direction == 'v':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] -= (overlap-1)*self.verticalAxis
+                    else:
+                        self.players[playerId - 1]['position'] -= speed*self.verticalAxis
+                        
+                # right indicates screen left
+                elif direction == '>':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] -= (overlap-1)*self.horizontalAxis
+                    else:
+                        self.players[playerId - 1]['position'] -= speed*self.horizontalAxis
+                        
+                # left indicates screen right
+                elif direction == '<':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
+                    else:
+                        self.players[playerId - 1]['position'] += speed*self.horizontalAxis
+                topic = comms.move
+                displayUpdates = {'playerId': playerId,
+                                'position': self.players[playerId - 1]['position'].tolist()}
+            if settings.verbose: print("end of move: ", self.players[playerId-1])
+            return topic, displayUpdates
         
         except:
             print("An error occurred moving player", playerId, ":", direction)
@@ -281,19 +292,21 @@ class PlaySpace:
                 inverse = self.horizontalAxis
                 location = self.players[playerId - 1]['position']*self.verticalAxis - speed*self.verticalAxis
 
-            elif direction == '<':
+            # right indicates screen left
+            elif direction == '>':
                 axis = self.horizontalAxis
                 inverse = self.verticalAxis
                 location = self.players[playerId - 1]['position']*self.horizontalAxis - speed*self.horizontalAxis
-
-            elif direction == '>':
+            
+            # left indicates screen right
+            elif direction == '<':
                 axis = self.horizontalAxis
                 inverse = self.verticalAxis
                 location = self.players[playerId - 1]['position']*self.horizontalAxis + speed*self.horizontalAxis
             
             #get the position index that is changing
             for i in range(len(axis)):
-                if axis[i] == 1:
+                if abs(axis[i]) == 1:
                     index = i
 
             # check if collision with edges of playspace
@@ -330,9 +343,6 @@ class PlaySpace:
                             collision = True
                             overlap = int(np.linalg.norm(difference))
 
-
-            
-
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
             if (self.players[playerId - 1]['it'] == False):
@@ -345,7 +355,7 @@ class PlaySpace:
                             collision = True
                             overlap = 1
                         elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
-                            tag = playerId
+                            # tag = playerId
                             collision = True
                             overlap = 1
             
@@ -391,44 +401,3 @@ class PlaySpace:
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
-            
-# class Player:
-#     def __init__(self, playerId, x, y, z, it):
-#         try:
-#             self.playerId = playerId;
-#             self.position = [x, y, z]
-#             self.it = it
-#         except:
-#             print("An error occurred initializing Player")
-
-#     def setIt(self):
-#         '''
-#         Sets the player as It
-#         '''
-#         try:
-#             if(not self.it):
-#                 self.it = True
-#             else: print("Tagged person was already it, something went wrong")
-#         except:
-#             print("An error occurred updating who is it")
-
-#     def setNotIt(self):
-#         '''
-#         Sets the player as Not It
-#         '''
-#         try:
-#             if(self.it): self.it = False
-#             else: print("Tagged person was already not it, something went wrong")
-#         except:
-#             print("An error occurred updating who is it")
-
-
-if __name__ == "__main__":
-    myp = PlaySpace(4,10,0,0)
-    myp.players[0]['position'] = np.array([5,2,5])
-    myp.players[1]['position'] = np.array([5,1,1])
-    myp.players[2]['position'] = np.array([3,9,3])
-    myp.players[3]['position'] = np.array([2,9,7])
-    myp.players[0]['it'] = False
-    myp.players[1]['it'] = True
-    print(myp.checkCollision(2, '^'))

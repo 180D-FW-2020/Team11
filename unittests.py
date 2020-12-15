@@ -86,7 +86,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[3]['position'] = np.array([7,7,7])
         expectedReturn = np.array([1,0,0,1])
         
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
                          msg = '{}'.format(self.p.checkCollision(1, '>')))
     
     def testCheckCollisionWithEdgeRightNotItFalse(self):
@@ -97,7 +97,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[1]['position'] = np.array([1,1,1])
         self.p.players[2]['position'] = np.array([3,3,3])
         self.p.players[3]['position'] = np.array([7,7,7])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
                          msg = '{}'.format(self.p.checkCollision(1, '>')))
     
     def testCheckCollisionWithEdgeLeftNotItTrue(self):
@@ -109,7 +109,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[3]['position'] = np.array([7,7,7])
         expectedReturn = np.array([1,0,0,1])
         
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
                          msg = '{}'.format(self.p.checkCollision(1, '<')))
     
     def testCheckCollisionWithEdgeLeftNotItFalse(self):
@@ -120,7 +120,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[1]['position'] = np.array([1,1,1])
         self.p.players[2]['position'] = np.array([3,3,3])
         self.p.players[3]['position'] = np.array([7,7,7])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
                          msg = '{}'.format(self.p.checkCollision(1, '<')))
     
     def testCheckCollisionWithEdgeDownNotItTrue(self):
@@ -180,7 +180,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[3]['position'] = np.array([7,7,7])
         expectedReturn = np.array([1,0,0,1])
         
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
                          msg = '{}'.format(self.p.checkCollision(1, '>')))
     
     def testCheckCollisionWithEdgeRightItTrueOverlap(self):
@@ -191,7 +191,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[1]['position'] = np.array([1,1,1])
         self.p.players[2]['position'] = np.array([3,3,3])
         self.p.players[3]['position'] = np.array([7,7,7])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
                          msg = '{}'.format(self.p.checkCollision(1, '>')))
     
     def testCheckCollisionWithEdgeLeftItTrue(self):
@@ -203,7 +203,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[3]['position'] = np.array([7,7,7])
         expectedReturn = np.array([1,0,0,1])
         
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
                          msg = '{}'.format(self.p.checkCollision(1, '<')))
     
     def testCheckCollisionWithEdgeLeftItTrueOverlap(self):
@@ -214,7 +214,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[1]['position'] = np.array([1,1,1])
         self.p.players[2]['position'] = np.array([3,3,3])
         self.p.players[3]['position'] = np.array([7,7,7])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
                          msg = '{}'.format(self.p.checkCollision(1, '<')))
     
     def testCheckCollisionWithEdgeDownItTrue(self):
@@ -260,7 +260,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[1]['position'] = np.array([1,1,1])
         self.p.players[2]['position'] = np.array([3,3,3])
         self.p.players[3]['position'] = np.array([7,7,7])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
                          msg = '{}'.format(self.p.checkCollision(1, '>')))
     
     
@@ -272,7 +272,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[1]['position'] = np.array([1,1,1])
         self.p.players[2]['position'] = np.array([3,3,3])
         self.p.players[3]['position'] = np.array([7,7,7])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, '>')),
                          msg = '{}'.format(self.p.checkCollision(1, '<')))
     
     
@@ -335,7 +335,7 @@ class TestPlaySpace(unittest.TestCase):
         self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(1, 'v')),
                          msg = '{}'.format(self.p.checkCollision(1,'v')))
 
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
                          msg = '{}'.format(self.p.checkCollision(3,'>')))
 
     def testCheckCollisionWithPlayers_RightTrue(self):
@@ -346,7 +346,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,0,0,1])
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = False
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '<')),
                          msg = '{}'.format(self.p.checkCollision(4,'>')))
 
     def testCheckCollisionWithPlayers_RightFalse(self):
@@ -357,7 +357,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = False
         expectedReturn = np.array([0,0,0,-1])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '<')),
                          msg = '{}'.format(self.p.checkCollision(4,'>')))
 
     def testCheckCollisionWithPlayers_LeftTrue(self):
@@ -368,7 +368,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,0,0,1])
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = False
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
                          msg = '{}'.format(self.p.checkCollision(3,'<')))
 
     def testCheckCollisionWithPlayers_LeftFalse(self):
@@ -380,7 +380,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = False
         expectedReturn = np.array([0,0,0,-1])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
                          msg = '{}'.format(self.p.checkCollision(3,'<')))
 
 
@@ -564,7 +564,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,3,0,1])
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = True
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '<')),
                          msg = '{}'.format(self.p.checkCollision(4,'>')))
         
     def testCheckCollisionTag_RightTrue_Overlap(self):
@@ -575,7 +575,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,3,0,2])
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = True
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '<')),
                          msg = '{}'.format(self.p.checkCollision(4,'>')))
 
     def testCheckCollisionTag_RightTrue_NotItMove(self):
@@ -586,7 +586,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,4,0,1])
         self.p.players[2]['it'] = True
         self.p.players[3]['it'] = False
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '<')),
                          msg = '{}'.format(self.p.checkCollision(4,'>')))
 
     def testCheckCollisionTag_RightFalse(self):
@@ -597,7 +597,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = True
         expectedReturn = np.array([0,0,0,-1])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '>')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(4, '<')),
                          msg = '{}'.format(self.p.checkCollision(4,'>')))
 
     def testCheckCollisionTag_LeftTrue_ItMove(self):
@@ -608,7 +608,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,4,0,1])
         self.p.players[2]['it'] = True
         self.p.players[3]['it'] = False
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
                          msg = '{}'.format(self.p.checkCollision(3,'<')))
 
     def testCheckCollisionTag_LeftTrue_Overlap(self):
@@ -619,7 +619,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,4,0,2])
         self.p.players[2]['it'] = True
         self.p.players[3]['it'] = False
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
                          msg = '{}'.format(self.p.checkCollision(3,'<')))
 
     def testCheckCollisionTag_LeftTrue_NotItMove(self):
@@ -630,7 +630,7 @@ class TestPlaySpace(unittest.TestCase):
         expectedReturn = np.array([1,3,0,1])
         self.p.players[2]['it'] = False
         self.p.players[3]['it'] = True
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
                          msg = '{}'.format(self.p.checkCollision(3,'<')))
 
     def testCheckCollisionTag_LeftFalse(self):
@@ -642,7 +642,7 @@ class TestPlaySpace(unittest.TestCase):
         self.p.players[2]['it'] = True
         self.p.players[3]['it'] = False
         expectedReturn = np.array([0,0,0,-1])
-        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '<')),
+        self.assertTrue(np.array_equal(expectedReturn, self.p.checkCollision(3, '>')),
                          msg = '{}'.format(self.p.checkCollision(3,'<')))
 
     def testMovePlayerTag(self):

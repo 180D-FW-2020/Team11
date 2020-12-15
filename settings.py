@@ -4,7 +4,7 @@ Values configured on a player/device level
 
 @author: zefyr
 """
-numPlayers = 1
+numPlayers = 2
 isPi = False
 isPrimary = True
 playerId = 1

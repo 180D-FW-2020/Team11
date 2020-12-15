@@ -121,6 +121,7 @@ class PlayerPC:
             elif topic == comms.tag:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
                 self.playSpace.players[message['playerId'] - 1]['it'] = False
+                self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
             elif topic == comms.initial and not self.initialReceived:
                 self.playSpace.__dict__= message
                 self.dist = int(1000/(self.playSpace.edgeLength + 2))
@@ -191,7 +192,7 @@ class Camera:
                 length = frame.shape[0]
 
                 direction = 0
-                img = frame[120:360, 200:440]
+                img = frame[120:360, 80:320]
                 ret,thresh = cv2.threshold(img,127,255,0)
                 contours, hierarchy = cv2.findContours(thresh, 3, 2)
                 
@@ -206,52 +207,59 @@ class Camera:
                         area = cv2.contourArea(cnt)
                         
                         # Find first contour of reasonable proportion to overall size of sub image
-                        if (area/(img.size) > 0.01) and (area/(img.size) < 0.1):
+                        if (area/(img.size) > 0.03) and (area/(img.size) < 0.1):
                     
                             leftmost = cnt[cnt[:,:,0].argmin()][0]
                             rightmost = cnt[cnt[:,:,0].argmax()][0]
                             topmost = cnt[cnt[:,:,1].argmin()][0]
                             bottommost = cnt[cnt[:,:,1].argmax()][0]
                             
+                            # Values for horizontal to vertical ratio
                             leftright_x = abs((rightmost - leftmost)[0])
                             topbottom_y = abs((bottommost - topmost)[1])
                             
-                            ratio = leftright_x/topbottom_y
+                            # Values for tilt ratio
+                            leftright_y = abs((rightmost - leftmost)[1])
+                            topbottom_x = abs((bottommost - topmost)[0])
                             
-                            # A horizontal to vertical ratio of about 0.48 corresponds with
-                            # a vertical arrow
-                            if ratio - 0.48 < 0.05:
-                                # if span from bottom to arrow wings is longer than from arrow wings to
-                                # top, it's an up arrow
-                                if abs(bottommost[1] - leftmost[1]) > abs(leftmost[1] - topmost[1]):
-                                    direction = '^'
-                                else: direction = 'v'
-                                
-                            # A horizontal to vertical ratio of about 2.10 corresponds with
-                            # a horizontal arrow
-                            elif 1/ratio - 2.10 < 0.05:
-                                # if span from right to arrow wings is longer than from arrow wings to
-                                # left, it's a left arrow
-                                if abs(rightmost[0] - topmost[0]) > abs(topmost[0] - leftmost[0]):
-                                    direction = '<'
-                                else: direction = '>'
-                                
-                            # Any other ratio is unlikely to be a reasonable orientation of our arrow
-                            else:
-                                pass
+                            ratio = leftright_x/topbottom_y
+                            tiltratio = max(leftright_y,topbottom_x)/area
+                            
+                            if tiltratio < 0.01:
+                                # A horizontal to vertical ratio of about 0.48 corresponds with
+                                # a vertical arrow
+                                if ratio - 0.48 < 0.05:
+                                    # if span from bottom to arrow wings is longer than from arrow wings to
+                                    # top, it's an up arrow
+                                    if abs(bottommost[1] - leftmost[1]) > abs(leftmost[1] - topmost[1]):
+                                        direction = '^'
+                                    else: direction = 'v'
+                                    
+                                # A horizontal to vertical ratio of about 2.10 corresponds with
+                                # a horizontal arrow
+                                elif 1/ratio - 2.10 < 0.05:
+                                    # if span from right to arrow wings is longer than from arrow wings to
+                                    # left, it's a left arrow
+                                    if abs(rightmost[0] - topmost[0]) > abs(topmost[0] - leftmost[0]):
+                                        direction = '<'
+                                    else: direction = '>'
+                                    
+                                # Any other ratio is unlikely to be a reasonable orientation of our arrow
+                                else:
+                                    pass
                             
                             # if direction found, print stuff to screen
                             
-                            if direction:
-                                img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
-                                img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
-                                img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
-                                img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
-                                frame = cv2.putText(frame, direction, (int(frame.shape[1]/2),frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
-                                                    4, (255, 255, 255), 10)
-                            break
+                                if direction:
+                                    img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
+                                    img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
+                                    img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
+                                    img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
+                                    frame = cv2.putText(frame, direction, (int(frame.shape[1]/2),frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
+                                                        4, (255, 255, 255), 10)
+                                break
                 
-                frame = cv2.flip(cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2),1)
+                frame = cv2.flip(cv2.rectangle(frame,(80, 120), (320,360), (0,255,0),2),1)
                 
                 #bound = int((frame.shape[1] - frame.shape[0])/2)
                 #frame = frame[:, bound:frame.shape[1] - bound]
@@ -261,12 +269,7 @@ class Camera:
                 frame = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
                 frame = np.expand_dims(frame, axis=2)
                 return direction, frame
-                # cv2.imshow('frame', cv2.rectangle(frame,(200, 120), (440,360), (0,255,0),2))
-                # frame = cv2.flip(frame,1)
-                # # Display the resulting frame
-                # cv2.imshow('frame', frame)
-                # if direction:
-                #     return direction
+            
             while not cameraWorking:
                 pass
                 # val = int(input())

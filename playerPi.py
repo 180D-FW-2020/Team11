@@ -29,7 +29,7 @@ class PlayerPi:
             # This is a dummy number, how do we set each player number distinctly
             # without hardcoding?
             
-            self.playerId = 1
+            self.playerId = playerId
             self.imu = BerryIMU()
             self.gameOver = False
             self.coolDown = False
