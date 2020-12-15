@@ -21,7 +21,7 @@ import time
 import traceback
 import datetime
 
-testWithoutPi = False
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -254,7 +254,7 @@ def centralNodeProcess():
             # If yes, unpack the first one and use to identify which device is
             # now connected
             playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
-            
+            print(playerId)
             if pi:
                 pis.remove(playerId)
                 if settings.verbose:
