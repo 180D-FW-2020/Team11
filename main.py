@@ -61,12 +61,16 @@ def piProcess():
     transmit = Thread(target=piTransmit, args = (transmitter, pi, lambda:stop,))
     transmit.start()
     
+    # Wait for start from central
+    while not pi.start:
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
+    
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # set the rotation cooldown or end the game.
     while not pi.gameOver:
-        if pi.start:
-            if len(receiver.packages):
-                pi.unpack(receiver.packages.pop(0))
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
 
     stop = True
     transmit.join()
@@ -78,7 +82,7 @@ def piTransmit(transmitter, pi, stop):
     central.
     '''
     while not pi.gameOver and not stop():
-        print("in transmit loop, current cooldown state is", pi.coolDown)
+        #print("in transmit loop, current cooldown state is", pi.coolDown)
         if not pi.coolDown:
             rotation = pi.getRotation()
             package = pi.pack(rotation)
@@ -259,23 +263,28 @@ def centralNodeProcess():
             except:
                 print("An error occurred receiving in the first central loop")
                 print(receiver.packages)
-                traceback.print_exc() 
+                traceback.print_exc()
+                
             print(playerId)
             if pi and playerId in pis:
                 pis.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pi has arrived.".format(playerId))
-                    print("Pending pis:", pis)
+                    
             elif pc and playerId in pcs:
                 pcs.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pc has arrived.".format(playerId))
-                    print("Pending pis:", pcs)
+                    
             elif ready and playerId in readies:
                 readies.remove(playerId)
                 if settings.verbose:
                     print("Player {} is ready.".format(playerId))
-                    print("Pending readies:", readies)
+                    
+        if settings.verbose:
+            print("Pending pis:", pis)
+            print("Pending pis:", pcs)
+            print("Pending readies:", readies)
         # Repeat until no devices left to join
         devicesPending = len(pcs)+len(pis)+len(readies)
         time.sleep(1)

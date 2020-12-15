@@ -79,7 +79,7 @@ class PlayerPi:
             # cooldown state. If on cooldown rotation, the pi can't send.
             
             topic, message = package
-            
+            #print("unpacking stuff")
             if topic in (comms.axes, comms.coolDown):
                 self.coolDown = message['coolDown']
                 if settings.verbose: print("Current cooldown state is:", self.coolDown)
@@ -136,7 +136,7 @@ class BerryIMU:
                 
                 #Loop until retrieve a rotation
                 while True:
-                    if settings.verbose: print("In IMU loop, attempting to get rotation")
+                    #if settings.verbose: print("In IMU loop, attempting to get rotation")
                     #Read the accelerometer,gyroscope and magnetometer values
                     ACCx = IMU.readACCx()
                     ACCy = IMU.readACCy()
