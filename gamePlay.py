@@ -181,12 +181,14 @@ class PlaySpace:
             if settings.verbose: print("start of move: ", self.players[playerId-1])
             # First check for collision
             collision, tag, powerup, overlap = self.checkCollision(playerId, direction)
+            if settings.verbose: print("collision info: ", collision, tag, powerup, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
                 self.players[tag - 1]['it'] = True
                 self.players[self.it - 1]['it'] = False
                 if tag in self.playersNotIt:
                     self.playersNotIt.remove(tag)
+                self.it = tag
                 displayUpdates = {'tagged': tag,
                                   'untagged': playerId}
             # If collision is obstacle/wall/non tag player bump, do nothing
