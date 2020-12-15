@@ -20,6 +20,8 @@ import random
 import time
 import traceback
 import datetime
+
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -157,7 +159,7 @@ def pcProcess():
         #cv2.imshow('frame',pc.cameraImage)
         pc.updateDisplay(event = False)
         
-        if direction and datetime.datetime.now()<delay:
+        if direction and datetime.datetime.now()>delay:
             package = pc.pack(direction)
             transmitter.transmit(comms.direction, package)
             delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
@@ -174,10 +176,8 @@ def pcProcess():
     
     stop = True
     packageReceipt.join()
-    packageReceipt.stop()
-    #transmitDirection.join()
     #transmitCommand.join()
-    #receiver.stop()
+    receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
     '''
@@ -257,7 +257,9 @@ def centralNodeProcess():
     # Send initial message until all devices confirm receipt
     devicesPending = True
     pcs = [i for i in range(1, settings.numPlayers+1)]
-    pis = [i for i in range(1, settings.numPlayers+1)]
+
+    if testWithoutPi: pis = []
+    else: pis = [i for i in range(1, settings.numPlayers+1)]
     
     while devicesPending:
         

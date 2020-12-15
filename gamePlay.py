@@ -192,30 +192,35 @@ class PlaySpace:
                 displayUpdates = 0
             # Otherwise move. If there's a powerup there, pick it up
             
-            if self.players[playerId - 1]['it']: speed = ITSPEED
-            else: speed = 1
-            
-            if direction == '^':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] += (overlap-1)*self.verticalAxis
-                else:
-                    self.players[playerId - 1]['position'] += speed*self.verticalAxis
-            elif direction == 'v':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] -= (overlap-1)*self.verticalAxis
-                else:
-                    self.players[playerId - 1]['position'] -= speed*self.verticalAxis
-            elif direction == '<':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] -= (overlap-1)*self.horizontalAxis
-                else:
-                    self.players[playerId - 1]['position'] -= speed*self.horizontalAxis
-            elif direction == '>':
-                if collision and (overlap > 1):
-                    self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
-                else:
-                    self.players[playerId - 1]['position'] += speed*self.horizontalAxis
-            displayUpdates = {'playerId': playerId,
+            else:
+                if self.players[playerId - 1]['it']: speed = ITSPEED
+                else: speed = 1
+                
+                if direction == '^':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] += (overlap-1)*self.verticalAxis
+                    else:
+                        self.players[playerId - 1]['position'] += speed*self.verticalAxis
+                elif direction == 'v':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] -= (overlap-1)*self.verticalAxis
+                    else:
+                        self.players[playerId - 1]['position'] -= speed*self.verticalAxis
+                        
+                # right indicates screen left
+                elif direction == '>':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] -= (overlap-1)*self.horizontalAxis
+                    else:
+                        self.players[playerId - 1]['position'] -= speed*self.horizontalAxis
+                        
+                # left indicates screen right
+                elif direction == '<':
+                    if collision and (overlap > 1):
+                        self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
+                    else:
+                        self.players[playerId - 1]['position'] += speed*self.horizontalAxis
+                displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
                 
             return comms.move, displayUpdates                
@@ -281,12 +286,14 @@ class PlaySpace:
                 inverse = self.horizontalAxis
                 location = self.players[playerId - 1]['position']*self.verticalAxis - speed*self.verticalAxis
 
-            elif direction == '<':
+            # right indicates screen left
+            elif direction == '>':
                 axis = self.horizontalAxis
                 inverse = self.verticalAxis
                 location = self.players[playerId - 1]['position']*self.horizontalAxis - speed*self.horizontalAxis
-
-            elif direction == '>':
+            
+            # left indicates screen right
+            elif direction == '<':
                 axis = self.horizontalAxis
                 inverse = self.verticalAxis
                 location = self.players[playerId - 1]['position']*self.horizontalAxis + speed*self.horizontalAxis
@@ -391,44 +398,3 @@ class PlaySpace:
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
-            
-# class Player:
-#     def __init__(self, playerId, x, y, z, it):
-#         try:
-#             self.playerId = playerId;
-#             self.position = [x, y, z]
-#             self.it = it
-#         except:
-#             print("An error occurred initializing Player")
-
-#     def setIt(self):
-#         '''
-#         Sets the player as It
-#         '''
-#         try:
-#             if(not self.it):
-#                 self.it = True
-#             else: print("Tagged person was already it, something went wrong")
-#         except:
-#             print("An error occurred updating who is it")
-
-#     def setNotIt(self):
-#         '''
-#         Sets the player as Not It
-#         '''
-#         try:
-#             if(self.it): self.it = False
-#             else: print("Tagged person was already not it, something went wrong")
-#         except:
-#             print("An error occurred updating who is it")
-
-
-if __name__ == "__main__":
-    myp = PlaySpace(4,10,0,0)
-    myp.players[0]['position'] = np.array([5,2,5])
-    myp.players[1]['position'] = np.array([5,1,1])
-    myp.players[2]['position'] = np.array([3,9,3])
-    myp.players[3]['position'] = np.array([2,9,7])
-    myp.players[0]['it'] = False
-    myp.players[1]['it'] = True
-    print(myp.checkCollision(2, '^'))
