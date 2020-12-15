@@ -25,6 +25,7 @@ itColor = (255, 198, 220)
 
 ## Commands
 phrases = {
+    "ready" : comms.ready,
     "start" : comms.start,
     "stop" : comms.stop
 }
@@ -55,6 +56,7 @@ class PlayerPC:
             
             self.initialReceived = False
             self.gameOver = False
+            self.start = False
             
         except:
             print("An error occurred initializing PlayerPC")
@@ -118,15 +120,19 @@ class PlayerPC:
             topic, message = package
             if topic == comms.move:
                 self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+                
             elif topic == comms.axes:
                 self.playSpace.verticalAxis = message['verticalAxis']
                 self.playSpace.horizontalAxis = message['horizontalAxis']
                 self.playSpace.rotationCoolDownTime = message['coolDown']
+                
             elif topic == comms.coolDown:
                 self.playSpace.rotationCoolDownTime = message['coolDown']
+                
             elif topic == comms.tag:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
                 self.playSpace.players[message['playerId'] - 1]['it'] = False
+                
             elif topic == comms.initial and not self.initialReceived:
                 self.playSpace.__dict__= message
                 self.dist = int(1000/(self.playSpace.edgeLength + 2))
@@ -138,6 +144,10 @@ class PlayerPC:
                 # Return True for initial message
                 self.initialReceived = True
                 return True
+            
+            elif topic == comms.start:
+                self.start = True
+                
             return False
         except:
             print("Error getting package from primary node")

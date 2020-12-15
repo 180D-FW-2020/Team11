@@ -53,9 +53,11 @@ class GamePlay:
             topic, message = package
             
             if topic == comms.piConfirmation:
-                return message['playerId'], True, False
+                return message['playerId'], True, False, False
             elif topic == comms.pcConfirmation:
-                return message['playerId'], False, True
+                return message['playerId'], False, True, False
+            elif topic == comms.ready:
+                return message['playerId'], False, False, True
             elif topic == comms.direction:
                 return self.playSpace.movePlayer(message['playerId'],
                                                     message['val'])

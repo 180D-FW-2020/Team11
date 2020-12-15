@@ -20,6 +20,8 @@ import random
 import time
 import traceback
 import datetime
+
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -35,6 +37,7 @@ def piProcess():
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
                                comms.coolDown,
+                               comms.start,
                                comms.axes),
                               clientId)
     transmitter = comms.Transmitter()
@@ -73,7 +76,7 @@ def piTransmit(transmitter, pi, stop):
     Separate thread for receiving player input on Pi and transmitting it to 
     central.
     '''
-    while not pi.gameOver and not stop():
+    while not pi.gameOver and pi.start and not stop():
         if not pi.coolDown:
             rotation = pi.getRotation()
             package = pi.pack(rotation)
@@ -102,6 +105,7 @@ def pcProcess():
     receiver = comms.Receiver((comms.initial,
                                comms.move,
                                comms.tag,
+                               comms.start,
                                comms.axes,
                                comms.coolDown),
                               clientId)
@@ -127,13 +131,14 @@ def pcProcess():
     # transmitDirection = Thread(target=pcTransmitDirection, args = (transmitter, pc, lambda:stop,))
     # transmitDirection.start()
     
+    ## transmitCommand methods not yet fully implemented
+    transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
+    transmitCommand.start()
+    
     # Send main gameplay loop to separate thread
     packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
     packageReceipt.start()
     
-    ## transmitCommand methods not yet fully implemented
-    transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
-    transmitCommand.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -152,7 +157,7 @@ def pcProcess():
     
     delay = datetime.datetime.now()
     cv2.startWindowThread()
-    while not pc.gameOver:
+    while not pc.gameOver and pc.start:
         direction, pc.cameraImage = pc.getDirection(frameCapture)
         #cv2.imshow('frame',pc.cameraImage)
         pc.updateDisplay(event = False)
@@ -193,6 +198,7 @@ def pcPackageReceipt(receiver, pc, stop):
         #     break
     #cv2.destroyAllWindows()
     receiver.stop()
+    
 # def pcTransmitDirection(transmitter, pc, stop):
 #     '''
 #     Separate thread for receiving player input on PC and transmitting it to 
@@ -244,7 +250,7 @@ def centralNodeProcess():
     receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
-                               comms.start,
+                               comms.ready,
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
@@ -257,7 +263,11 @@ def centralNodeProcess():
     # Send initial message until all devices confirm receipt
     devicesPending = True
     pcs = [i for i in range(1, settings.numPlayers+1)]
-    pis = [i for i in range(1, settings.numPlayers+1)]
+
+    if testWithoutPi: pis = []
+    else: pis = [i for i in range(1, settings.numPlayers+1)]
+    
+    readies = [i for i in range(1, settings.numPlayers+1)]
     
     while devicesPending:
         
@@ -269,7 +279,7 @@ def centralNodeProcess():
             
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc = game.unpack(receiver.packages.pop(0))
+            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
             
             if pi:
                 pis.remove(playerId)
@@ -279,12 +289,19 @@ def centralNodeProcess():
                 pcs.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pc has arrived.".format(playerId))
+                    
+            elif ready:
+                readies.remove(playerId)
+                if settings.verbose:
+                    print("Player {} is ready.".format(playerId))
         
         # Repeat until no devices left to join
-        devicesPending = len(pcs)+len(pis)
+        devicesPending = len(pcs) + len(pis) + len(readies)
         time.sleep(1)
     
-    if settings.verbose: print("All player devices connected")
+    if settings.verbose: print("All player devices connected and players ready")
+    
+    transmitter.transmit(comms.start, {'start': True})
     
     # Then start the game
     while not game.gameOver:
