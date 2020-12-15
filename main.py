@@ -21,7 +21,7 @@ import time
 import traceback
 import datetime
 
-testWithoutPi = True
+testWithoutPi = False
             
 def piProcess():
     '''
@@ -281,11 +281,12 @@ def centralNodeProcess():
                 pcs.remove(playerId)
                 if settings.verbose:
                     print("Player {}'s pc has arrived.".format(playerId))
-        
+        print(devicesPending)
         # Repeat until no devices left to join
         devicesPending = len(pcs)+len(pis)
         time.sleep(1)
     
+    game.start = True
     if settings.verbose: print("All player devices connected")
     
     # Then start the game

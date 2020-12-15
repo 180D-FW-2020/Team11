@@ -18,6 +18,7 @@ class GamePlay:
     def __init__(self, numPlayers):
         try:
             self.gameOver = False
+            self.start = False
             
             args = self.settings()
             self.playSpace = PlaySpace(numPlayers, *args)
@@ -52,20 +53,20 @@ class GamePlay:
         try:
             topic, message = package
             
-            if topic == comms.piConfirmation:
-                return message['playerId'], True, False
-            elif topic == comms.pcConfirmation:
-                return message['playerId'], False, True
-            elif topic == comms.direction:
-                return self.playSpace.movePlayer(message['playerId'],
-                                                    message['val'])
-            elif topic == comms.rotation:
-                return self.playSpace.rotatePlaySpace(message['val'])
-            elif topic == comms.command:
-                print(message['val'])
+            if self.start:
+                if topic == comms.direction:
+                    return self.playSpace.movePlayer(message['playerId'],
+                                                        message['val'])
+                elif topic == comms.rotation:
+                    return self.playSpace.rotatePlaySpace(message['val'])
+                else: print("Message received after game start without direction or rotation")
             else:
+                if topic == comms.piConfirmation:
+                    return message['playerId'], True, False
+                elif topic == comms.pcConfirmation:
+                    return message['playerId'], False, True
                 # Unplanned case
-                print("A message was received without direction or rotation")
+                else: print("Message received before game start without pi or pc confirmation")
             
         except:
             print("An error occurred getting player input")
@@ -177,6 +178,7 @@ class PlaySpace:
         makes the move and returns info about the move.
         '''
         try:
+            if settings.verbose: print("start of move: ", self.players[playerId-1])
             # First check for collision
             collision, tag, powerup, overlap = self.checkCollision(playerId, direction)
             # If collision is a tag, do the tagging stuff but don't move player
@@ -222,8 +224,8 @@ class PlaySpace:
                         self.players[playerId - 1]['position'] += speed*self.horizontalAxis
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
-                
-            return comms.move, displayUpdates                
+            if settings.verbose: print("start of move: ", self.players[playerId-1])
+            return comms.move, displayUpdates
         
         except:
             print("An error occurred moving player", playerId, ":", direction)
@@ -300,7 +302,7 @@ class PlaySpace:
             
             #get the position index that is changing
             for i in range(len(axis)):
-                if axis[i] == 1:
+                if abs(axis[i]) == 1:
                     index = i
 
             # check if collision with edges of playspace
