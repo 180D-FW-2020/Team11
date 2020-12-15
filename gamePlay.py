@@ -360,13 +360,13 @@ class PlaySpace:
                         myloc = (location + inverse*self.players[playerId - 1]['position'])
                         yourloc = (self.players[i]['position']*playArea)
                         distance = myloc - yourloc
-                        if (yourloc == myloc).all() and (self.players[i]['it'] == False):
+                        if (yourloc == myloc).all():
                             collision = True
                             overlap = 1
-                        elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
+                    #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
                             # tag = playerId
-                            collision = True
-                            overlap = 1
+                     #       collision = True
+                      #      overlap = 1
             
             return collision, tag, powerup, overlap
         except:
