@@ -61,12 +61,16 @@ def piProcess():
     transmit = Thread(target=piTransmit, args = (transmitter, pi, lambda:stop,))
     transmit.start()
     
+    # Wait for start from central
+    while not pi.start:
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
+    
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # set the rotation cooldown or end the game.
     while not pi.gameOver:
-        if pi.start:
-            if len(receiver.packages):
-                pi.unpack(receiver.packages.pop(0))
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
 
     stop = True
     transmit.join()
