@@ -199,6 +199,7 @@ class PlaySpace:
                                   'untagged': playerId}
             # If collision is obstacle/wall/non tag player bump, do nothing
             elif collision and (overlap == 1):
+                topic = 0
                 displayUpdates = 0
             # Otherwise move. If there's a powerup there, pick it up
             
