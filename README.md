@@ -2,12 +2,12 @@
 
 Source code present is as follows:
 * settings.py: For gameplay settings such as number of players, whether the current device is a Pi, and so on. A few settings which were not critical for building the prototype are currently hardcoded inside the game and pending update. For gameplay this is intended as an intermediate solution, to be replaced by a GUI settings menu and detection of other relevant information.
-* main.py: Run to play. See play instructions below. This file contains the high level logic based around threading and communications.
-* comms.py: Contains all of the communications classes.
-* gameplay.py: Contains classes for the game and the playspace, as managed by the central node. Individual players also launch instances of the playspace, but don't perform any logic.
+* main.py: Run to play. See play instructions below. This file contains the high level logic based around threading and communications. Launching an interactive settings menu is not yet implemented.
+* comms.py: Contains all of the communications classes. There are currently some observed issues with dropped and repeated messages, which will be resolved for the final version.
+* gameplay.py: Contains classes for the game and the playspace, as managed by the central node. Individual players also launch instances of the playspace, but don't perform any logic. The checkCollision logic is currently under review to correct behavior when vertical and horizontal axes are not at their default settings. The display implementation in OpenCV is intended as a prototype, to be replaced with a Unity implementation.
 * playerPC.py: Contains classes for the player PC and the webcam and microphone integrations.
 * playerPi.py: Contains classes for the player Pi and the IMU integrations.
-* unittests.py: Contains unit tests, currently only testing logic in gameplay.py.
+* unittests.py: Contains unit tests, currently only testing a subset of logic in gameplay.py. Additional tests to be added.
 * IMU.py, LIS3MDL.py. LSM6DSL.py, LSM9DS0.py, LSM9DS1.py: these files are all directly from the Berry IMU sample code, with a minor modification to the smbus import in IMU.py to support Python 3.7+.
 
 
