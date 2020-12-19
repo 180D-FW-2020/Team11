@@ -127,7 +127,7 @@ class PlayerPC:
                 self.playSpace.rotationCoolDownTime = message['coolDown']
             elif topic == comms.tag:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
-                self.playSpace.players[message['playerId'] - 1]['it'] = False
+                self.playSpace.players[message['untagged'] - 1]['it'] = False
                 self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
             elif topic == comms.initial and not self.initialReceived:
                 self.playSpace.__dict__= message

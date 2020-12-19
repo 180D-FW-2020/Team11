@@ -52,6 +52,7 @@ class GamePlay:
         '''
         try:
             topic, message = package
+            print("Central unpacking message:", message, topic)
             
             if self.start:
                 if topic == comms.direction:
@@ -269,7 +270,7 @@ class PlaySpace:
         Takes a player and direction, figures out if they are going to run into 
         stuff.
         
-        Return tuple (collision, tag, powerup):
+        Return tuple (collision, tag, powerup, overlap):
          - collision: bool indicating a collision with obstacle, edge, or
              another player where the moving player is not it
          - tag: if the moving player is it and the obstacle is another
@@ -284,31 +285,33 @@ class PlaySpace:
             tag = 0
             powerup = 0
             overlap = int(-1)
+            posVertical = np.abs(self.verticalAxis)
+            posHorizontal = np.abs(self.horizontalAxis)
             playArea = self.horizontalAxis + self.verticalAxis
             initloc = self.players[playerId-1]['position']*playArea
 
             #set future location                
             if direction == '^':
-                axis = self.verticalAxis
-                inverse = self.horizontalAxis
-                location = self.players[playerId - 1]['position']*self.verticalAxis + speed*self.verticalAxis
+                axis = posVertical
+                inverse = posHorizontal
+                location = self.players[playerId - 1]['position']*axis + speed*self.verticalAxis
 
             elif direction == 'v':
-                axis = self.verticalAxis
-                inverse = self.horizontalAxis
-                location = self.players[playerId - 1]['position']*self.verticalAxis - speed*self.verticalAxis
+                axis = posVertical
+                inverse = posHorizontal
+                location = self.players[playerId - 1]['position']*axis - speed*self.verticalAxis
 
             # right indicates screen left
             elif direction == '>':
-                axis = self.horizontalAxis
-                inverse = self.verticalAxis
-                location = self.players[playerId - 1]['position']*self.horizontalAxis - speed*self.horizontalAxis
+                axis = posHorizontal
+                inverse = posVertical
+                location = self.players[playerId - 1]['position']*axis - speed*self.horizontalAxis
             
             # left indicates screen right
             elif direction == '<':
-                axis = self.horizontalAxis
-                inverse = self.verticalAxis
-                location = self.players[playerId - 1]['position']*self.horizontalAxis + speed*self.horizontalAxis
+                axis = posHorizontal
+                inverse = posVertical
+                location = self.players[playerId - 1]['position']*axis + speed*self.horizontalAxis
             
             #get the position index that is changing
             for i in range(len(axis)):
@@ -326,7 +329,7 @@ class PlaySpace:
                     overlap = int(2)
                 else:
                     overlap = 1
-            elif (self.players[playerId - 1]['it']) and (self.players[playerId - 1]['position'][index] > 0) and (location[index] < 0):
+            elif (self.players[playerId - 1]['it']) and (abs(self.players[playerId - 1]['position'][index]) == 1) and (abs(location[index]) == 1):
                 collision = True
                 overlap = int(1)
 
@@ -357,13 +360,13 @@ class PlaySpace:
                         myloc = (location + inverse*self.players[playerId - 1]['position'])
                         yourloc = (self.players[i]['position']*playArea)
                         distance = myloc - yourloc
-                        if (yourloc == myloc).all() and (self.players[i]['it'] == False):
+                        if (yourloc == myloc).all():
                             collision = True
                             overlap = 1
-                        elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
+                    #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
                             # tag = playerId
-                            collision = True
-                            overlap = 1
+                     #       collision = True
+                      #      overlap = 1
             
             return collision, tag, powerup, overlap
         except:
@@ -407,3 +410,4 @@ class PlaySpace:
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
+
