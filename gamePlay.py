@@ -290,7 +290,7 @@ class PlaySpace:
             overlap = int(-1)
             posVertical = np.abs(self.verticalAxis)
             posHorizontal = np.abs(self.horizontalAxis)
-            playArea = self.horizontalAxis + self.verticalAxis
+            playArea = np.add(posVertical, posHorizontal)
             initloc = self.players[playerId-1]['position']*playArea
 
             #set future location                
@@ -414,3 +414,12 @@ class PlaySpace:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
 
+if __name__ == "__main__":
+    space = PlaySpace(4,10,0,0)
+    space.verticalAxis = [0,-1,0]
+    space.horizontalAxis = [1,0,0]
+    space.players[0]['position'] = np.array([5,10,5])
+    space.players[1]['position'] = np.array([6,10,5])
+    space.players[2]['position'] = np.array([7,10,5])
+    space.players[3]['position'] = np.array([8,10,5])
+    print(space.checkCollision(2, '<'))
