@@ -159,7 +159,8 @@ class PlaySpace:
                     playersNotIt.append(i)
                 players.append({'playerId': i,
                                 'position': position,
-                                'it': it})
+                                'it': it,
+                                'powerUpHeld': 0})
             
             return players, playersNotIt
         except:
@@ -212,6 +213,7 @@ class PlaySpace:
                     position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1)])
+                    powerupID = r.randrange(1,3)
                     for j in range(len(self.players)):
                         if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
                             if position[0] != 1:
@@ -219,7 +221,7 @@ class PlaySpace:
                             else:
                                 position[0] += 1
                     for j in range(len(self.obstacles)):
-                        if (self.obstacles[j]['position'][0] == postion[0]) and (self.obstacles[j]['position'][1] == postion[1]):
+                        if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][1] == position[1]):
                             if position[0] != 1:
                                 position[0] -= 1
                             else:
@@ -227,7 +229,8 @@ class PlaySpace:
                 else: position = np.array([0, 0, 0])
                 
                 
-                powerups.append(position)
+                powerups.append({'powerUp': powerupID,
+                                'position': position})
             
             return powerups
         except:
@@ -288,6 +291,10 @@ class PlaySpace:
                         self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
                     else:
                         self.players[playerId - 1]['position'] += speed*self.horizontalAxis
+
+                if powerUp != 0:
+                    self.players[playerId - 1]['powerUpHeld'] = powerup
+                    
                 topic = comms.move
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
@@ -441,6 +448,27 @@ class PlaySpace:
                         collision = True
                         overlap = int(np.linalg.norm(difference))
 
+            #check to see collision with powerup
+                for i in range(len(self.powerUps)):
+                    
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.powerUps[i]['position']*playArea)
+                    distance = myloc - yourloc
+                    difference = initloc - yourloc
+                    movement = np.subtract(difference, distance)
+                    if (np.linalg.norm(distance) < 1):
+                        if self.players[playerId - 1]['powerupHeld'] == 0:
+                            powerup = self.powerUps[i]['powerUp']
+                        else:
+                            collision = True
+                        overlap = int(np.linalg.norm(difference))
+                    elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
+                        if self.players[playerId - 1]['powerupHeld'] == 0:
+                            powerup = self.powerUps[i]['powerUp']
+                        else:
+                            collision = True
+                        overlap = int(np.linalg.norm(difference))
+
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
             if (self.players[playerId - 1]['it'] == False):
@@ -461,6 +489,19 @@ class PlaySpace:
                     distance = myloc - yourloc
                     if (yourloc == myloc).all():
                         collision = True
+                        overlap = 1
+
+            #check to see collision with powerup
+                for j in range(len(self.powerUps)):
+                    
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.powerUps[j]['position']*playArea)
+                    distance = myloc - yourloc
+                    if (yourloc == myloc).all():
+                        if self.players[playerId - 1]['powerupHeld'] == 0:
+                            powerup = self.powerUps[j]['powerUp']
+                        else:
+                            collision = True
                         overlap = 1
 
                     #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
