@@ -19,9 +19,12 @@ class TestPlaySpace(unittest.TestCase):
     ## initialize playSpace
     def setUp(self):
         self.numPlayers = 4
+        self.numObstacles = 0
+        self.numPowerups = 0
         self.edgeLength = 10
         self.ITSPEED = 2
-        self.p = gamePlay.PlaySpace(self.numPlayers, self.edgeLength, 0, 0)
+        self.p = gamePlay.PlaySpace(self.numPlayers, self.edgeLength, self.numObstacles, self.numPowerups)
+        
     
     ## check default variables assigned correctly
     def testInitEdgeLength(self):
@@ -44,11 +47,25 @@ class TestPlaySpace(unittest.TestCase):
     
     ## function not yet implemented, untestable
     def testPlaceObstacles(self):
-        pass
+        mask = [1,1,0]
+        for i in range(len(self.p.obstacles)):
+            print(self.p.obstacles[i])
+            for j in range(i+1, len(self.p.obstacles)):
+                ipos = np.multiply(self.p.obstacles[i]['position'],mask)
+                jpos = np.multiply(self.p.obstacles[j]['position'],mask)
+                self.assertFalse(np.array_equal(ipos,jpos),
+                                msg = '{},{}'.format(self.p.obstacles[i], self.p.obstacles[j]))
     
     ## function not yet implemented, untestable
     def testPlacePowerups(self):
-        pass
+        mask = [1,1,0]
+        for i in range(len(self.p.powerUps)):
+            print(self.p.powerUps[i]['position'])
+            for j in range(i+1, len(self.p.powerUps)):
+                ipos = np.multiply(self.p.powerUps[i]['position'],mask)
+                jpos = np.multiply(self.p.powerUps[j]['position'],mask)
+                self.assertFalse(np.array_equal(ipos,jpos),
+                                msg = '{},{}'.format(self.p.powerUps[i], self.p.powerUps[j]))
     
     ## function not yet implemented, untestable
 
