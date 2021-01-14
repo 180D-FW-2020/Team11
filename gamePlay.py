@@ -106,8 +106,6 @@ class PlaySpace:
             self.powerUps = []
             self.it = 0
             
-            if numObstacles: self.placeObstacles(numObstacles)
-            if numPowerups: self.placePowerUps(numPowerups)
             
             self.verticalAxis = np.array([0,1,0])
             self.horizontalAxis = np.array([1,0,0])
@@ -117,6 +115,11 @@ class PlaySpace:
             if numPlayers:
                 self.numPlayers = numPlayers
                 self.players, self.playersNotIt = self.placePlayers(numPlayers)
+            
+            if numObstacles: 
+                self.obstacles = self.placeObstacles(numObstacles)
+            if numPowerups: 
+                self.powerUps = self.placePowerUps(numPowerups)
 
         except:
             print("An error occurred initializing PlaySpace")
@@ -140,6 +143,12 @@ class PlaySpace:
                     position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1)])
+         #           if len(self.players) != 0:
+          #              if (self.players[i-1]['position'][0] == postion[0]) and (self.players[i-1]['position'][1] == postion[1]):
+           #                 if position[0] != 1:
+            #                    position[0] -= 1
+             #               else:
+              #                  position[0] += 1
                 else: position = np.array([0, 0, 0])
                 
                 if(i == playerIt): 
@@ -163,8 +172,27 @@ class PlaySpace:
         and any other obstacles.
         '''
         try:
-            # Add obstacle code here
-            pass
+            obstacles = []
+            for i in range (numObstacles):
+                # Get a random position a reasonable distance from other players
+                # with respect to edge length. Don't use origin, this is dummy code
+                
+                if self.edgeLength:
+                    position = np.array([r.randrange(1, self.edgeLength + 1, 1),
+                                r.randrange(1, self.edgeLength + 1, 1),
+                                r.randrange(1, self.edgeLength + 1, 1)])
+                    for j in range(len(self.players)):
+                        if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
+                            if position[0] != 1:
+                                position[0] -= 1
+                            else:
+                                position[0] += 1
+                else: position = np.array([0, 0, 0])
+                
+                
+                obstacles.append(position)
+            
+            return obstacles
         except:
             print("An error occurred placing obstacles")
             traceback.print_exc() 
@@ -175,8 +203,33 @@ class PlaySpace:
         and any other powerups.
         '''
         try:
-            # Add powerUp code here
-            pass
+            powerups = []
+            for i in range (numPowerUps):
+                # Get a random position a reasonable distance from other players
+                # with respect to edge length. Don't use origin, this is dummy code
+                
+                if self.edgeLength:
+                    position = np.array([r.randrange(1, self.edgeLength + 1, 1),
+                                r.randrange(1, self.edgeLength + 1, 1),
+                                r.randrange(1, self.edgeLength + 1, 1)])
+                    for j in range(len(self.players)):
+                        if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
+                            if position[0] != 1:
+                                position[0] -= 1
+                            else:
+                                position[0] += 1
+                    for j in range(len(self.obstacles)):
+                        if (self.obstacles[j]['position'][0] == postion[0]) and (self.obstacles[j]['position'][1] == postion[1]):
+                            if position[0] != 1:
+                                position[0] -= 1
+                            else:
+                                position[0] += 1
+                else: position = np.array([0, 0, 0])
+                
+                
+                powerups.append(position)
+            
+            return powerups
         except:
             print("An error occurred placing powerups")
             traceback.print_exc() 
@@ -263,6 +316,24 @@ class PlaySpace:
                                   'verticalAxis': self.verticalAxis.tolist(),
                                   'coolDown': True}
             self.setRotationCoolDown()
+
+            #check that no collisions occur on rotation
+            for i in range(len(self.verticalAxis)):
+                if abs(self.verticalAxis[i]) == 1:
+                    verticalindex = i
+            for i in range(len(self.horizontalAxis)):
+                if abs(self.horizontalAxis[i]) == 1:
+                    horizontalindex = i
+            
+            for i in range(len(self.players)):
+                for j in range(len(self.players)):
+                    if j > i:
+                        if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
+                            if self.players[i]['position'][horizontalindex] != 1:
+                                self.players[i]['position'][horizontalindex] -= 1
+                            else:
+                                self.players[i]['position'][horizontalindex] += 1
+
             return comms.axes, displayUpdates  
         except:
             print("An error occurred rotating", rotation)
@@ -290,7 +361,7 @@ class PlaySpace:
             overlap = int(-1)
             posVertical = np.abs(self.verticalAxis)
             posHorizontal = np.abs(self.horizontalAxis)
-            playArea = self.horizontalAxis + self.verticalAxis
+            playArea = np.add(posVertical, posHorizontal)
             initloc = self.players[playerId-1]['position']*playArea
 
             #set future location                
@@ -355,6 +426,21 @@ class PlaySpace:
                             collision = True
                             overlap = int(np.linalg.norm(difference))
 
+            #check to see collision with obstacle
+                for i in range(len(self.obstacles)):
+                    
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.obstacles[i]*playArea)
+                    distance = myloc - yourloc
+                    difference = initloc - yourloc
+                    movement = np.subtract(difference, distance)
+                    if (np.linalg.norm(distance) < 1):
+                        collision = True
+                        overlap = int(np.linalg.norm(difference))
+                    elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
+                        collision = True
+                        overlap = int(np.linalg.norm(difference))
+
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
             if (self.players[playerId - 1]['it'] == False):
@@ -366,6 +452,17 @@ class PlaySpace:
                         if (yourloc == myloc).all():
                             collision = True
                             overlap = 1
+
+            #check to see collision with obstacle
+                for j in range(len(self.obstacles)):
+                    
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.obstacles[j]*playArea)
+                    distance = myloc - yourloc
+                    if (yourloc == myloc).all():
+                        collision = True
+                        overlap = 1
+
                     #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
                             # tag = playerId
                      #       collision = True
@@ -414,3 +511,10 @@ class PlaySpace:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
 
+if __name__ == "__main__":
+    myp = PlaySpace(4,10,4,4)
+    for i in range(len(myp.players)):
+        print(myp.players[i]['position'])
+    
+    for i in range(len(myp.obstacles)):
+        print(myp.obstacles[i])
