@@ -8,9 +8,13 @@ Created on Mon Nov 23 15:55:26 2020
 from paho.mqtt import client as mqtt_client
 import json
 import settings
+import logging
+import logHandling
+import datetime
 
 broker = 'broker.emqx.io'
 port = 1883
+qos_ = 1
 
 ### Topics ###
 initial = "ece180d/team11/init"
@@ -40,26 +44,48 @@ class Transmitter:
         
         transmitter.transmit(someMessage)
     '''
-    def __init__(self):
-        #self.topic = topic
+    def __init__(self, logger):        
         self.connected = False
+        self.logger = logger
+        print("Logger has type:", type(self.logger))
         
         self.client = mqtt_client.Client()
+        self.client.enable_logger(logger=None)
         self.client.on_connect = self.on_connect
+        self.client.on_publish = self.on_publish
         self.client.connect(broker, port)
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.connected = True
-            if settings.verbose:
-                print("Transmitter connected")
+            
+            log = "Transmitter connected"
+            self.logger.info(log)
+            if settings.verbose: print(log)
         else:
-            print("Failed to connect, return code %d\n", rc)
+            log = f"Transmitter failed to connect, return code `{rc}`"
+            self.logger.info(log)
+            if settings.verbose: print(log)
+            
+    def on_publish(self, client, userdata, mid):
+        pass
             
     def transmit(self, topic, package):
-        if settings.verbose:
-            print("Sending", package, "from", topic)
-        self.client.publish(topic, json.dumps(package), qos=0)
+        unsent = 1
+        count = 10
+        package['ID'] = datetime.datetime.now().strftime("%M%S%f")
+        while unsent and count:
+            unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
+            count = count - 1        
+        
+        if unsent:
+            log = f"Failed to published `{package}` from `{topic}`"
+            self.logger.info(log)
+            if settings.verbose: print(log)
+        else:
+            log = f"Published `{package}` from `{topic}`"
+            self.logger.info(log)
+            if settings.verbose: print(log)
         
 class Receiver:
     '''
@@ -83,21 +109,22 @@ class Receiver:
         
         receiver.stop()
     '''
-    def __init__(self, topic, clientId):
-        
+    def __init__(self, topic, clientId, logger):
         # Allow for multiple topic subscriptions
         if type(topic) == tuple:
             topics = []
             for t in topic:
-                topics.append((t, 0))
+                topics.append((t, qos_))
             self.topic = topics
         else:
-            self.topic = (topic, 0)
+            self.topic = (topic, qos_)
         
         self.connected = False
         self.clientId = clientId
+        self.logger = logger
 
-        self.client = mqtt_client.Client(client_id = clientId)
+        self.client = mqtt_client.Client(client_id = clientId, clean_session=True)
+        self.client.enable_logger(logger=None)
         self.client.on_connect = self.on_connect        
         self.client.on_message = self.on_message
         self.client.on_subscribe = self.on_subscribe
@@ -107,20 +134,25 @@ class Receiver:
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            self.client.subscribe(self.topic)
-            if settings.verbose:
-                print("Receiver connected: ", self.topic, self.clientId)
+            ret = self.client.subscribe(self.topic)
+            
+            log = f"Receiver connected: `{self.topic}`, client id = `{self.clientId}`, ret = `{ret}`"
+            self.logger.info(log)
+            if settings.verbose: print(log)
         else:
-            if settings.verbose:
-                print("Failed to connect, return code %d\n", rc)
+            log = f"Receiver failed to connect, return code `{rc}`"
+            self.logger.info(log)
+            if settings.verbose: print(log)
                 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        if settings.verbose:
-            print("Subscribed, mid = ", mid)
+        log = f"Subscribed, qos `{granted_qos}`"
+        self.logger.info(log)
+        if settings.verbose: print(log)
 
     def on_message(self, client, userdata, msg):
-        if settings.verbose:
-            print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
+        log = f"Received `{msg.payload.decode()}` from `{msg.topic}`"
+        self.logger.info(log)
+        if settings.verbose: print(log)
         
         # Store topic and decoded dictionary payload
         self.packages.append((msg.topic, json.loads(msg.payload.decode())))

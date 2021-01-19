@@ -20,15 +20,21 @@ import random
 import time
 import traceback
 import datetime
+import logging
+import logHandling
 
 testWithoutPi = False
+testWithoutMic = True
             
 def piProcess():
     '''
     Processes run on the pi. This detects a rotation on the pi, sends it,
     and then waits for permission to detect a new rotation.
     '''
-    if settings.verbose: print("Starting pi process")
+    logger = logHandling.setup_logger('pi_logger', 'pi_output.log')
+    log = "Pi processes started, player " + str(settings.playerId)
+    logger.info(log)
+    if settings.verbose: print(log)
     
     pi = playerPi.PlayerPi(settings.playerId)
     displayReceived = False
@@ -39,8 +45,8 @@ def piProcess():
                                comms.coolDown,
                                comms.axes,
                                comms.start),
-                              clientId)
-    transmitter = comms.Transmitter()
+                              clientId, logger)
+    transmitter = comms.Transmitter(logger)
     receiver.start()
     
     #First, get initial load with full playspace info
@@ -95,8 +101,12 @@ def pcProcess():
     display update on a separate thread which can access the local pc class, so
     that the display just updates when display information is updated from a
     received message.
-    '''   
-    if settings.verbose: print("Starting pc process")
+    '''
+    
+    logger = logHandling.setup_logger('pc_logger', 'pc_output.log')
+    log = "PC processes started (central node), player " + str(settings.playerId)
+    logger.info(log)
+    if settings.verbose: print(log)
     
     pc = playerPC.PlayerPC(settings.playerId, settings.numPlayers)
     displayReceived = False
@@ -109,8 +119,8 @@ def pcProcess():
                                comms.start,
                                comms.axes,
                                comms.coolDown),
-                              clientId)
-    transmitter = comms.Transmitter()
+                              clientId, logger)
+    transmitter = comms.Transmitter(logger)
     receiver.start()
     
     #First, get initial load with full playspace info
@@ -127,13 +137,14 @@ def pcProcess():
     package = pc.pack(displayReceived)
     transmitter.transmit(comms.pcConfirmation, package)
     
-    while not pc.ready:
-        command = pc.getCommand()
-        if command == comms.ready:
-            pc.ready = True
-            package = pc.pack(pc.ready)
-            transmitter.transmit(comms.ready, package)
-    
+    if not testWithoutMic:
+        while not pc.ready:
+            command = pc.getCommand()
+            if command == comms.ready:
+                pc.ready = True
+                package = pc.pack(pc.ready)
+                transmitter.transmit(comms.ready, package)
+        
     # Send main gameplay loop to separate thread
     packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
     packageReceipt.start()
@@ -217,18 +228,22 @@ def centralNodeProcess():
     When a message is received, the PlaySpace and game state are updated, and
     a message is sent to player PCs and Pi's indicating the update.
     '''
-    if settings.verbose: print("Starting central process")
     
+    logger = logHandling.setup_logger('central_logger', 'central_output.log')
+    log = "Central processes started, player " + str(settings.playerId)
+    logger.info(log)
+    if settings.verbose: print(log)
+            
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiverc = comms.Receiver((comms.piConfirmation,
+    receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
                                comms.command,
                                comms.ready,
                                comms.rotation),
-                              clientId)
-    transmitter = comms.Transmitter()
-    receiverc.start()
+                              clientId, logger)
+    transmitter = comms.Transmitter(logger)
+    receiver.start()
     
     game = g.GamePlay(settings.numPlayers)
 
@@ -241,7 +256,8 @@ def centralNodeProcess():
     if testWithoutPi: pis = []
     else: pis = [i for i in range(1, settings.numPlayers+1)]
     
-    readies = [i for i in range(1, settings.numPlayers+1)]
+    if testWithoutMic: readies = []
+    else: readies = [i for i in range(1, settings.numPlayers+1)]
     
     while devicesPending:
         
@@ -249,11 +265,11 @@ def centralNodeProcess():
         transmitter.transmit(comms.initial, initialPackage)
         
         # Check if any packages in the queue
-        if len(receiverc.packages):
-            if settings.verbose: print("Central first loop found", receiverc.packages)
+        if len(receiver.packages):
+            if settings.verbose: print("Central first loop found", receiver.packages)
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc, ready = game.unpack(receiverc.packages.pop(0))
+            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
             print(playerId)
             if pi and playerId in pis:
                 pis.remove(playerId)
@@ -284,11 +300,11 @@ def centralNodeProcess():
     while not game.gameOver:
         
         # Poll for messages in queue
-        if len(receiverc.packages):
+        if len(receiver.packages):
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            topic, message = game.unpack(receiverc.packages.pop(0))
+            topic, message = game.unpack(receiver.packages.pop(0))
                         
             # Generally this should result in some outbound message
             if message:
@@ -309,25 +325,20 @@ def centralNodeProcess():
                 # If it's now ended, send a message to announce it
                 transmitter.transmit(topic, message)
     
-    receiverc.stop()
+    receiver.stop()
 
 ### Select processes to run for instance
 if __name__ == '__main__':
     if settings.isPi:
         #piProcess()
         try:
-            if settings.verbose: print("will run pi stuff")
             piProcess()
         except:
             print("An error occurred with pi processes")
             traceback.print_exc() 
     elif settings.isPrimary:
-        try:
-            if settings.verbose: print("will run central stuff")
-            # central = Thread(target=centralNodeProcess)
-            # player = Thread(target=pcProcess)
-            
-            # player multiprocess must start first for Mac compatibility with
+        try:            
+            # player multiprocess must be created first for Mac compatibility with
             # OpenCV when displaying stuff later
             player = multiprocessing.Process(target=pcProcess)
             central = multiprocessing.Process(target=centralNodeProcess)
@@ -339,7 +350,6 @@ if __name__ == '__main__':
     else:
         # Only other case is this is the playerPC
         try:
-            if settings.verbose: print("will run pc stuff")
             pcProcess()
         except:
             print("An error occurred with non primary node processes")
