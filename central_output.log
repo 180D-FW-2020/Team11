@@ -1,26 +1,31 @@
-2021-01-18 10:06:45,323 INFO ('10:06:45:323388', 'Central processes started')
-2021-01-18 10:07:33,804 INFO 10:07:33:804754Central processes started
-2021-01-18 17:49:09,296 INFO Central processes started, player 1
-2021-01-18 17:50:56,635 INFO Central processes started, player 1
-2021-01-18 18:10:50,516 INFO Central processes started, player 1
-2021-01-18 18:17:59,375 INFO Central processes started, player 1
-2021-01-18 18:20:16,133 INFO Central processes started, player 1
-2021-01-18 18:21:06,624 INFO Central processes started, player 1
-2021-01-18 18:21:43,045 INFO Central processes started, player 1
-2021-01-18 18:25:26,039 INFO Central processes started, player 1
-2021-01-18 18:25:26,198 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:26,198 INFO Receiver connected: `[('ece180d/team11/piconf', 1), ('ece180d/team11/pcconf', 1), ('ece180d/team11/direc', 1), ('ece180d/team11/command', 1), ('ece180d/team11/ready', 1), ('ece180d/team11/rot', 1)]`, client id = `python-mqtt-865`, ret = `(0, 1)`
-2021-01-18 18:25:26,241 INFO Subscribed, qos `(1, 1, 1, 1, 1, 1)`
-2021-01-18 18:25:26,413 INFO Received `{"playerId": 1, "val": true}` from `ece180d/team11/pcconf`
-2021-01-18 18:25:27,199 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:28,202 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:29,206 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:30,206 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:31,208 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:32,211 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:33,214 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:34,216 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:35,219 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:36,222 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:37,225 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
-2021-01-18 18:25:38,228 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [8, 7, 10], 'it': True}], 'playersNotIt': []}` from `ece180d/team11/init`
+2021-01-20 15:38:36,340 INFO Central processes started, player 1
+2021-01-20 15:38:36,458 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3836458068'}` from `ece180d/team11/init`
+2021-01-20 15:38:36,458 INFO Receiver connected: `[('ece180d/team11/piconf', 1), ('ece180d/team11/pcconf', 1), ('ece180d/team11/direc', 1), ('ece180d/team11/command', 1), ('ece180d/team11/ready', 1), ('ece180d/team11/rot', 1)]`, client id = `python-mqtt-733`, ret = `(0, 1)`
+2021-01-20 15:38:36,505 INFO Subscribed, qos `(1, 1, 1, 1, 1, 1)`
+2021-01-20 15:38:36,665 INFO Received `{"playerId": 0, "val": "python-mqtt-42", "MessageId": "3836617641"}` from `ece180d/team11/pcconf`
+2021-01-20 15:38:37,459 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3837459390'}` from `ece180d/team11/init`
+2021-01-20 15:38:37,461 INFO Published `{'clientId': 'python-mqtt-42', 'playerId': 1, 'MessageId': '3837460391'}` from `ece180d/team11/assign`
+2021-01-20 15:38:37,645 INFO Received `{"playerId": 1, "val": true, "MessageId": "3837599017"}` from `ece180d/team11/ready`
+2021-01-20 15:38:38,466 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3838466697'}` from `ece180d/team11/init`
+2021-01-20 15:38:39,471 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3839471011'}` from `ece180d/team11/init`
+2021-01-20 15:38:40,473 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3840473332'}` from `ece180d/team11/init`
+2021-01-20 15:38:41,475 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3841475651'}` from `ece180d/team11/init`
+2021-01-20 15:38:42,477 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3842477971'}` from `ece180d/team11/init`
+2021-01-20 15:38:43,480 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3843480290'}` from `ece180d/team11/init`
+2021-01-20 15:38:43,609 INFO Received `{"playerId": 0, "val": "python-mqtt-54", "MessageId": "3845976973"}` from `ece180d/team11/piconf`
+2021-01-20 15:38:44,482 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3844482610'}` from `ece180d/team11/init`
+2021-01-20 15:38:44,483 INFO Published `{'clientId': 'python-mqtt-54', 'playerId': 2, 'MessageId': '3844483608'}` from `ece180d/team11/assign`
+2021-01-20 15:38:44,657 INFO Received `{"playerId": 2, "val": 2, "MessageId": "3847029209"}` from `ece180d/team11/ready`
+2021-01-20 15:38:45,485 INFO Published `{'edgeLength': 10, 'obstacles': [], 'powerUps': [], 'it': 1, 'verticalAxis': [0, 1, 0], 'horizontalAxis': [1, 0, 0], 'rotationCoolDownTime': 0, 'numPlayers': 1, 'players': [{'playerId': 1, 'position': [5, 6, 3], 'it': True}], 'playersNotIt': [], 'MessageId': '3845485927'}` from `ece180d/team11/init`
+2021-01-20 15:38:46,488 INFO Published `{'val': True, 'MessageId': '3846488247'}` from `ece180d/team11/start`
+2021-01-20 15:38:47,899 INFO Received `{"playerId": 1, "val": ">", "MessageId": "3847814700"}` from `ece180d/team11/direc`
+2021-01-20 15:38:47,915 INFO Published `{'playerId': 1, 'position': [3, 6, 3], 'MessageId': '3847915431'}` from `ece180d/team11/move`
+2021-01-20 15:38:52,552 INFO Received `{"playerId": 1, "val": "<", "MessageId": "3852473243"}` from `ece180d/team11/direc`
+2021-01-20 15:38:52,564 INFO Published `{'playerId': 1, 'position': [5, 6, 3], 'MessageId': '3852564998'}` from `ece180d/team11/move`
+2021-01-20 15:38:54,611 INFO Received `{"playerId": 1, "val": ">", "MessageId": "3854543707"}` from `ece180d/team11/direc`
+2021-01-20 15:38:54,624 INFO Published `{'playerId': 1, 'position': [3, 6, 3], 'MessageId': '3854624491'}` from `ece180d/team11/move`
+2021-01-20 15:38:57,560 INFO Received `{"playerId": 1, "val": ">", "MessageId": "3857480853"}` from `ece180d/team11/direc`
+2021-01-20 15:38:57,573 INFO Published `{'playerId': 1, 'position': [1, 6, 3], 'MessageId': '3857573605'}` from `ece180d/team11/move`
+2021-01-20 15:38:58,976 INFO Received `{"playerId": 2, "val": "v", "MessageId": "3901314656"}` from `ece180d/team11/rot`
+2021-01-20 15:38:58,988 INFO Published `{'horizontalAxis': [1, 0, 0], 'verticalAxis': [0, 0, 1], 'coolDown': True, 'MessageId': '3858988821'}` from `ece180d/team11/axes`
+2021-01-20 15:39:08,989 INFO Published `{'coolDown': False, 'MessageId': '3908989080'}` from `ece180d/team11/cool`

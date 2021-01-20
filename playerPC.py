@@ -12,6 +12,7 @@ import traceback
 import copy
 import comms
 import speech_recognition as sr
+import settings
 
 cameraWorking = True
 
@@ -36,11 +37,12 @@ class PlayerPC:
     includes interacting with the camera and microphone, packing and unpacking 
     messages to and from the central node, and displaying updates.    
     '''
-    def __init__(self, playerId, numPlayers):
+    def __init__(self, playerId, numPlayers, clientId):
         try:
             # This is a dummy number, how do we set each player number distinctly
             # without hardcoding?
-            self.playerId = playerId
+            self.playerId = 0
+            self.clientId = clientId
             self.camera = Camera()
             self.microphone = Microphone()
             self.displayUpdate = False
@@ -139,7 +141,11 @@ class PlayerPC:
                     self.displayBase = cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
                 # Return True for initial message
                 self.initialReceived = True
-                return True
+            elif topic == comms.assign:
+                if not self.playerId and message['clientId'] == self.clientId:
+                    print("setting playerId: was ", self.playerId)
+                    self.playerId = message['playerId']
+                    if settings.verbose: print('playerId set to', self.playerId)
             elif topic == comms.start:
                 self.start = True
             return False

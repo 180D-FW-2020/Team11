@@ -17,11 +17,10 @@ ITSPEED = 2 #spaces
 class GamePlay:
     def __init__(self, numPlayers):
         try:
-            self.gameOver = False
             self.start = False
             
-            args = self.settings()
-            self.playSpace = PlaySpace(numPlayers, *args)
+            self.playMode, edgeLength, numObstacles, numPowerups = self.settings()
+            self.playSpace = PlaySpace(numPlayers, edgeLength, numObstacles, numPowerups)
             
         except:
             print("An error occurred initializing GamePlay")
@@ -37,8 +36,8 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            edgeLength, numObstacles, numPowerups = (10, 0, 0)
-            return edgeLength, numObstacles, numPowerups
+            playMode, edgeLength, numObstacles, numPowerups = ("Standard", 10, 0, 0)
+            return playMode, edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
             traceback.print_exc() 
@@ -64,28 +63,31 @@ class GamePlay:
                     print("Message received after game start without direction or rotation")
             else:
                 if topic == comms.piConfirmation:
-                    return message['playerId'], True, False, False
+                    return message['val'], 0,  True, False, False
                 elif topic == comms.pcConfirmation:
-                    return message['playerId'], False, True, False
+                    return message['val'], 0, False, True, False
                 elif topic == comms.ready:
-                    return message['playerId'], False, False, True
+                    return 0, message['playerId'], False, False, True
                 # Unplanned case
                 else:
                     print("Message received before game start without pi or pc confirmation")
-                    return False, False, False, False
+                    return False, False, False, False, False
             
         except:
             print("An error occurred getting player input")
-            traceback.print_exc() 
+            traceback.print_exc()
     
-    def pack(self, message = None):
+    def pack(self, message = None, clientId = None, playerId = None):
         '''
         Packs initial load of playspace for players.
         
         Returns message for transmission.
         '''
         try:
-            if not message:
+            if clientId:
+                return {'clientId': clientId,
+                    'playerId': playerId}
+            elif not message:
                 message = copy.deepcopy(self.playSpace.__dict__)
                 for p in message['players']:
                     p['position'] = p['position'].tolist()
@@ -96,6 +98,15 @@ class GamePlay:
                 return {'val': message}
         except:
             print("An error occurred packing the playspace")
+            traceback.print_exc() 
+    
+    def isGameOver(self):
+        try:
+            if self.playMode == "Standard" and len(self.playSpace.playersNotIt) == 1:
+                return True
+            return False
+        except:
+            print("An error occurred determining if the game is over")
             traceback.print_exc() 
             
 class PlaySpace:
@@ -510,11 +521,3 @@ class PlaySpace:
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
-
-if __name__ == "__main__":
-    myp = PlaySpace(4,10,4,4)
-    for i in range(len(myp.players)):
-        print(myp.players[i]['position'])
-    
-    for i in range(len(myp.obstacles)):
-        print(myp.obstacles[i])

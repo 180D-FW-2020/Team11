@@ -18,6 +18,7 @@ qos_ = 1
 
 ### Topics ###
 initial = "ece180d/team11/init"
+assign = "ece180d/team11/assign"
 move = "ece180d/team11/move"
 tag = "ece180d/team11/tag"
 axes = "ece180d/team11/axes"
@@ -72,11 +73,11 @@ class Transmitter:
             
     def transmit(self, topic, package):
         unsent = 1
-        count = 10
-        package['ID'] = datetime.datetime.now().strftime("%M%S%f")
-        while unsent and count:
-            unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
-            count = count - 1        
+        count = 5
+        package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
+        #while unsent and count:
+        unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
+            #count = count - 1
         
         if unsent:
             log = f"Failed to published `{package}` from `{topic}`"

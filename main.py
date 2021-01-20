@@ -36,12 +36,13 @@ def piProcess():
     logger.info(log)
     if settings.verbose: print(log)
     
-    pi = playerPi.PlayerPi(settings.playerId)
+    clientId = f'python-mqtt-{random.randint(0, 1000)}'
+    pi = playerPi.PlayerPi(settings.playerId, clientId)
     displayReceived = False
     stop = False
     
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
+                               comms.assign,
                                comms.coolDown,
                                comms.axes,
                                comms.start),
@@ -50,17 +51,31 @@ def piProcess():
     receiver.start()
     
     #First, get initial load with full playspace info
-    while not displayReceived:
+    while not pi.initialReceived:
         
         # Keep checking for an initial load
         if len(receiver.packages):
-            # Gets true if initial load received, false and deletes message
-            # from queue otherwise
-            displayReceived = pi.unpack(receiver.packages.pop(0))
+            # sets initialReceived to True if yes
+            pi.unpack(receiver.packages.pop(0))
             
     # Send handshake to confirm receipt of first load
-    package = pi.pack(displayReceived)
+    package = pi.pack(pi.clientId)
     transmitter.transmit(comms.piConfirmation, package)
+    
+    # Receive playerId. May not correspond to playerId for the same player's PC
+    # but that doesn't matter, this is only for ease of reading logs
+    
+    while not pi.playerId:
+    
+        # Keep checking for a message assigning the player number
+        if len(receiver.packages):
+            # Gets true if initial load received, false and deletes message
+            # from queue otherwise
+            pi.unpack(receiver.packages.pop(0))
+            
+    # Send handshake to confirm receipt of playerId
+    package = pi.pack(pi.playerId)
+    transmitter.transmit(comms.ready, package)
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
@@ -108,12 +123,13 @@ def pcProcess():
     logger.info(log)
     if settings.verbose: print(log)
     
-    pc = playerPC.PlayerPC(settings.playerId, settings.numPlayers)
+    clientId = f'python-mqtt-{random.randint(0, 1000)}'
+    pc = playerPC.PlayerPC(settings.playerId, settings.numPlayers, clientId)
     displayReceived = False
     stop = False
-    
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
+        
     receiver = comms.Receiver((comms.initial,
+                               comms.assign,
                                comms.move,
                                comms.tag,
                                comms.start,
@@ -124,26 +140,36 @@ def pcProcess():
     receiver.start()
     
     #First, get initial load with full playspace info
-    while not displayReceived:
+    while not pc.initialReceived:
         
         # Keep checking for an initial load
         if len(receiver.packages):
             
-            # If message is initial load, displayReceived will be True
-            displayReceived = pc.unpack(receiver.packages.pop(0))
+            # Get initial load and update the display in the background
+            pc.unpack(receiver.packages.pop(0))
             pc.updateDisplay()
             
     # Send handshake to confirm receipt of first load
-    package = pc.pack(displayReceived)
+    package = pc.pack(pc.clientId)
     transmitter.transmit(comms.pcConfirmation, package)
+    
+    while not pc.playerId:
+    
+        # Keep checking for an initial load
+        if len(receiver.packages):
+            # Gets true if initial load received, false and deletes message
+            # from queue otherwise
+            pc.unpack(receiver.packages.pop(0))
     
     if not testWithoutMic:
         while not pc.ready:
             command = pc.getCommand()
             if command == comms.ready:
                 pc.ready = True
-                package = pc.pack(pc.ready)
-                transmitter.transmit(comms.ready, package)
+    else:
+        pc.ready = True
+    package = pc.pack(pc.ready)
+    transmitter.transmit(comms.ready, package)
         
     # Send main gameplay loop to separate thread
     packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
@@ -252,12 +278,20 @@ def centralNodeProcess():
     # Send initial message until all devices confirm receipt
     devicesPending = True
     pcs = [i for i in range(1, settings.numPlayers+1)]
-
-    if testWithoutPi: pis = []
-    else: pis = [i for i in range(1, settings.numPlayers+1)]
+    pcsReceived = []
     
-    if testWithoutMic: readies = []
-    else: readies = [i for i in range(1, settings.numPlayers+1)]
+    readiesPC = [i for i in range(1, settings.numPlayers+1)]
+
+    # PC player numbers don't need to correspond to pi player numbers, so for
+    # simplicity they don't
+    if testWithoutPi:
+        pis = []
+        readiesPi = []
+    else:
+        pis = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
+        readiesPi = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
+    
+    pisReceived = []
     
     while devicesPending:
         
@@ -266,29 +300,36 @@ def centralNodeProcess():
         
         # Check if any packages in the queue
         if len(receiver.packages):
-            if settings.verbose: print("Central first loop found", receiver.packages)
+            
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
-            print(playerId)
-            if pi and playerId in pis:
-                pis.remove(playerId)
-                if settings.verbose:
-                    print("Player {}'s pi has arrived.".format(playerId))
-            elif pc and playerId in pcs:
-                pcs.remove(playerId)
-                if settings.verbose:
-                    print("Player {}'s pc has arrived.".format(playerId))
-            elif ready and playerId in readies:
-                readies.remove(playerId)
-                if settings.verbose:
-                    print("Player {} is ready.".format(playerId))
+            client, player, pi, pc, ready = game.unpack(receiver.packages.pop(0))
+            if pi and client not in pisReceived:
+                pisReceived.append(client)
+                package = game.pack(clientId = client, playerId = pis.pop(0))
+                transmitter.transmit(comms.assign, package)
+                # if settings.verbose:
+                #     print("Player {}'s pi has arrived.".format(player))
+            elif pc and client not in pcsReceived:
+                pcsReceived.append(client)
+                package = game.pack(clientId = client, playerId = pcs.pop(0))
+                transmitter.transmit(comms.assign, package)
+                # if settings.verbose:
+                #     print("Player {}'s pc has arrived.".format(playerId))
+            elif ready:
+                if player in readiesPC:
+                    readiesPC.remove(player)
+                elif player in readiesPi:
+                    readiesPi.remove(player)
+                # if settings.verbose:
+                #     print("Player {} is ready.".format(playerId))
         # Repeat until no devices left to join
-        devicesPending = len(pcs)+len(pis)+len(readies)
+        devicesPending = len(pcs)+len(pis)+len(readiesPC)+len(readiesPi)
         if settings.verbose:
             print("Pending pis:", pis)
-            print("Pending pis:", pcs)
-            print("Pending readies:", readies)
+            print("Pending pcs:", pcs)
+            print("Pending ready pis:", readiesPi)
+            print("Pending ready pcs:", readiesPC)
         time.sleep(1)
     
     game.start = True
@@ -297,7 +338,7 @@ def centralNodeProcess():
     transmitter.transmit(comms.start, package)
     
     # Then start the game
-    while not game.gameOver:
+    while not game.isGameOver():
         
         # Poll for messages in queue
         if len(receiver.packages):
