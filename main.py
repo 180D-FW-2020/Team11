@@ -384,9 +384,9 @@ if __name__ == '__main__':
             # player multiprocess must be created first for Mac compatibility with
             # OpenCV when displaying stuff later
             player = multiprocessing.Process(target=pcProcess)
-            player.daemon = True
+            #player.daemon = True
             central = multiprocessing.Process(target=centralNodeProcess)
-            central.daemon = True
+            #central.daemon = True
             central.start()
             player.start()
         except:
