@@ -346,6 +346,31 @@ class PlaySpace:
             print("An error occurred rotating", rotation)
             traceback.print_exc() 
     
+    def replacePowerUp(self, index):
+        np.delete(self.powerUps, index)
+        # update display to remove powerup
+        position = np.array([r.randrange(1, self.edgeLength + 1, 1),
+                    r.randrange(1, self.edgeLength + 1, 1),
+                    r.randrange(1, self.edgeLength + 1, 1)])
+        powerupID = r.randrange(1,3)
+        for j in range(len(self.players)):
+            if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
+                if position[0] != 1:
+                    position[0] -= 1
+                else:
+                   position[0] += 1
+        for j in range(len(self.obstacles)):
+            if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][1] == position[1]):
+                if position[0] != 1:
+                    position[0] -= 1
+                else:
+                    position[0] += 1          
+                
+                powerups.append({'powerUp': powerupID,
+                                'position': position})
+        # update display to indicate new powerup
+        return powerups
+
     def checkCollision(self, playerId, direction):
         '''
         Takes a player and direction, figures out if they are going to run into 
@@ -457,14 +482,16 @@ class PlaySpace:
                     difference = initloc - yourloc
                     movement = np.subtract(difference, distance)
                     if (np.linalg.norm(distance) < 1):
-                        if self.players[playerId - 1]['powerupHeld'] == 0:
+                        if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[i]['powerUp']
+                            self.replacePowerUp(i)
                         else:
                             collision = True
                         overlap = int(np.linalg.norm(difference))
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
-                        if self.players[playerId - 1]['powerupHeld'] == 0:
+                        if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[i]['powerUp']
+                            self.replacePowerUp(i)
                         else:
                             collision = True
                         overlap = int(np.linalg.norm(difference))
@@ -498,8 +525,9 @@ class PlaySpace:
                     yourloc = (self.powerUps[j]['position']*playArea)
                     distance = myloc - yourloc
                     if (yourloc == myloc).all():
-                        if self.players[playerId - 1]['powerupHeld'] == 0:
+                        if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[j]['powerUp']
+                            self.replacePowerUp(i)
                         else:
                             collision = True
                         overlap = 1
@@ -514,6 +542,20 @@ class PlaySpace:
             print("An error occurred checking collision")
             traceback.print_exc() 
     
+    def activatePowerUp(self, playerId):
+        try:
+            if self.players[playerId-1]['powerUpHeld'] == 0:
+                #indicate on display no powerups held
+            if self.players[playerId-1]['powerUpHeld'] == 1:
+                #speed powerup
+            if self.players[playerId-1]['powerUpHeld'] == 2:
+                pass
+            if self.players[playerId-1]['powerUpHeld'] == 3:
+                pass
+        except:
+            print("An error occurred activating powerup")
+            traceback.print_exc() 
+
     def setRotationCoolDown(self):
         '''
         Sets the rotation cooldown to end a designated time after now

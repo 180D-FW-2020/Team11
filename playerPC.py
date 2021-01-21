@@ -175,8 +175,8 @@ class PlayerPC:
                     vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles)
                     if vpos<0:
                         vpos = self.playSpace.edgeLength + vpos + 1
-                    self.display = cv2.rectangle(self.display,(self.dist*hpos - int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          (self.dist*hpos + int(self.dist/2), self.dist*vpos - int(self.dist/2)), (0,255,0), -1)
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                          int(self.dist/3), playerColors[2], -1)
                 
                 for i, powerups in enumerate(self.playSpace.powerUps):
                     hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
@@ -185,8 +185,8 @@ class PlayerPC:
                     vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
                     if vpos<0:
                         vpos = self.playSpace.edgeLength + vpos + 1
-                    self.display = cv2.rectangle(self.display,(self.dist*hpos - int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          (self.dist*hpos + int(self.dist/2), self.dist*vpos - int(self.dist/2)), (0,0,255), -1)
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                          int(self.dist/3), playerColors[3], -1)
 
 
                 if self.playSpace.rotationCoolDownTime:
