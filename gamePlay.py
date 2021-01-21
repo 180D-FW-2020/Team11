@@ -102,7 +102,7 @@ class GamePlay:
     
     def isGameOver(self):
         try:
-            if self.playMode == "Standard" and len(self.playSpace.playersNotIt) == 0:
+            if self.playMode == "Standard" and len(self.playSpace.playersNotIt) == 1:
                 return True
             return False
         except:

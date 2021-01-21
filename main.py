@@ -86,9 +86,8 @@ def piProcess():
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # set the rotation cooldown or end the game.
     while not pi.gameOver:
-        if pi.start:
-            if len(receiver.packages):
-                pi.unpack(receiver.packages.pop(0))
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
 
     stop = True
     transmit.join()
@@ -99,7 +98,7 @@ def piTransmit(transmitter, pi, stop):
     Separate thread for receiving player input on Pi and transmitting it to 
     central.
     '''
-    while not pi.gameOver and not stop():
+    while not pi.gameOver and pi.start:
         if not pi.coolDown:
             rotation = pi.getRotation()
             package = pi.pack(rotation)

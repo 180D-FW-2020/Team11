@@ -17,20 +17,20 @@ port = 1883
 qos_ = 1
 
 ### Topics ###
-initial = "ece180d/team11/init"
-assign = "ece180d/team11/assign"
-move = "ece180d/team11/move"
-tag = "ece180d/team11/tag"
-axes = "ece180d/team11/axes"
-direction = "ece180d/team11/direc"
-ready = "ece180d/team11/ready"
-command = "ece180d/team11/command"
-start = "ece180d/team11/start"
-stop = "ece180d/team11/stop"
-rotation = "ece180d/team11/rot"
-coolDown = "ece180d/team11/cool"
-piConfirmation = "ece180d/team11/piconf"
-pcConfirmation = "ece180d/team11/pcconf"
+initial = settings.uniqueComms + "ece180d/team11/init"
+assign = settings.uniqueComms + "ece180d/team11/assign"
+move = settings.uniqueComms + "ece180d/team11/move"
+tag = settings.uniqueComms + "ece180d/team11/tag"
+axes = settings.uniqueComms + "ece180d/team11/axes"
+direction = settings.uniqueComms + "ece180d/team11/direc"
+ready = settings.uniqueComms + "ece180d/team11/ready"
+command = settings.uniqueComms + "ece180d/team11/command"
+start = settings.uniqueComms + "ece180d/team11/start"
+stop = settings.uniqueComms + "ece180d/team11/stop"
+rotation = settings.uniqueComms + "ece180d/team11/rot"
+coolDown = settings.uniqueComms + "ece180d/team11/cool"
+piConfirmation = settings.uniqueComms + "ece180d/team11/piconf"
+pcConfirmation = settings.uniqueComms + "ece180d/team11/pcconf"
 
 
 class Transmitter:
