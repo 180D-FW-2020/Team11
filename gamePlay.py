@@ -466,7 +466,7 @@ class PlaySpace:
                 for i in range(len(self.obstacles)):
                     
                     myloc = (location + inverse*self.players[playerId - 1]['position'])
-                    yourloc = (self.obstacles[i]*playArea)
+                    yourloc = (self.obstacles[i]['position']*playArea)
                     distance = myloc - yourloc
                     difference = initloc - yourloc
                     movement = np.subtract(difference, distance)
@@ -516,7 +516,7 @@ class PlaySpace:
                 for j in range(len(self.obstacles)):
                     
                     myloc = (location + inverse*self.players[playerId - 1]['position'])
-                    yourloc = (self.obstacles[j]*playArea)
+                    yourloc = (self.obstacles[j]['position']*playArea)
                     distance = myloc - yourloc
                     if (yourloc == myloc).all():
                         collision = True
