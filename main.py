@@ -36,7 +36,7 @@ def piProcess():
     logger.info(log)
     if settings.verbose: print(log)
     
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
+    clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pi = playerPi.PlayerPi(settings.playerId, clientId)
     displayReceived = False
     stop = False
@@ -124,7 +124,7 @@ def pcProcess():
     logger.info(log)
     if settings.verbose: print(log)
     
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
+    clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(settings.playerId, settings.numPlayers, clientId)
     displayReceived = False
     stop = False
@@ -262,7 +262,7 @@ def centralNodeProcess():
     logger.info(log)
     if settings.verbose: print(log)
             
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
+    clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
@@ -292,6 +292,8 @@ def centralNodeProcess():
     else:
         pis = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
         readiesPi = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
+        print("Pcs:", pcs)
+        print("Pis:", pis)
     
     pisReceived = []
     
