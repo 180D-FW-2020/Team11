@@ -37,7 +37,7 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            edgeLength, numObstacles, numPowerups = (10, 0, 0)
+            edgeLength, numObstacles, numPowerups = (10, 4, 4)
             return edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
@@ -89,6 +89,10 @@ class GamePlay:
                 message = copy.deepcopy(self.playSpace.__dict__)
                 for p in message['players']:
                     p['position'] = p['position'].tolist()
+                for o in message['obstacles']:
+                    o['position'] = o['position'].tolist()
+                for u in message['powerUps']:
+                    u['position'] = u['position'].tolist()
                 message['verticalAxis'] = message['verticalAxis'].tolist()
                 message['horizontalAxis'] = message['horizontalAxis'].tolist()
                 return message
@@ -191,7 +195,7 @@ class PlaySpace:
                 else: position = np.array([0, 0, 0])
                 
                 
-                obstacles.append(position)
+                obstacles.append({'position': position})
             
             return obstacles
         except:
@@ -245,8 +249,8 @@ class PlaySpace:
         try:
             if settings.verbose: print("start of move: ", self.players[playerId-1])
             # First check for collision
-            collision, tag, powerup, overlap = self.checkCollision(playerId, direction)
-            if settings.verbose: print("collision info: ", collision, tag, powerup, overlap)
+            collision, tag, powerUp, overlap = self.checkCollision(playerId, direction)
+            if settings.verbose: print("collision info: ", collision, tag, powerUp, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
                 self.players[tag - 1]['it'] = True
@@ -293,7 +297,7 @@ class PlaySpace:
                         self.players[playerId - 1]['position'] += speed*self.horizontalAxis
 
                 if powerUp != 0:
-                    self.players[playerId - 1]['powerUpHeld'] = powerup
+                    self.players[playerId - 1]['powerUpHeld'] = powerUp
                     
                 topic = comms.move
                 displayUpdates = {'playerId': playerId,
@@ -546,11 +550,13 @@ class PlaySpace:
         try:
             if self.players[playerId-1]['powerUpHeld'] == 0:
                 #indicate on display no powerups held
-            if self.players[playerId-1]['powerUpHeld'] == 1:
-                #speed powerup
-            if self.players[playerId-1]['powerUpHeld'] == 2:
                 pass
-            if self.players[playerId-1]['powerUpHeld'] == 3:
+            elif self.players[playerId-1]['powerUpHeld'] == 1:
+                #speed powerup
+                pass
+            elif self.players[playerId-1]['powerUpHeld'] == 2:
+                pass
+            elif self.players[playerId-1]['powerUpHeld'] == 3:
                 pass
         except:
             print("An error occurred activating powerup")

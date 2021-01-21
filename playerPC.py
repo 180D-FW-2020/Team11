@@ -169,10 +169,10 @@ class PlayerPC:
                                           int(self.dist/3), itColor, int(self.dist/10))
 
                 for i, obstacles in enumerate(self.playSpace.obstacles):
-                    hpos = np.dot(self.playSpace.horizontalAxis, obstacles)
+                    hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
                     if hpos<0:
                         hpos = self.playSpace.edgeLength + hpos + 1
-                    vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles)
+                    vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
                     if vpos<0:
                         vpos = self.playSpace.edgeLength + vpos + 1
                     self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
