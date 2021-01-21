@@ -37,7 +37,7 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            edgeLength, numObstacles, numPowerups = (10, 4, 4)
+            edgeLength, numObstacles, numPowerups = (10, 4, 0)
             return edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
@@ -370,10 +370,10 @@ class PlaySpace:
                 else:
                     position[0] += 1          
                 
-                powerups.append({'powerUp': powerupID,
+                self.powerUps.append({'powerUp': powerupID,
                                 'position': position})
         # update display to indicate new powerup
-        return powerups
+        return self.powerUps
 
     def checkCollision(self, playerId, direction):
         '''
@@ -432,7 +432,6 @@ class PlaySpace:
             if (abs(location[index]) > (self.edgeLength)):
                 collision = True
                 overlap = int(abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1)))
-                return collision, tag, powerup, overlap
             elif (location[index] == 0):
                 collision = True
                 if (self.players[playerId - 1]['it']):
@@ -601,9 +600,8 @@ class PlaySpace:
             traceback.print_exc()
 
 if __name__ == "__main__":
-    myp = PlaySpace(4,10,4,4)
-    for i in range(len(myp.players)):
-        print(myp.players[i]['position'])
-    
-    for i in range(len(myp.obstacles)):
-        print(myp.obstacles[i])
+    myp = PlaySpace(1,10,1,0)
+    myp.players[0]['position'] = np.array([5,9,5])
+    myp.obstacles[0]['position'] = np.array([5,10,5])
+
+    print(myp.checkCollision(1, '^'))

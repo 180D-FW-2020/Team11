@@ -239,7 +239,7 @@ def centralNodeProcess():
     pcs = [i for i in range(1, settings.numPlayers+1)]
 
     if testWithoutPi: pis = []
-    else: pis = [i for i in range(1, settings.numPlaçyers+1)]
+    else: pis = [i for i in range(1, settings.numPlayers+1)]
     
     readies = [i for i in range(1, settings.numPlayers+1)]
     
