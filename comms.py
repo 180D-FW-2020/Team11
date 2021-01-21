@@ -75,9 +75,9 @@ class Transmitter:
         unsent = 1
         count = 5
         package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
-        #while unsent and count:
-        unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
-            #count = count - 1
+        while unsent and count:
+            unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
+            count = count - 1
         
         if unsent:
             log = f"Failed to published `{package}` from `{topic}`"
