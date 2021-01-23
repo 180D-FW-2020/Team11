@@ -77,11 +77,12 @@ class PlayerPi:
             # Message data may contain info that is only relevant for the
             # playerPC, so this is just looking for the current rotation
             # cooldown state. If on cooldown rotation, the pi can't send.
-            
             topic, message = package
             
-            if topic in (comms.axes, comms.coolDown):
-                self.coolDown = message['coolDown']
+            if self.start and topic in (comms.axes, comms.coolDown):
+                    self.coolDown = message['coolDown']
+            elif topic == comms.stop:
+                self.gameOver = True
             elif topic == comms.initial:
                 return True
             elif topic == comms.start:

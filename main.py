@@ -22,7 +22,7 @@ import time
 import traceback
 import datetime
 
-testWithoutPi = True
+testWithoutPi = False
             
 def piProcess():
     '''
@@ -39,7 +39,8 @@ def piProcess():
     receiver = comms.Receiver((comms.initial,
                                comms.coolDown,
                                comms.axes,
-                               comms.start),
+                               comms.start,
+                               comms.stop),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -65,10 +66,11 @@ def piProcess():
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # set the rotation cooldown or end the game.
+    #while not pi.gameOver:
     while not pi.gameOver:
-        if pi.start:
-            if len(receiver.packages):
-                pi.unpack(receiver.packages.pop(0))
+        #if pi.start:
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
 
     stop = True
     transmit.join()
@@ -109,6 +111,7 @@ def pcProcess(stopCentral = 0):
                                comms.move,
                                comms.tag,
                                comms.start,
+                               comms.stop,
                                comms.axes,
                                comms.coolDown),
                               clientId)
@@ -225,7 +228,7 @@ def centralNodeProcess(stop):
     if settings.verbose: print("Starting central process")
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiverc = comms.Receiver((comms.piConfirmation,
+    receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
                                comms.command,
@@ -233,7 +236,7 @@ def centralNodeProcess(stop):
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
-    receiverc.start()
+    receiver.start()
     
     game = g.GamePlay(settings.numPlayers)
 
@@ -254,11 +257,11 @@ def centralNodeProcess(stop):
         transmitter.transmit(comms.initial, initialPackage)
         
         # Check if any packages in the queue
-        if len(receiverc.packages):
-            if settings.verbose: print("Central first loop found", receiverc.packages)
+        if len(receiver.packages):
+            if settings.verbose: print("Central first loop found", receiver.packages)
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc, ready = game.unpack(receiverc.packages.pop(0))
+            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
             print(playerId)
             if pi and playerId in pis:
                 pis.remove(playerId)
@@ -289,11 +292,11 @@ def centralNodeProcess(stop):
     while not game.gameOver and not stop.value:
         
         # Poll for messages in queue
-        if len(receiverc.packages):
+        if len(receiver.packages):
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            topic, message = game.unpack(receiverc.packages.pop(0))
+            topic, message = game.unpack(receiver.packages.pop(0))
                         
             # Generally this should result in some outbound message
             if message:
@@ -314,7 +317,9 @@ def centralNodeProcess(stop):
                 # If it's now ended, send a message to announce it
                 transmitter.transmit(topic, message)
     
-    receiverc.stop()
+    message = game.pack(stop.value)
+    transmitter.transmit(comms.stop, message)
+    receiver.stop()
 
 ### Select processes to run for instance
 if __name__ == '__main__':
@@ -335,7 +340,7 @@ if __name__ == '__main__':
             
             stop = multiprocessing.Value('i', False)
             
-            # player multiprocess must start first for Mac compatibility with
+            # player multiprocess must created first for Mac compatibility with
             # OpenCV when displaying stuff later
             player = multiprocessing.Process(target=pcProcess, args = (stop, ))
             player.daemon = True
