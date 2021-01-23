@@ -59,6 +59,7 @@ def piProcess():
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
     transmit = Thread(target=piTransmit, args = (transmitter, pi, lambda:stop,))
+    transmit.daemon = True
     transmit.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
@@ -136,6 +137,7 @@ def pcProcess():
     
     # Send main gameplay loop to separate thread
     packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
+    packageReceipt.daemon = True
     packageReceipt.start()
     
     ## transmitCommand methods not yet fully implemented
@@ -330,9 +332,13 @@ if __name__ == '__main__':
             # player multiprocess must start first for Mac compatibility with
             # OpenCV when displaying stuff later
             player = multiprocessing.Process(target=pcProcess)
+            player.daemon = True
             central = multiprocessing.Process(target=centralNodeProcess)
+            central.daemon = True
             central.start()
             player.start()
+            central.join()
+            player.join()
         except:
             print("An error occurred with primary node processes")
             traceback.print_exc() 
