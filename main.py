@@ -16,12 +16,13 @@ import comms
 from threading import Thread
 import cv2
 import multiprocessing
+#import multiprocess
 import random
 import time
 import traceback
 import datetime
 
-testWithoutPi = False
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -89,7 +90,7 @@ def piTransmit(transmitter, pi, stop):
             # before that return message is received
             pi.coolDown = True
 
-def pcProcess():
+def pcProcess(stopCentral = 0):
     '''
     Processes run on the pc. This detects a direction with the camera, sends it,
     and then waits for permission to detect a new direction. It also runs a
@@ -184,6 +185,8 @@ def pcProcess():
     
     stop = True
     packageReceipt.join()
+    if stopCentral:
+        stopCentral.value = True
     #transmitCommand.join()
     receiver.stop()
 
@@ -211,7 +214,7 @@ def pcTransmitCommand(transmitter, pc, stop):
         package = pc.pack(command)
         transmitter.transmit(comms.command, package)
     
-def centralNodeProcess():
+def centralNodeProcess(stop):
     '''
     Processes run on the central node only, which will run on a separate thread
     from that particular player's personal processes (pcProcess above). This
@@ -273,7 +276,7 @@ def centralNodeProcess():
         devicesPending = len(pcs)+len(pis)+len(readies)
         if settings.verbose:
             print("Pending pis:", pis)
-            print("Pending pis:", pcs)
+            print("Pending pcs:", pcs)
             print("Pending readies:", readies)
         time.sleep(1)
     
@@ -283,7 +286,7 @@ def centralNodeProcess():
     transmitter.transmit(comms.start, package)
     
     # Then start the game
-    while not game.gameOver:
+    while not game.gameOver and not stop.value:
         
         # Poll for messages in queue
         if len(receiverc.packages):
@@ -329,16 +332,21 @@ if __name__ == '__main__':
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
             
+            
+            stop = multiprocessing.Value('i', False)
+            
             # player multiprocess must start first for Mac compatibility with
             # OpenCV when displaying stuff later
-            player = multiprocessing.Process(target=pcProcess)
+            player = multiprocessing.Process(target=pcProcess, args = (stop, ))
             player.daemon = True
-            central = multiprocessing.Process(target=centralNodeProcess)
+            central = multiprocessing.Process(target=centralNodeProcess, args = (stop, ))
             central.daemon = True
-            central.start()
+            
             player.start()
-            central.join()
+            central.start()
+            
             player.join()
+            central.join()
         except:
             print("An error occurred with primary node processes")
             traceback.print_exc() 
