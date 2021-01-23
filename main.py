@@ -21,6 +21,7 @@ import random
 import time
 import traceback
 import datetime
+import sys
 
 testWithoutPi = False
             
@@ -33,7 +34,7 @@ def piProcess():
     
     pi = playerPi.PlayerPi(settings.playerId)
     displayReceived = False
-    stop = False
+    #stop = False
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
@@ -58,9 +59,10 @@ def piProcess():
     package = pi.pack(displayReceived)
     transmitter.transmit(comms.piConfirmation, package)
     
+    stop = [0]
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
-    transmit = Thread(target=piTransmit, args = (transmitter, pi, lambda:stop,))
+    transmit = Thread(target=piTransmit, args = (transmitter, pi, stop,))
     transmit.daemon = True
     transmit.start()
     
@@ -68,11 +70,11 @@ def piProcess():
     # set the rotation cooldown or end the game.
     #while not pi.gameOver:
     while not pi.gameOver:
-        #if pi.start:
         if len(receiver.packages):
             pi.unpack(receiver.packages.pop(0))
+    print("pi game over")
 
-    stop = True
+    stop[0] = True
     transmit.join()
     receiver.stop()
 
@@ -81,9 +83,9 @@ def piTransmit(transmitter, pi, stop):
     Separate thread for receiving player input on Pi and transmitting it to 
     central.
     '''
-    while not pi.gameOver and not stop():
-        if not pi.coolDown:
-            rotation = pi.getRotation()
+    while not pi.gameOver:
+        rotation = pi.getRotation(stop)
+        if rotation:
             package = pi.pack(rotation)
             transmitter.transmit(comms.rotation, package)
             

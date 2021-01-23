@@ -311,13 +311,11 @@ class Microphone:
         returns it.
         '''
         while(True):
+            r = sr.Recognizer()
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source)
             if self.active:
-                r = sr.Recognizer()
-    
                 with sr.Microphone() as source:
-                    r.adjust_for_ambient_noise(source)
-    
-                    
                     print("Please say something...")
     
                     audio = r.listen(source)
