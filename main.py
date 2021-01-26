@@ -16,10 +16,12 @@ import comms
 from threading import Thread
 import cv2
 import multiprocessing
+#import multiprocess
 import random
 import time
 import traceback
 import datetime
+import sys
 
 testWithoutPi = False
             
@@ -32,13 +34,14 @@ def piProcess():
     
     pi = playerPi.PlayerPi(settings.playerId)
     displayReceived = False
-    stop = False
+    #stop = False
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
                                comms.coolDown,
                                comms.axes,
-                               comms.start),
+                               comms.start,
+                               comms.stop),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -56,20 +59,22 @@ def piProcess():
     package = pi.pack(displayReceived)
     transmitter.transmit(comms.piConfirmation, package)
     
+    stop = [0]
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
-    transmit = Thread(target=piTransmit, args = (transmitter, pi, lambda:stop,))
+    transmit = Thread(target=piTransmit, args = (transmitter, pi, stop,))
     transmit.daemon = True
     transmit.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # set the rotation cooldown or end the game.
+    #while not pi.gameOver:
     while not pi.gameOver:
-        if pi.start:
-            if len(receiver.packages):
-                pi.unpack(receiver.packages.pop(0))
+        if len(receiver.packages):
+            pi.unpack(receiver.packages.pop(0))
+    print("pi game over")
 
-    stop = True
+    stop[0] = True
     transmit.join()
     receiver.stop()
 
@@ -78,9 +83,9 @@ def piTransmit(transmitter, pi, stop):
     Separate thread for receiving player input on Pi and transmitting it to 
     central.
     '''
-    while not pi.gameOver and not stop():
-        if not pi.coolDown:
-            rotation = pi.getRotation()
+    while not pi.gameOver:
+        rotation = pi.getRotation(stop)
+        if rotation:
             package = pi.pack(rotation)
             transmitter.transmit(comms.rotation, package)
             
@@ -89,7 +94,7 @@ def piTransmit(transmitter, pi, stop):
             # before that return message is received
             pi.coolDown = True
 
-def pcProcess():
+def pcProcess(stopCentral = 0):
     '''
     Processes run on the pc. This detects a direction with the camera, sends it,
     and then waits for permission to detect a new direction. It also runs a
@@ -108,6 +113,7 @@ def pcProcess():
                                comms.move,
                                comms.tag,
                                comms.start,
+                               comms.stop,
                                comms.axes,
                                comms.coolDown),
                               clientId)
@@ -184,6 +190,8 @@ def pcProcess():
     
     stop = True
     packageReceipt.join()
+    if stopCentral:
+        stopCentral.value = True
     #transmitCommand.join()
     receiver.stop()
 
@@ -211,7 +219,7 @@ def pcTransmitCommand(transmitter, pc, stop):
         package = pc.pack(command)
         transmitter.transmit(comms.command, package)
     
-def centralNodeProcess():
+def centralNodeProcess(stop):
     '''
     Processes run on the central node only, which will run on a separate thread
     from that particular player's personal processes (pcProcess above). This
@@ -222,7 +230,7 @@ def centralNodeProcess():
     if settings.verbose: print("Starting central process")
     
     clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiverc = comms.Receiver((comms.piConfirmation,
+    receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
                                comms.command,
@@ -230,7 +238,7 @@ def centralNodeProcess():
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
-    receiverc.start()
+    receiver.start()
     
     game = g.GamePlay(settings.numPlayers)
 
@@ -251,11 +259,11 @@ def centralNodeProcess():
         transmitter.transmit(comms.initial, initialPackage)
         
         # Check if any packages in the queue
-        if len(receiverc.packages):
-            if settings.verbose: print("Central first loop found", receiverc.packages)
+        if len(receiver.packages):
+            if settings.verbose: print("Central first loop found", receiver.packages)
             # If yes, unpack the first one and use to identify which device is
             # now connected
-            playerId, pi, pc, ready = game.unpack(receiverc.packages.pop(0))
+            playerId, pi, pc, ready = game.unpack(receiver.packages.pop(0))
             print(playerId)
             if pi and playerId in pis:
                 pis.remove(playerId)
@@ -273,7 +281,7 @@ def centralNodeProcess():
         devicesPending = len(pcs)+len(pis)+len(readies)
         if settings.verbose:
             print("Pending pis:", pis)
-            print("Pending pis:", pcs)
+            print("Pending pcs:", pcs)
             print("Pending readies:", readies)
         time.sleep(1)
     
@@ -283,14 +291,14 @@ def centralNodeProcess():
     transmitter.transmit(comms.start, package)
     
     # Then start the game
-    while not game.gameOver:
+    while not game.gameOver and not stop.value:
         
         # Poll for messages in queue
-        if len(receiverc.packages):
+        if len(receiver.packages):
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            topic, message = game.unpack(receiverc.packages.pop(0))
+            topic, message = game.unpack(receiver.packages.pop(0))
                         
             # Generally this should result in some outbound message
             if message:
@@ -311,7 +319,9 @@ def centralNodeProcess():
                 # If it's now ended, send a message to announce it
                 transmitter.transmit(topic, message)
     
-    receiverc.stop()
+    message = game.pack(stop.value)
+    transmitter.transmit(comms.stop, message)
+    receiver.stop()
 
 ### Select processes to run for instance
 if __name__ == '__main__':
@@ -329,16 +339,21 @@ if __name__ == '__main__':
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
             
-            # player multiprocess must start first for Mac compatibility with
+            
+            stop = multiprocessing.Value('i', False)
+            
+            # player multiprocess must created first for Mac compatibility with
             # OpenCV when displaying stuff later
-            player = multiprocessing.Process(target=pcProcess)
+            player = multiprocessing.Process(target=pcProcess, args = (stop, ))
             player.daemon = True
-            central = multiprocessing.Process(target=centralNodeProcess)
+            central = multiprocessing.Process(target=centralNodeProcess, args = (stop, ))
             central.daemon = True
-            central.start()
+            
             player.start()
-            central.join()
+            central.start()
+            
             player.join()
+            central.join()
         except:
             print("An error occurred with primary node processes")
             traceback.print_exc() 

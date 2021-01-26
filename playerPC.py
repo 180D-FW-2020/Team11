@@ -129,6 +129,8 @@ class PlayerPC:
                 self.playSpace.players[message['tagged'] - 1]['it'] = True
                 self.playSpace.players[message['untagged'] - 1]['it'] = False
                 self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+            elif topic == comms.stop:
+                self.gameOver = True
             elif topic == comms.initial and not self.initialReceived:
                 self.playSpace.__dict__= message
                 self.dist = int(1000/(self.playSpace.edgeLength + 2))
@@ -309,13 +311,11 @@ class Microphone:
         returns it.
         '''
         while(True):
+            r = sr.Recognizer()
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source)
             if self.active:
-                r = sr.Recognizer()
-    
                 with sr.Microphone() as source:
-                    r.adjust_for_ambient_noise(source)
-    
-                    
                     print("Please say something...")
     
                     audio = r.listen(source)
