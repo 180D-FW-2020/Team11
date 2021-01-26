@@ -90,7 +90,7 @@ class PlayerPi:
             elif topic == comms.assign:
                 if message['clientId'] == self.clientId:
                     self.playerId = message['playerId']
-                if settings.verbose: print('playerId set to', self.playerId)
+                if settings.verbose: print('########## playerId set to ############', self.playerId)
             elif topic == comms.start:
                 self.start = True
         except:

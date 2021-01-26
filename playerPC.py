@@ -147,7 +147,7 @@ class PlayerPC:
                 elif topic == comms.assign:
                     if not self.playerId and message['clientId'] == self.clientId:
                         self.playerId = message['playerId']
-                        if settings.verbose: print('playerId set to', self.playerId)
+                        if settings.verbose: print('########## playerId set to ############', self.playerId)
                 elif topic == comms.start:
                     self.start = True
             return False
@@ -324,7 +324,7 @@ class Microphone:
                     r.adjust_for_ambient_noise(source)
     
                     
-                    print("Please say something...")
+                    print("############# Please say something... ##################")
     
                     audio = r.listen(source)
     
