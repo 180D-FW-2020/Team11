@@ -37,7 +37,7 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            edgeLength, numObstacles, numPowerups = (10, 4, 0)
+            edgeLength, numObstacles, numPowerups = (10, 0, 4)
             return edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
@@ -351,7 +351,8 @@ class PlaySpace:
             traceback.print_exc() 
     
     def replacePowerUp(self, index):
-        np.delete(self.powerUps, index)
+        mypower = self.powerUps
+        mypower.pop(index)
         # update display to remove powerup
         position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                     r.randrange(1, self.edgeLength + 1, 1),
@@ -370,9 +371,10 @@ class PlaySpace:
                 else:
                     position[0] += 1          
                 
-                self.powerUps.append({'powerUp': powerupID,
+        self.powerUps.append({'powerUp': powerupID,
                                 'position': position})
         # update display to indicate new powerup
+        self.powerUps = mypower
         return self.powerUps
 
     def checkCollision(self, playerId, direction):
@@ -490,14 +492,14 @@ class PlaySpace:
                             self.replacePowerUp(i)
                         else:
                             collision = True
-                        overlap = int(np.linalg.norm(difference))
+                            overlap = int(np.linalg.norm(difference))
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
                         if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[i]['powerUp']
                             self.replacePowerUp(i)
                         else:
                             collision = True
-                        overlap = int(np.linalg.norm(difference))
+                            overlap = int(np.linalg.norm(difference))
 
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
@@ -533,7 +535,7 @@ class PlaySpace:
                             self.replacePowerUp(i)
                         else:
                             collision = True
-                        overlap = 1
+                            overlap = 1
 
                     #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
                             # tag = playerId
@@ -600,8 +602,10 @@ class PlaySpace:
             traceback.print_exc()
 
 if __name__ == "__main__":
-    myp = PlaySpace(1,10,1,0)
+    myp = PlaySpace(1,10,0,1)
     myp.players[0]['position'] = np.array([5,9,5])
-    myp.obstacles[0]['position'] = np.array([5,10,5])
-
+    myp.powerUps[0]['position'] = np.array([5,10,5])
     print(myp.checkCollision(1, '^'))
+    myp.movePlayer(1, '^')
+    print(myp.powerUps)
+    print(myp.players)
