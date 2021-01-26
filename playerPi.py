@@ -24,12 +24,15 @@ ACC_MEDIANTABLESIZE = 9         # Median filter table size for accelerometer. Hi
 MAG_MEDIANTABLESIZE = 9         # Median filter table size for magnetometer. Higher = smoother but a longer delay
 
 class PlayerPi:
-    def __init__(self, playerId):
+    def __init__(self, clientId):
         try:
             # This is a dummy number, how do we set each player number distinctly
             # without hardcoding?
             
-            self.playerId = playerId
+            self.playerId = 0
+            self.clientId = clientId
+            
+            self.initialReceived = False
             self.imu = BerryIMU()
             self.gameOver = False
             self.coolDown = False
@@ -83,7 +86,11 @@ class PlayerPi:
             if topic in (comms.axes, comms.coolDown):
                 self.coolDown = message['coolDown']
             elif topic == comms.initial:
-                return True
+                self.initialReceived = True
+            elif topic == comms.assign:
+                if message['clientId'] == self.clientId:
+                    self.playerId = message['playerId']
+                if settings.verbose: print('playerId set to', self.playerId)
             elif topic == comms.start:
                 self.start = True
         except:

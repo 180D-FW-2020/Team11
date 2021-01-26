@@ -30,12 +30,13 @@ def piProcess():
     '''
     if settings.verbose: print("Starting pi process")
     
-    pi = playerPi.PlayerPi(settings.playerId)
-    displayReceived = False
+    clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
+    pi = playerPi.PlayerPi(clientId)
+    #displayReceived = False
     stop = False
     
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
+                               comms.assign,
                                comms.coolDown,
                                comms.axes,
                                comms.start),
@@ -44,17 +45,32 @@ def piProcess():
     receiver.start()
     
     #First, get initial load with full playspace info
-    while not displayReceived:
+    while not pi.initialReceived:
         
         # Keep checking for an initial load
         if len(receiver.packages):
             # Gets true if initial load received, false and deletes message
             # from queue otherwise
-            displayReceived = pi.unpack(receiver.packages.pop(0))
+            pi.unpack(receiver.packages.pop(0))
             
     # Send handshake to confirm receipt of first load
-    package = pi.pack(displayReceived)
+    package = pi.pack(pi.clientId)
     transmitter.transmit(comms.piConfirmation, package)
+    
+    # Receive playerId. May not correspond to playerId for the same player's PC
+    # but that doesn't matter, this is only for ease of reading logs
+    
+    while not pi.playerId:
+    
+        # Keep checking for a message assigning the player number
+        if len(receiver.packages):
+            # Gets true if initial load received, false and deletes message
+            # from queue otherwise
+            pi.unpack(receiver.packages.pop(0))
+            
+    # Send handshake to confirm receipt of playerId
+    package = pi.pack(pi.playerId)
+    transmitter.transmit(comms.ready, package)
     
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
@@ -99,12 +115,13 @@ def pcProcess():
     '''   
     if settings.verbose: print("Starting pc process")
     
-    pc = playerPC.PlayerPC(settings.playerId, settings.numPlayers)
-    displayReceived = False
+    clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
+    pc = playerPC.PlayerPC(settings.numPlayers, clientId)
+    #displayReceived = False
     stop = False
     
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.initial,
+                               comms.assign,
                                comms.move,
                                comms.tag,
                                comms.start,
@@ -115,18 +132,26 @@ def pcProcess():
     receiver.start()
     
     #First, get initial load with full playspace info
-    while not displayReceived:
+    while not pc.initialReceived:
         
         # Keep checking for an initial load
         if len(receiver.packages):
             
-            # If message is initial load, displayReceived will be True
-            displayReceived = pc.unpack(receiver.packages.pop(0))
+            # Get initial load and set the base display background
+            pc.unpack(receiver.packages.pop(0))
             pc.updateDisplay()
             
     # Send handshake to confirm receipt of first load
-    package = pc.pack(displayReceived)
+    package = pc.pack(pc.clientId)
     transmitter.transmit(comms.pcConfirmation, package)
+    
+    while not pc.playerId:
+    
+        # Keep checking for an initial load
+        if len(receiver.packages):
+            # Gets true if initial load received, false and deletes message
+            # from queue otherwise
+            pc.unpack(receiver.packages.pop(0))
     
     while not pc.ready:
         command = pc.getCommand()
@@ -221,8 +246,8 @@ def centralNodeProcess():
     '''
     if settings.verbose: print("Starting central process")
     
-    clientId = f'python-mqtt-{random.randint(0, 1000)}'
-    receiverc = comms.Receiver((comms.piConfirmation,
+    clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
+    receiver = comms.Receiver((comms.piConfirmation,
                                comms.pcConfirmation,
                                comms.direction,
                                comms.command,
@@ -230,7 +255,7 @@ def centralNodeProcess():
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
-    receiverc.start()
+    receiver.start()
     
     game = g.GamePlay(settings.numPlayers)
 
@@ -239,9 +264,16 @@ def centralNodeProcess():
     # Send initial message until all devices confirm receipt
     devicesPending = True
     pcs = [i for i in range(1, settings.numPlayers+1)]
+    readiesPC = [i for i in range(1, settings.numPlayers+1)]
+    pcsReceived = []
 
-    if testWithoutPi: pis = []
-    else: pis = [i for i in range(1, settings.numPlayers+1)]
+    if testWithoutPi:
+        pis = []
+        readiesPi = []
+    else:
+        pis = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
+        readiesPi = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
+    pisReceived = []
     
     readies = [i for i in range(1, settings.numPlayers+1)]
     
@@ -251,30 +283,36 @@ def centralNodeProcess():
         transmitter.transmit(comms.initial, initialPackage)
         
         # Check if any packages in the queue
-        if len(receiverc.packages):
-            if settings.verbose: print("Central first loop found", receiverc.packages)
+        if len(receiver.packages):
+            if settings.verbose: print("Central first loop found", receiver.packages)
             # If yes, unpack the first one and use to identify which device is
-            # now connected
-            playerId, pi, pc, ready = game.unpack(receiverc.packages.pop(0))
-            print(playerId)
-            if pi and playerId in pis:
-                pis.remove(playerId)
-                if settings.verbose:
-                    print("Player {}'s pi has arrived.".format(playerId))
-            elif pc and playerId in pcs:
-                pcs.remove(playerId)
-                if settings.verbose:
-                    print("Player {}'s pc has arrived.".format(playerId))
-            elif ready and playerId in readies:
-                readies.remove(playerId)
-                if settings.verbose:
-                    print("Player {} is ready.".format(playerId))
+            # now connected. Confirmation topics are for the first step in the 
+            # handshake, providing central with a client ID for the PC or Pi.
+            # Central then associates a player ID with that device and sends it
+            # out. When the device has received its number successfully, it
+            # sends a Ready, completing device registration.
+            client, player, pi, pc, ready = game.unpack(receiver.packages.pop(0))
+            
+            if pi and client not in pisReceived:
+                pisReceived.append(client)
+                package = game.pack(clientId = client, playerId = pis.pop(0))
+                transmitter.transmit(comms.assign, package)
+            elif pc and client not in pcsReceived:
+                pcsReceived.append(client)
+                package = game.pack(clientId = client, playerId = pcs.pop(0))
+                transmitter.transmit(comms.assign, package)
+            elif ready:
+                if player in readiesPC:
+                    readiesPC.remove(player)
+                elif player in readiesPi:
+                    readiesPi.remove(player)
         # Repeat until no devices left to join
-        devicesPending = len(pcs)+len(pis)+len(readies)
+        devicesPending = len(pcs)+len(pis)+len(readiesPC)+len(readiesPi)
         if settings.verbose:
             print("Pending pis:", pis)
-            print("Pending pis:", pcs)
-            print("Pending readies:", readies)
+            print("Pending pcs:", pcs)
+            print("Pending ready pis:", readiesPi)
+            print("Pending ready pcs:", readiesPC)
         time.sleep(1)
     
     game.start = True
@@ -286,11 +324,11 @@ def centralNodeProcess():
     while not game.gameOver:
         
         # Poll for messages in queue
-        if len(receiverc.packages):
+        if len(receiver.packages):
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            topic, message = game.unpack(receiverc.packages.pop(0))
+            topic, message = game.unpack(receiver.packages.pop(0))
                         
             # Generally this should result in some outbound message
             if message:
@@ -311,7 +349,7 @@ def centralNodeProcess():
                 # If it's now ended, send a message to announce it
                 transmitter.transmit(topic, message)
     
-    receiverc.stop()
+    receiver.stop()
 
 ### Select processes to run for instance
 if __name__ == '__main__':
