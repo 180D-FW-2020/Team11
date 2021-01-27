@@ -15,13 +15,14 @@ import copy
 ITSPEED = 2 #spaces
 
 class GamePlay:
-    def __init__(self, numPlayers):
+    def __init__(self):
         try:
             self.gameOver = False
             self.start = False
+            self.numPlayers = 0
             
             args = self.settings()
-            self.playSpace = PlaySpace(numPlayers, *args)
+            self.playSpace = PlaySpace(*args)
             
         except:
             print("An error occurred initializing GamePlay")
@@ -37,8 +38,8 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            edgeLength, numObstacles, numPowerups = (10, 0, 0)
-            return edgeLength, numObstacles, numPowerups
+            self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.numPlayers, 10, 0, 0)
+            return self.numPlayers, edgeLength, numObstacles, numPowerups
         except:
             print("An error occurred getting settings")
             traceback.print_exc() 

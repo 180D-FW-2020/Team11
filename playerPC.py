@@ -37,7 +37,7 @@ class PlayerPC:
     includes interacting with the camera and microphone, packing and unpacking 
     messages to and from the central node, and displaying updates.    
     '''
-    def __init__(self, numPlayers, clientId):
+    def __init__(self, clientId):
         try:
             self.playerId = 0
             self.clientId = clientId
@@ -46,7 +46,7 @@ class PlayerPC:
             self.displayUpdate = False
             
             #light version of playSpace for display only
-            self.playSpace = g.PlaySpace(numPlayers, 0, 0, 0)
+            self.playSpace = g.PlaySpace(0, 0, 0, 0)
             self.displayBase = 0
             self.display = 0
             self.dist = 0

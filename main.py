@@ -118,9 +118,9 @@ def pcProcess(stopCentral = 0):
     if settings.verbose: print("Starting pc process")
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
-    pc = playerPC.PlayerPC(settings.numPlayers, clientId)
+    pc = playerPC.PlayerPC(clientId)
     #displayReceived = False
-    stop = False
+    stop = [0]
     
     receiver = comms.Receiver((comms.initial,
                                comms.assign,
@@ -165,7 +165,7 @@ def pcProcess(stopCentral = 0):
             transmitter.transmit(comms.ready, package)
     
     # Send main gameplay loop to separate thread
-    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, lambda:stop,))
+    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
     packageReceipt.daemon = True
     packageReceipt.start()
     
@@ -211,7 +211,7 @@ def pcProcess(stopCentral = 0):
     # lags/fails
     #cv2.waitKey(1)
     
-    stop = True
+    stop[0] = True
     packageReceipt.join()
     if stopCentral:
         stopCentral.value = True
@@ -224,7 +224,7 @@ def pcPackageReceipt(receiver, pc, stop):
     event. Does not update the display on screen, which must be handled in the 
     main thread for Mac compatibility.
     '''
-    while not pc.gameOver and not stop():
+    while not pc.gameOver and not stop[0]:
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
             pc.updateDisplay()
@@ -263,25 +263,25 @@ def centralNodeProcess(stop):
     transmitter = comms.Transmitter()
     receiver.start()
     
-    game = g.GamePlay(settings.numPlayers)
+    game = g.GamePlay()
 
     initialPackage = game.pack()
     
     # Send initial message until all devices confirm receipt
     devicesPending = True
-    pcs = [i for i in range(1, settings.numPlayers+1)]
-    readiesPC = [i for i in range(1, settings.numPlayers+1)]
+    pcs = [i for i in range(1, game.numPlayers+1)]
+    readiesPC = [i for i in range(1, game.numPlayers+1)]
     pcsReceived = []
 
     if testWithoutPi:
         pis = []
         readiesPi = []
     else:
-        pis = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
-        readiesPi = [i for i in range(settings.numPlayers+1, 2*settings.numPlayers+1)]
+        pis = [i for i in range(game.numPlayers+1, 2*game.numPlayers+1)]
+        readiesPi = [i for i in range(game.numPlayers+1, 2*game.numPlayers+1)]
     pisReceived = []
     
-    readies = [i for i in range(1, settings.numPlayers+1)]
+    readies = [i for i in range(1, game.numPlayers+1)]
     
     while devicesPending:
         
