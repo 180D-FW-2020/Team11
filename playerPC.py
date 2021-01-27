@@ -12,6 +12,7 @@ import traceback
 import copy
 import comms
 import speech_recognition as sr
+import settings
 
 cameraWorking = True
 
@@ -36,11 +37,10 @@ class PlayerPC:
     includes interacting with the camera and microphone, packing and unpacking 
     messages to and from the central node, and displaying updates.    
     '''
-    def __init__(self, playerId, numPlayers):
+    def __init__(self, numPlayers, clientId):
         try:
-            # This is a dummy number, how do we set each player number distinctly
-            # without hardcoding?
-            self.playerId = playerId
+            self.playerId = 0
+            self.clientId = clientId
             self.camera = Camera()
             self.microphone = Microphone()
             self.displayUpdate = False
@@ -117,33 +117,39 @@ class PlayerPC:
             # in which it should not be.
             # 1 is a dummy value
             topic, message = package
-            if topic == comms.move:
-                self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
-            elif topic == comms.axes:
-                self.playSpace.verticalAxis = message['verticalAxis']
-                self.playSpace.horizontalAxis = message['horizontalAxis']
-                self.playSpace.rotationCoolDownTime = message['coolDown']
-            elif topic == comms.coolDown:
-                self.playSpace.rotationCoolDownTime = message['coolDown']
-            elif topic == comms.tag:
-                self.playSpace.players[message['tagged'] - 1]['it'] = True
-                self.playSpace.players[message['untagged'] - 1]['it'] = False
-                self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
-            elif topic == comms.stop:
+            if topic == comms.stop:
                 self.gameOver = True
-            elif topic == comms.initial and not self.initialReceived:
-                self.playSpace.__dict__= message
-                self.dist = int(1000/(self.playSpace.edgeLength + 2))
-                self.displayBase = np.zeros((1000,1700,3), np.uint8)
-                for i in range(self.playSpace.edgeLength + 1):
-                    self.displayBase = cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
-                for i in range(self.playSpace.edgeLength + 1):
-                    self.displayBase = cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
-                # Return True for initial message
-                self.initialReceived = True
-                return True
-            elif topic == comms.start:
-                self.start = True
+            elif self.start:
+                if topic == comms.move:
+                    self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+                elif topic == comms.axes:
+                    self.playSpace.verticalAxis = message['verticalAxis']
+                    self.playSpace.horizontalAxis = message['horizontalAxis']
+                    self.playSpace.rotationCoolDownTime = message['coolDown']
+                elif topic == comms.coolDown:
+                    self.playSpace.rotationCoolDownTime = message['coolDown']
+                elif topic == comms.tag:
+                    self.playSpace.players[message['tagged'] - 1]['it'] = True
+                    self.playSpace.players[message['untagged'] - 1]['it'] = False
+                    self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+            else:
+                if topic == comms.initial and not self.initialReceived:
+                    self.playSpace.__dict__= message
+                    self.dist = int(1000/(self.playSpace.edgeLength + 2))
+                    self.displayBase = np.zeros((1000,1700,3), np.uint8)
+                    for i in range(self.playSpace.edgeLength + 1):
+                        self.displayBase = cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
+                    for i in range(self.playSpace.edgeLength + 1):
+                        self.displayBase = cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
+                    # Return True for initial message
+                    self.initialReceived = True
+                    #return True
+                elif topic == comms.assign:
+                    if not self.playerId and message['clientId'] == self.clientId:
+                        self.playerId = message['playerId']
+                        if settings.verbose: print('########## playerId set to ############', self.playerId)
+                elif topic == comms.start:
+                    self.start = True
             return False
         except:
             print("Error getting package from primary node")

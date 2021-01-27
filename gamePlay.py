@@ -63,29 +63,35 @@ class GamePlay:
                 else:
                     print("Message received after game start without direction or rotation")
             else:
+                # Before game start, messages are returned with values
+                # clientId (str), playerId (int), pi (bool), pc (bool), ready
+                # (bool). 
                 if topic == comms.piConfirmation:
-                    return message['playerId'], True, False, False
+                    return message['val'], 0, True, False, False
                 elif topic == comms.pcConfirmation:
-                    return message['playerId'], False, True, False
+                    return message['val'], 0, False, True, False
                 elif topic == comms.ready:
-                    return message['playerId'], False, False, True
+                    return 0, message['playerId'], False, False, True
                 # Unplanned case
                 else:
                     print("Message received before game start without pi or pc confirmation")
-                    return False, False, False, False
+                    return False, False, False, False, False
             
         except:
             print("An error occurred getting player input")
             traceback.print_exc() 
     
-    def pack(self, message = None):
+    def pack(self, message = None, clientId = None, playerId = None):
         '''
         Packs initial load of playspace for players.
         
         Returns message for transmission.
         '''
         try:
-            if not message:
+            if clientId:
+                return {'clientId': clientId,
+                    'playerId': playerId}
+            elif not message:
                 message = copy.deepcopy(self.playSpace.__dict__)
                 for p in message['players']:
                     p['position'] = p['position'].tolist()
