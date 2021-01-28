@@ -308,6 +308,7 @@ class Microphone:
         self.microphone = sr.Microphone()
         for i, mic in enumerate(self.microphone.list_microphone_names()):
             print(i,mic)
+        print("Device", self.microphone.device_index())
             # if "sound mapper" not in mic.lower():
             #     self.microphone.device_index = i
             #     break
