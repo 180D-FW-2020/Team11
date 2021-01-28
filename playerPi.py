@@ -10,6 +10,7 @@ import sys
 import math
 import traceback
 import comms
+import time
 if settings.isPi:
     import IMU
 
@@ -24,12 +25,12 @@ ACC_MEDIANTABLESIZE = 9         # Median filter table size for accelerometer. Hi
 MAG_MEDIANTABLESIZE = 9         # Median filter table size for magnetometer. Higher = smoother but a longer delay
 
 class PlayerPi:
-    def __init__(self, playerId):
+    def __init__(self, clientId):
         try:
-            # This is a dummy number, how do we set each player number distinctly
-            # without hardcoding?
+            self.playerId = 0
+            self.clientId = clientId
             
-            self.playerId = playerId
+            self.initialReceived = False
             self.imu = BerryIMU()
             self.gameOver = False
             self.coolDown = False
@@ -39,13 +40,15 @@ class PlayerPi:
             print("An error occurred initializing PlayerPi")
             traceback.print_exc() 
             
-    def getRotation(self):
+    def getRotation(self, stop):
         '''
         Gets rotation information from the BerryIMU.
         '''
         try:
-            rotation = self.imu.getRotation()
-            return rotation
+            if not self.coolDown and not stop[0]:
+                rotation = self.imu.getRotation(stop)
+                return rotation
+            else: return False
         except:
             print("Error getting rotation information from the IMU")
             traceback.print_exc() 
@@ -77,13 +80,18 @@ class PlayerPi:
             # Message data may contain info that is only relevant for the
             # playerPC, so this is just looking for the current rotation
             # cooldown state. If on cooldown rotation, the pi can't send.
-            
             topic, message = package
             
-            if topic in (comms.axes, comms.coolDown):
+            if self.start and topic in (comms.axes, comms.coolDown):
                 self.coolDown = message['coolDown']
+            elif topic == comms.stop:
+                self.gameOver = True
             elif topic == comms.initial:
-                return True
+                self.initialReceived = True
+            elif topic == comms.assign:
+                if message['clientId'] == self.clientId:
+                    self.playerId = message['playerId']
+                if settings.verbose: print('########## playerId set to ############', self.playerId)
             elif topic == comms.start:
                 self.start = True
         except:
@@ -114,13 +122,12 @@ class BerryIMU:
             print("Error initializing IMU")
             traceback.print_exc() 
             
-    def getRotation(self):
+    def getRotation(self, stop):
         '''
         Looks for a rotation command, and when one is found, classifies and
         returns it.
         '''
         try:
-            
             if settings.isPi:
                 self.acc_medianTable1X = [1] * ACC_MEDIANTABLESIZE
                 self.acc_medianTable1Y = [1] * ACC_MEDIANTABLESIZE
@@ -134,7 +141,7 @@ class BerryIMU:
                 self.oldZAccRawValue = 0
                 
                 #Loop until retrieve a rotation
-                while True:
+                while not stop[0]:
                     
                     #Read the accelerometer,gyroscope and magnetometer values
                     ACCx = IMU.readACCx()
@@ -204,7 +211,7 @@ class BerryIMU:
                     if rotation:
                         print('found rotation', rotation)
                         return rotation
-            while not settings.isPi:
+            if not settings.isPi:
                 pass
                 # val = input()
                 # if val == 'w': rotation = '^'
