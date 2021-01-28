@@ -115,6 +115,7 @@ class PlaySpace:
             self.horizontalAxis = np.array([1,0,0])
                         
             self.rotationCoolDownTime = 0
+            self.freezeTimer = 0
             
             if numPlayers:
                 self.numPlayers = numPlayers
@@ -249,6 +250,12 @@ class PlaySpace:
         makes the move and returns info about the move.
         '''
         try:
+            #first check if play is frozen
+            if self.powerUpTimerRemaining(0):
+                if self.players[playerId-1]['powerUpActive'] != 2:
+                    topic = 0
+                    displayUpdates = 0
+                    return topic, displayUpdates
             if settings.verbose: print("start of move: ", self.players[playerId-1])
             # First check for collision
             collision, tag, powerUp, overlap = self.checkCollision(playerId, direction)
@@ -272,6 +279,9 @@ class PlaySpace:
             else:
                 if self.players[playerId - 1]['it']: speed = ITSPEED
                 else: speed = 1
+
+                if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
+                    speed = 2
                 
                 if (powerUp != 0):
                     self.players[playerId-1]['powerUpHeld'] = powerUp
@@ -570,6 +580,20 @@ class PlaySpace:
                 self.setPowerUpTimer(playerId)
                 pass
             elif self.players[playerId-1]['powerUpHeld'] == 3:
+                #swap places with an existing player
+                #recquires comms and display updates
+                playerSwap = r.randrange(1, self.numPlayers+1, 1)
+                if playerSwap != playerId:
+                    xValue = self.players[playerId-1]['position'][0]
+                    yValue = self.players[playerId-1]['position'][1]
+                    zValue = self.players[playerId-1]['position'][2]
+                    self.players[playerId-1]['position'][0] = self.players[playerSwap-1]['position'][0]
+                    self.players[playerId-1]['position'][1] = self.players[playerSwap-1]['position'][1]
+                    self.players[playerId-1]['position'][2] = self.players[playerSwap-1]['position'][2]
+                    self.players[playerSwap-1]['position'][0] = xValue
+                    self.players[playerSwap-1]['position'][1] = yValue
+                    self.players[playerSwap-1]['position'][2] = zValue
+
                 pass
         except:
             print("An error occurred activating powerup")
@@ -580,7 +604,10 @@ class PlaySpace:
         Sets the rotation cooldown to end a designated time after now
         '''
         try:
-            self.players[playerId-1]['powerUpTimer'] = datetime.datetime.now() + datetime.timedelta(seconds = settings.ROTATION_COOLDOWN)
+            if playerId != 0:
+                self.players[playerId-1]['powerUpTimer'] = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
+            else:
+                self.freezeTimer = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
         except:
             print("An error occurred setting the rotation cooldown")
             traceback.print_exc() 
@@ -593,21 +620,42 @@ class PlaySpace:
             # Check if a timer is even in place. If not, abort. This should
             # be an edge case: the method should only be called when a timer
             # is known to be active
-            if not self.players[playerId-1]['powerUpTimer']:
-                if settings.verbose:
-                    print("powerUpTimerRemaining called without checking",
-                          "if timer in place.")
-                return False
-            
-            # If timer is in place, check to see if it ended before now. If
-            # yes, the timer is over, so zero out the timer and return false
-            elif self.players[playerId-1]['powerUpTimer'] < datetime.datetime.now():
-                self.players[playerId-1]['powerUpTimer'] = 0
-                return False
-            
-            # Otherwise the timer is still active, so return true and keep things going
+            if playerID != 0:
+                if not self.players[playerID-1]['powerUpTimer']:
+                    if settings.verbose:
+                        print("powerUpTimerRemaining called without checking",
+                            "if timer in place.")
+                    return False
+                
+                # If timer is in place, check to see if it ended before now. If
+                # yes, the timer is over, so zero out the timer and return false
+                elif self.players[playerID-1]['powerUpTimer'] < datetime.datetime.now():
+                    self.players[playerID-1]['powerUpTimer'] = 0
+                    self.players[playerID-1]['powerUpActive'] = 0
+                    return False
+                
+                # Otherwise the timer is still active, so return true and keep things going
+                else:
+                    return True
             else:
-                return True
+                if not self.freezeTimer:
+                    if settings.verbose:
+                        print("powerUpTimerRemaining called without checking",
+                            "if timer in place.")
+                    return False
+                
+                # If timer is in place, check to see if it ended before now. If
+                # yes, the timer is over, so zero out the timer and return false
+                elif self.freezeTimer < datetime.datetime.now():
+                    self.freezeTimer = 0
+                    for i, player in enumerate(self.players):
+                        if player['powerUpActive'] == 2:
+                            player['powerUpActive'] = 0
+                            return False
+                
+                # Otherwise the timer is still active, so return true and keep things going
+                else:
+                    return True
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
