@@ -698,10 +698,3 @@ class PlaySpace:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
 
-if __name__ == "__main__":
-    myp = PlaySpace(1,10,0,1)
-    myp.players[0]['position'] = np.array([5,9,5])
-    myp.powerUps[0]['position'] = np.array([5,10,5])
-    myp.movePlayer(1, '^')
-    print(myp.powerUps)
-    print(myp.players)
