@@ -78,7 +78,7 @@ class PlayerPC:
         Gets command information from the microphone.
         '''
         try:
-            self.microphone.listen()
+            #self.microphone.listen()
             command = self.microphone.getCommand()
             return command
         except:
@@ -303,7 +303,13 @@ class Camera:
             
 class Microphone:
     def __init__(self):
-        self.active = False
+        #self.active = False
+        self.recognizer = sr.Recognizer()
+        self.microphone = sr.Microphone()
+        for i, mic in enumerate(self.microphone.list_microphone_names()):
+            if "sound mapper" not in mic.lower():
+                self.microphone.device_index = i
+                break
 
     def listen(self):
         self.active = True
@@ -316,33 +322,31 @@ class Microphone:
         Listens for a voice command, and when one is found, classifies and
         returns it.
         '''
-        while(True):
-            r = sr.Recognizer()
-            with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source)
-            if self.active:
-                with sr.Microphone() as source:
+        try:
+            with self.microphone as source:
+                while(True):
+                    self.recognizer.adjust_for_ambient_noise(source)
+                    
                     print("Please say something...")
     
-                    audio = r.listen(source)
+                    audio = self.recognizer.listen(source)
     
-                    command = ""
-    
-                    try:
-                        # All the getting command stuff. 0 is a dummy number
-                        command = r.recognize_google(audio)
-    
-    
-                        print("You said : \n " + command)
-    
-    
-                        #Check for conditionals
-                        for key in phrases:
-                            if(key.lower() in command.lower()):
-                                return phrases[key]
-    
-                    except:
-                        print("Error getting command from microphone")
-                        traceback.print_exc() 
+                    
+                    # All the getting command stuff. 0 is a dummy number
+                    command = self.recognizer.recognize_google(audio)
+
+                    print("You said : \n " + command)
+
+                    #Check for conditionals
+                    for key in phrases:
+                        if(key.lower() in command.lower()):
+                            return phrases[key]
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            print (message)
+                # except:
+                #     print("Error getting command from microphone")
+                #     traceback.print_exc() 
 
 
