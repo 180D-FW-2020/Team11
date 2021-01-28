@@ -164,7 +164,9 @@ class PlaySpace:
                 players.append({'playerId': i,
                                 'position': position,
                                 'it': it,
-                                'powerUpHeld': 0})
+                                'powerUpHeld': 0,
+                                'powerUpActive': 0,
+                                'powerUpTimer': 0})
             
             return players, playersNotIt
         except:
@@ -271,6 +273,9 @@ class PlaySpace:
                 if self.players[playerId - 1]['it']: speed = ITSPEED
                 else: speed = 1
                 
+                if (powerUp != 0):
+                    self.players[playerId-1]['powerUpHeld'] = powerUp
+
                 if direction == '^':
                     if collision and (overlap > 1):
                         self.players[playerId - 1]['position'] += (overlap-1)*self.verticalAxis
@@ -554,14 +559,58 @@ class PlaySpace:
                 pass
             elif self.players[playerId-1]['powerUpHeld'] == 1:
                 #speed powerup
+                self.players[playerId-1]['powerUpHeld'] == 0
+                self.players[playerId-1]['powerUpActive'] == 1
+                self.setPowerUpTimer(playerId)
                 pass
             elif self.players[playerId-1]['powerUpHeld'] == 2:
+                #freeze powerup
+                self.players[playerId-1]['powerUpHeld'] == 0
+                self.players[playerId-1]['powerUpActive'] == 2
+                self.setPowerUpTimer(playerId)
                 pass
             elif self.players[playerId-1]['powerUpHeld'] == 3:
                 pass
         except:
             print("An error occurred activating powerup")
             traceback.print_exc() 
+
+    def setPowerUpTimer(self, playerId):
+        '''
+        Sets the rotation cooldown to end a designated time after now
+        '''
+        try:
+            self.players[playerId-1]['powerUpTimer'] = datetime.datetime.now() + datetime.timedelta(seconds = settings.ROTATION_COOLDOWN)
+        except:
+            print("An error occurred setting the rotation cooldown")
+            traceback.print_exc() 
+    
+    def powerUpTimerRemaining(self, playerID):
+        '''
+        Checks if the cooldown is active. Return true if yes, false if no
+        '''
+        try:
+            # Check if a timer is even in place. If not, abort. This should
+            # be an edge case: the method should only be called when a timer
+            # is known to be active
+            if not self.players[playerId-1]['powerUpTimer']:
+                if settings.verbose:
+                    print("powerUpTimerRemaining called without checking",
+                          "if timer in place.")
+                return False
+            
+            # If timer is in place, check to see if it ended before now. If
+            # yes, the timer is over, so zero out the timer and return false
+            elif self.players[playerId-1]['powerUpTimer'] < datetime.datetime.now():
+                self.players[playerId-1]['powerUpTimer'] = 0
+                return False
+            
+            # Otherwise the timer is still active, so return true and keep things going
+            else:
+                return True
+        except:
+            print("An error occurred decrementing the rotation cooldown")
+            traceback.print_exc()
 
     def setRotationCoolDown(self):
         '''
@@ -605,7 +654,6 @@ if __name__ == "__main__":
     myp = PlaySpace(1,10,0,1)
     myp.players[0]['position'] = np.array([5,9,5])
     myp.powerUps[0]['position'] = np.array([5,10,5])
-    print(myp.checkCollision(1, '^'))
     myp.movePlayer(1, '^')
     print(myp.powerUps)
     print(myp.players)
