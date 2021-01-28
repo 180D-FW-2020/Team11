@@ -307,9 +307,10 @@ class Microphone:
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
         for i, mic in enumerate(self.microphone.list_microphone_names()):
-            if "sound mapper" not in mic.lower():
-                self.microphone.device_index = i
-                break
+            print(i,mic)
+            # if "sound mapper" not in mic.lower():
+            #     self.microphone.device_index = i
+            #     break
 
     def listen(self):
         self.active = True
