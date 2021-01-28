@@ -175,6 +175,28 @@ class PlayerPC:
                     if player['it']:
                         self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                                           int(self.dist/3), itColor, int(self.dist/10))
+
+                for i, obstacles in enumerate(self.playSpace.obstacles):
+                    hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
+                    if hpos<0:
+                        hpos = self.playSpace.edgeLength + hpos + 1
+                    vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
+                    if vpos<0:
+                        vpos = self.playSpace.edgeLength + vpos + 1
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                          int(self.dist/3), playerColors[2], -1)
+                
+                for i, powerups in enumerate(self.playSpace.powerUps):
+                    hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
+                    if hpos<0:
+                        hpos = self.playSpace.edgeLength + hpos + 1
+                    vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
+                    if vpos<0:
+                        vpos = self.playSpace.edgeLength + vpos + 1
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                          int(self.dist/3), playerColors[3], -1)
+
+
                 if self.playSpace.rotationCoolDownTime:
                     self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             

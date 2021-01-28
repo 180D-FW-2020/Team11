@@ -38,8 +38,10 @@ class GamePlay:
         '''
         try:
             # These are dummy values
-            self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.numPlayers, 10, 0, 0)
+
+            self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.numPlayers, 10, 0, 4)
             return self.numPlayers, edgeLength, numObstacles, numPowerups
+
         except:
             print("An error occurred getting settings")
             traceback.print_exc() 
@@ -96,6 +98,10 @@ class GamePlay:
                 message = copy.deepcopy(self.playSpace.__dict__)
                 for p in message['players']:
                     p['position'] = p['position'].tolist()
+                for o in message['obstacles']:
+                    o['position'] = o['position'].tolist()
+                for u in message['powerUps']:
+                    u['position'] = u['position'].tolist()
                 message['verticalAxis'] = message['verticalAxis'].tolist()
                 message['horizontalAxis'] = message['horizontalAxis'].tolist()
                 return message
@@ -118,6 +124,7 @@ class PlaySpace:
             self.horizontalAxis = np.array([1,0,0])
                         
             self.rotationCoolDownTime = 0
+            self.freezeTimer = 0
             
             if numPlayers:
                 self.numPlayers = numPlayers
@@ -166,7 +173,10 @@ class PlaySpace:
                     playersNotIt.append(i)
                 players.append({'playerId': i,
                                 'position': position,
-                                'it': it})
+                                'it': it,
+                                'powerUpHeld': 0,
+                                'powerUpActive': 0,
+                                'powerUpTimer': 0})
             
             return players, playersNotIt
         except:
@@ -197,7 +207,7 @@ class PlaySpace:
                 else: position = np.array([0, 0, 0])
                 
                 
-                obstacles.append(position)
+                obstacles.append({'position': position})
             
             return obstacles
         except:
@@ -219,6 +229,7 @@ class PlaySpace:
                     position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1)])
+                    powerupID = r.randrange(1,3)
                     for j in range(len(self.players)):
                         if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
                             if position[0] != 1:
@@ -226,7 +237,7 @@ class PlaySpace:
                             else:
                                 position[0] += 1
                     for j in range(len(self.obstacles)):
-                        if (self.obstacles[j]['position'][0] == postion[0]) and (self.obstacles[j]['position'][1] == postion[1]):
+                        if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][1] == position[1]):
                             if position[0] != 1:
                                 position[0] -= 1
                             else:
@@ -234,7 +245,8 @@ class PlaySpace:
                 else: position = np.array([0, 0, 0])
                 
                 
-                powerups.append(position)
+                powerups.append({'powerUp': powerupID,
+                                'position': position})
             
             return powerups
         except:
@@ -247,10 +259,16 @@ class PlaySpace:
         makes the move and returns info about the move.
         '''
         try:
+            #first check if play is frozen
+            if self.powerUpTimerRemaining(0):
+                if self.players[playerId-1]['powerUpActive'] != 2:
+                    topic = 0
+                    displayUpdates = 0
+                    return topic, displayUpdates
             if settings.verbose: print("start of move: ", self.players[playerId-1])
             # First check for collision
-            collision, tag, powerup, overlap = self.checkCollision(playerId, direction)
-            if settings.verbose: print("collision info: ", collision, tag, powerup, overlap)
+            collision, tag, powerUp, overlap = self.checkCollision(playerId, direction)
+            if settings.verbose: print("collision info: ", collision, tag, powerUp, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
                 self.players[tag - 1]['it'] = True
@@ -270,7 +288,13 @@ class PlaySpace:
             else:
                 if self.players[playerId - 1]['it']: speed = ITSPEED
                 else: speed = 1
+
+                if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
+                    speed = 2
                 
+                if (powerUp != 0):
+                    self.players[playerId-1]['powerUpHeld'] = powerUp
+
                 if direction == '^':
                     if collision and (overlap > 1):
                         self.players[playerId - 1]['position'] += (overlap-1)*self.verticalAxis
@@ -295,6 +319,10 @@ class PlaySpace:
                         self.players[playerId - 1]['position'] += (overlap-1)*self.horizontalAxis
                     else:
                         self.players[playerId - 1]['position'] += speed*self.horizontalAxis
+
+                if powerUp != 0:
+                    self.players[playerId - 1]['powerUpHeld'] = powerUp
+                    
                 topic = comms.move
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
@@ -346,6 +374,33 @@ class PlaySpace:
             print("An error occurred rotating", rotation)
             traceback.print_exc() 
     
+    def replacePowerUp(self, index):
+        mypower = self.powerUps
+        mypower.pop(index)
+        # update display to remove powerup
+        position = np.array([r.randrange(1, self.edgeLength + 1, 1),
+                    r.randrange(1, self.edgeLength + 1, 1),
+                    r.randrange(1, self.edgeLength + 1, 1)])
+        powerupID = r.randrange(1,3)
+        for j in range(len(self.players)):
+            if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
+                if position[0] != 1:
+                    position[0] -= 1
+                else:
+                   position[0] += 1
+        for j in range(len(self.obstacles)):
+            if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][1] == position[1]):
+                if position[0] != 1:
+                    position[0] -= 1
+                else:
+                    position[0] += 1          
+                
+        self.powerUps.append({'powerUp': powerupID,
+                                'position': position})
+        # update display to indicate new powerup
+        self.powerUps = mypower
+        return self.powerUps
+
     def checkCollision(self, playerId, direction):
         '''
         Takes a player and direction, figures out if they are going to run into 
@@ -403,7 +458,6 @@ class PlaySpace:
             if (abs(location[index]) > (self.edgeLength)):
                 collision = True
                 overlap = int(abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1)))
-                return collision, tag, powerup, overlap
             elif (location[index] == 0):
                 collision = True
                 if (self.players[playerId - 1]['it']):
@@ -437,7 +491,7 @@ class PlaySpace:
                 for i in range(len(self.obstacles)):
                     
                     myloc = (location + inverse*self.players[playerId - 1]['position'])
-                    yourloc = (self.obstacles[i]*playArea)
+                    yourloc = (self.obstacles[i]['position']*playArea)
                     distance = myloc - yourloc
                     difference = initloc - yourloc
                     movement = np.subtract(difference, distance)
@@ -447,6 +501,29 @@ class PlaySpace:
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
                         collision = True
                         overlap = int(np.linalg.norm(difference))
+
+            #check to see collision with powerup
+                for i in range(len(self.powerUps)):
+                    
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.powerUps[i]['position']*playArea)
+                    distance = myloc - yourloc
+                    difference = initloc - yourloc
+                    movement = np.subtract(difference, distance)
+                    if (np.linalg.norm(distance) < 1):
+                        if self.players[playerId - 1]['powerUpHeld'] == 0:
+                            powerup = self.powerUps[i]['powerUp']
+                            self.replacePowerUp(i)
+                        else:
+                            collision = True
+                            overlap = int(np.linalg.norm(difference))
+                    elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
+                        if self.players[playerId - 1]['powerUpHeld'] == 0:
+                            powerup = self.powerUps[i]['powerUp']
+                            self.replacePowerUp(i)
+                        else:
+                            collision = True
+                            overlap = int(np.linalg.norm(difference))
 
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
@@ -464,11 +541,25 @@ class PlaySpace:
                 for j in range(len(self.obstacles)):
                     
                     myloc = (location + inverse*self.players[playerId - 1]['position'])
-                    yourloc = (self.obstacles[j]*playArea)
+                    yourloc = (self.obstacles[j]['position']*playArea)
                     distance = myloc - yourloc
                     if (yourloc == myloc).all():
                         collision = True
                         overlap = 1
+
+            #check to see collision with powerup
+                for j in range(len(self.powerUps)):
+                    
+                    myloc = (location + inverse*self.players[playerId - 1]['position'])
+                    yourloc = (self.powerUps[j]['position']*playArea)
+                    distance = myloc - yourloc
+                    if (yourloc == myloc).all():
+                        if self.players[playerId - 1]['powerUpHeld'] == 0:
+                            powerup = self.powerUps[j]['powerUp']
+                            self.replacePowerUp(i)
+                        else:
+                            collision = True
+                            overlap = 1
 
                     #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
                             # tag = playerId
@@ -480,6 +571,104 @@ class PlaySpace:
             print("An error occurred checking collision")
             traceback.print_exc() 
     
+    def activatePowerUp(self, playerId):
+        try:
+            if self.players[playerId-1]['powerUpHeld'] == 0:
+                #indicate on display no powerups held
+                pass
+            elif self.players[playerId-1]['powerUpHeld'] == 1:
+                #speed powerup
+                self.players[playerId-1]['powerUpHeld'] == 0
+                self.players[playerId-1]['powerUpActive'] == 1
+                self.setPowerUpTimer(playerId)
+                pass
+            elif self.players[playerId-1]['powerUpHeld'] == 2:
+                #freeze powerup
+                self.players[playerId-1]['powerUpHeld'] == 0
+                self.players[playerId-1]['powerUpActive'] == 2
+                self.setPowerUpTimer(playerId)
+                pass
+            elif self.players[playerId-1]['powerUpHeld'] == 3:
+                #swap places with an existing player
+                #recquires comms and display updates
+                playerSwap = r.randrange(1, self.numPlayers+1, 1)
+                if playerSwap != playerId:
+                    xValue = self.players[playerId-1]['position'][0]
+                    yValue = self.players[playerId-1]['position'][1]
+                    zValue = self.players[playerId-1]['position'][2]
+                    self.players[playerId-1]['position'][0] = self.players[playerSwap-1]['position'][0]
+                    self.players[playerId-1]['position'][1] = self.players[playerSwap-1]['position'][1]
+                    self.players[playerId-1]['position'][2] = self.players[playerSwap-1]['position'][2]
+                    self.players[playerSwap-1]['position'][0] = xValue
+                    self.players[playerSwap-1]['position'][1] = yValue
+                    self.players[playerSwap-1]['position'][2] = zValue
+
+                pass
+        except:
+            print("An error occurred activating powerup")
+            traceback.print_exc() 
+
+    def setPowerUpTimer(self, playerId):
+        '''
+        Sets the rotation cooldown to end a designated time after now
+        '''
+        try:
+            if playerId != 0:
+                self.players[playerId-1]['powerUpTimer'] = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
+            else:
+                self.freezeTimer = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
+        except:
+            print("An error occurred setting the rotation cooldown")
+            traceback.print_exc() 
+    
+    def powerUpTimerRemaining(self, playerID):
+        '''
+        Checks if the cooldown is active. Return true if yes, false if no
+        '''
+        try:
+            # Check if a timer is even in place. If not, abort. This should
+            # be an edge case: the method should only be called when a timer
+            # is known to be active
+            if playerID != 0:
+                if not self.players[playerID-1]['powerUpTimer']:
+                    if settings.verbose:
+                        print("powerUpTimerRemaining called without checking",
+                            "if timer in place.")
+                    return False
+                
+                # If timer is in place, check to see if it ended before now. If
+                # yes, the timer is over, so zero out the timer and return false
+                elif self.players[playerID-1]['powerUpTimer'] < datetime.datetime.now():
+                    self.players[playerID-1]['powerUpTimer'] = 0
+                    self.players[playerID-1]['powerUpActive'] = 0
+                    return False
+                
+                # Otherwise the timer is still active, so return true and keep things going
+                else:
+                    return True
+            else:
+                if not self.freezeTimer:
+                    if settings.verbose:
+                        print("powerUpTimerRemaining called without checking",
+                            "if timer in place.")
+                    return False
+                
+                # If timer is in place, check to see if it ended before now. If
+                # yes, the timer is over, so zero out the timer and return false
+                elif self.freezeTimer < datetime.datetime.now():
+                    self.freezeTimer = 0
+                    for i, player in enumerate(self.players):
+                        if player['powerUpActive'] == 2:
+                            player['powerUpActive'] = 0
+                            return False
+                
+                # Otherwise the timer is still active, so return true and keep things going
+                else:
+                    return True
+        except:
+            print("An error occurred decrementing the rotation cooldown")
+            traceback.print_exc()
+
     def setRotationCoolDown(self):
         '''
         Sets the rotation cooldown to end a designated time after now
@@ -518,10 +707,3 @@ class PlaySpace:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
 
-if __name__ == "__main__":
-    myp = PlaySpace(4,10,4,4)
-    for i in range(len(myp.players)):
-        print(myp.players[i]['position'])
-    
-    for i in range(len(myp.obstacles)):
-        print(myp.obstacles[i])
