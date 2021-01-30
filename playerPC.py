@@ -13,6 +13,7 @@ import copy
 import comms
 import speech_recognition as sr
 import settings
+import json
 
 cameraWorking = True
 
@@ -28,8 +29,24 @@ itColor = (255, 198, 220)
 phrases = {
     "ready" : comms.ready,
     "start" : comms.start,
-    "stop" : comms.stop
+    "stop" : comms.stop,
+    "powerup" : comms.powerUp,
+    "power up" : comms.powerUp
 }
+
+googlecloud_json = {
+  "type": "service_account",
+  "project_id": "inbound-isotope-303321",
+  "private_key_id": "5adda750dc6dcb39d68920254877149e4b43a263",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQChbonZlCzAZPXF\nbPAPkDiKe043pYeyzbSXoDhai/4f1o5ByvLxRY9BW+JPAzr1+sPzweceXH2zT5kH\nCtOcF/85weNIDEvPN7m3SBgdmgd+SgQQZKvIQfGtQnUmhII/5+ZBj621QOakoloW\nmPMKW+dPVI6VOm/O7/SGWbnVdZWRjqZxjbWD78KTFlgS9Wyhb7LZ36j1K3ZxqkHB\nn2RAFfbeCPj7rcTAC/SEqH4aFuz8fTvpR6oTXW29Jul47c1naOwtRgH4iXWBDp3w\nln2hZ1akTzH9dF4JApr25OUiBFKKpWxWUtC+5HOaiuuKjv6573zglPacjRVqKDXQ\nI5++W5rNAgMBAAECggEAAYWl30COUcu8j9LjX44xTkhJLZf4s9Gh3dpzoDzuKuAu\nbAXibQPGIkG1cZ/FlvX5PNY2RuXB2fvf5OkFTj/hVurSU7FT/KfumcELAypwNCYK\nrESQDxMPbjNbIJTCwqCoiIk22XzmFSV3untQ3VHjrYPjVUUICALgrWyb+9yANMSy\n9u7PqG9ak5q0h84Zf2tksQV7HzmT7iYUKdeerF1HBViR0G6dujQ3esolyuSLhAcK\n0M1A5gctl3nY5WqaG6YVnK6xeuBskyrYS4fXMaRfvgSABXJrxGguSwVw14Ako3GP\nvV2blVH2fDGH9DbCmvF4JPTa+X7bLR2vSFHRuLqmqQKBgQDUPnxBYLmGvrQTe04y\n1f+Z+3Bk+MexoNEHBSuFdpwYdXG3k4cd+5vtAD/OgVKpjsAGXQrRkOM7b76H2T5f\nvHttJwJH5BOZcyuRm35ePeMrUDSmj1ex6i1F+HKhDJwdwvQ4KRafczkIQTa02/uO\ngATV2LcAcMZ4LfM3m6lBHJ4tiQKBgQDCtlrH5VbASIvHm+o3VeRmK5hBhLazodtY\nHWJKcPmxIVQ+9HQPAKv1AmfSwrZadgkXF7kV/CUUB44inFZPbH8d1KoPQfgSbVie\nu9oyLWNZiGlh/O4CiayLbLCslFNmN8ejTp1U2e0qcmvwojJKwHZw25tJ4sq4c77k\nT0vHZNtWJQKBgQCkI4q+mMoBzdu/sT1hjSP19oEOZWMyGLduoW3t8jN3quP934bA\nBkSo/edakaLW5EHW6f+i4FULMzj7IGPfcAlX+bIG3PjXVD0eh00sHtpfNdDx+qsM\nOZk3opMrv2/AiHOMNyJ6v4YcvypKplGd+51BsC6elZi3enm8yJIVe8dMWQKBgQCF\nMzxdHS3AcqB019tdKXwKzO3mfESEFEi6ObfA1xJpMzSvsIkorjv0a0XdL2iR78d+\nLbNnL8uprRV15d9BjCZVoOMJdwaejIEgbb/xrY0WdbQp3V5xC/+mjZ87IGkBN01y\nEVid8EtHS2k9/6dJ7enYgNL1s5kcn8nJ49kiOYO2pQKBgQCo7Ock+R9gmv8Xm/td\nUzFSFI/JrNNeDOd8UbWEt3dbLEaZFx05Yo29Iz4DzJ+JO6brJrhuzyIty4qIuPbv\nis8goFFo3HUuw2IGm3fYkUJrXwRByFJzrhmWxskK1YQmcZqRMtT1sk4nD5oPbffA\negAbjvbDsvsXqd0StF+RBpGDlA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "virtualtag@inbound-isotope-303321.iam.gserviceaccount.com",
+  "client_id": "107918678020018201409",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/virtualtag%40inbound-isotope-303321.iam.gserviceaccount.com"
+}
+
 
 class PlayerPC:
     '''
@@ -59,7 +76,7 @@ class PlayerPC:
             self.start = False
             
         except:
-            print("An error occurred initializing PlayerPC")
+            print("An error occurred initializing PlayerPC", flush=True)
             traceback.print_exc() 
             
     def getDirection(self, frameCapture):
@@ -70,19 +87,18 @@ class PlayerPC:
             direction = self.camera.getDirection(frameCapture)
             return direction
         except:
-            print("Error getting direction information from the camera")
+            print("Error getting direction information from the camera", flush=True)
             traceback.print_exc() 
 
-    def getCommand(self):
+    def getCommand(self, stop):
         ''' 
         Gets command information from the microphone.
         '''
         try:
-            #self.microphone.listen()
-            command = self.microphone.getCommand()
+            command = self.microphone.getCommand(stop)
             return command
         except:
-            print("Error getting command information from microphone")
+            print("Error getting command information from microphone", flush=True)
             traceback.print_exc() 
             
     def pack(self, val):
@@ -98,7 +114,7 @@ class PlayerPC:
                        'val': val}
             return message
         except:
-            print("Error sending package to primary node")
+            print("Error sending package to primary node", flush=True)
             traceback.print_exc() 
     
     def unpack(self, package):
@@ -152,7 +168,7 @@ class PlayerPC:
                     self.start = True
             return False
         except:
-            print("Error getting package from primary node")
+            print("Error getting package from primary node", flush=True)
             traceback.print_exc() 
         
     def updateDisplay(self, event = True):
@@ -183,7 +199,7 @@ class PlayerPC:
                 cv2.imshow('display',self.display)
             #self.displayUpdate = False
         except:
-            print("Error updating display")
+            print("Error updating display", flush=True)
             traceback.print_exc() 
 
 class Camera:
@@ -191,7 +207,7 @@ class Camera:
         try:
             pass
         except:
-            print("Error initializing camera")
+            print("Error initializing camera", flush=True)
             traceback.print_exc() 
             
     def getDirection(self, frameCapture):
@@ -298,7 +314,7 @@ class Camera:
                 # if direction:
                 #     return direction
         except:
-            print("Error getting direction from camera")
+            print("Error getting direction from camera", flush=True)
             traceback.print_exc() 
             
 class Microphone:
@@ -306,49 +322,56 @@ class Microphone:
         #self.active = False
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
-        for i, mic in enumerate(self.microphone.list_microphone_names()):
-            print(i,mic)
-        print("Device", self.microphone.device_index)
+        # for i, mic in enumerate(self.microphone.list_microphone_names()):
+        #     print(i,mic)
+        # print("Device", self.microphone.device_index)
             # if "sound mapper" not in mic.lower():
             #     self.microphone.device_index = i
             #     break
 
-    def listen(self):
-        self.active = True
+    # def listen(self):
+    #     self.active = True
 
-    def stop(self):
-        self.active = False
+    # def stop(self):
+    #     self.active = False
             
-    def getCommand(self):
+    def getCommand(self, stop):
         '''
         Listens for a voice command, and when one is found, classifies and
         returns it.
         '''
         try:
             with self.microphone as source:
-                while(True):
+                while not stop[0]:
+                    
+                    # UnknownValueError occurs when speech recognition can't
+                    # interpret detected input
+                    #with suppress(sr.UnknownValueError):
                     self.recognizer.adjust_for_ambient_noise(source)
                     
-                    print("Please say something...")
-    
-                    audio = self.recognizer.listen(source)
-    
+                    print("######## Please say something... #########", flush=True)
                     
-                    # All the getting command stuff. 0 is a dummy number
-                    command = self.recognizer.recognize_google(audio)
+                    audio = self.recognizer.listen(source)
+                    
+                    try:
+                        command = self.recognizer.recognize_google_cloud(audio, credentials_json=json.dumps(googlecloud_json))
+                        #command = self.recognizer.recognize_google(audio)
+                        #command = self.recognizer.recognize_ibm(audio, username=IBM_USERNAME, password=IBM_PASSWORD)
+                        print("######## You said : " + command + "##########", flush=True)
 
-                    print("You said : \n " + command)
-
-                    #Check for conditionals
-                    for key in phrases:
-                        if(key.lower() in command.lower()):
-                            return phrases[key]
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            print (message)
-                # except:
-                #     print("Error getting command from microphone")
-                #     traceback.print_exc() 
+                        # Check for valid input
+                        for key in phrases:
+                            if(key.lower() in command.lower()):
+                                return phrases[key]
+                    except sr.UnknownValueError:
+                        print("Speech to Text could not understand audio")
+                return False
+        # except Exception as ex:
+        #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        #     message = template.format(type(ex).__name__, ex.args)
+        #     print (message)
+        except:
+            print("Error getting command from microphone", flush=True)
+            traceback.print_exc() 
 
 

@@ -37,7 +37,7 @@ class PlayerPi:
             self.start = False
             
         except:
-            print("An error occurred initializing PlayerPi")
+            print("An error occurred initializing PlayerPi", flush=True)
             traceback.print_exc() 
             
     def getRotation(self, stop):
@@ -50,7 +50,7 @@ class PlayerPi:
                 return rotation
             else: return False
         except:
-            print("Error getting rotation information from the IMU")
+            print("Error getting rotation information from the IMU", flush=True)
             traceback.print_exc() 
     
     def pack(self, val):
@@ -67,7 +67,7 @@ class PlayerPi:
                        'val': val}
             return message
         except:
-            print("Error sending package to primary node")
+            print("Error sending package to primary node", flush=True)
             traceback.print_exc() 
     
     def unpack(self, package):
@@ -95,7 +95,7 @@ class PlayerPi:
             elif topic == comms.start:
                 self.start = True
         except:
-            print("Error getting package from primary node")
+            print("Error getting package from primary node", flush=True)
             traceback.print_exc() 
 
 class BerryIMU:
@@ -115,11 +115,11 @@ class BerryIMU:
                 
                 IMU.detectIMU()     #Detect if BerryIMU is connected.
                 if(IMU.BerryIMUversion == 99):
-                    print(" No BerryIMU found... exiting ")
+                    print(" No BerryIMU found... exiting ", flush=True)
                     sys.exit()
                 IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
         except:
-            print("Error initializing IMU")
+            print("Error initializing IMU", flush=True)
             traceback.print_exc() 
             
     def getRotation(self, stop):
@@ -209,7 +209,7 @@ class BerryIMU:
                     elif pitch < -50 and abs(roll) < 30: rotation = '>'
                     
                     if rotation:
-                        print('found rotation', rotation)
+                        print('found rotation', rotation, flush=True)
                         return rotation
             if not settings.isPi:
                 pass
@@ -222,5 +222,5 @@ class BerryIMU:
                 # if rotation:
                 #     return rotation
         except:
-            print("Error getting rotation from IMU")
+            print("Error getting rotation from IMU", flush=True)
             traceback.print_exc() 

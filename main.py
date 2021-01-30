@@ -29,7 +29,7 @@ def piProcess():
     Processes run on the pi. This detects a rotation on the pi, sends it,
     and then waits for permission to detect a new rotation.
     '''
-    if settings.verbose: print("Starting pi process")
+    if settings.verbose: print("Starting pi process", flush=True)
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pi = playerPi.PlayerPi(clientId)
@@ -85,7 +85,7 @@ def piProcess():
     while not pi.gameOver:
         if len(receiver.packages):
             pi.unpack(receiver.packages.pop(0))
-    print("pi game over")
+    print("pi game over", flush=True)
 
     stop[0] = True
     transmit.join()
@@ -115,7 +115,7 @@ def pcProcess(stopCentral = 0):
     that the display just updates when display information is updated from a
     received message.
     '''   
-    if settings.verbose: print("Starting pc process")
+    if settings.verbose: print("Starting pc process", flush=True)
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(clientId)
@@ -158,7 +158,7 @@ def pcProcess(stopCentral = 0):
     # Get confirmation from player that they are ready, and send that to central
     # to complete handshake process
     while not pc.ready:
-        command = pc.getCommand()
+        command = pc.getCommand(stop)
         if command == comms.ready:
             pc.ready = True
             package = pc.pack(pc.ready)
@@ -169,9 +169,10 @@ def pcProcess(stopCentral = 0):
     packageReceipt.daemon = True
     packageReceipt.start()
     
-    ## transmitCommand methods not yet fully implemented
-    #transmitCommand = Thread(target=pcTransmitCommand, args = (transmitter, pc, lambda:stop,))
-    #transmitCommand.start()
+    # transmitCommand methods not yet fully implemented
+    transmit = Thread(target=pcTransmit, args = (transmitter, pc, stop,))
+    transmit.daemon = True
+    transmit.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -206,16 +207,12 @@ def pcProcess(stopCentral = 0):
         #time.sleep(settings.motionDelay)
     frameCapture.release()
     cv2.destroyAllWindows()
-    
-    # This extra waitKey is necessary for mac compatibility, or destroyAllWindows
-    # lags/fails
-    #cv2.waitKey(1)
-    
+        
     stop[0] = True
     packageReceipt.join()
+    transmit.join()
     if stopCentral:
         stopCentral.value = True
-    #transmitCommand.join()
     receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
@@ -232,15 +229,17 @@ def pcPackageReceipt(receiver, pc, stop):
         #     break
     #cv2.destroyAllWindows()
         
-def pcTransmitCommand(transmitter, pc, stop):
+def pcTransmit(transmitter, pc, stop):
     '''
     Separate thread for receiving player input on PC and transmitting it to 
     central.
     '''
-    while not pc.gameOver and not stop():
-        command = pc.getCommand()
-        package = pc.pack(command)
-        transmitter.transmit(comms.command, package)
+    while not pc.gameOver and not stop[0]:
+        # Returned command is a topic. Package is sent to provide player ID.
+        command = pc.getCommand(stop)
+        if command:
+            package = pc.pack(command)
+            transmitter.transmit(command, package)
     
 def centralNodeProcess(stop):
     '''
@@ -250,7 +249,7 @@ def centralNodeProcess(stop):
     When a message is received, the PlaySpace and game state are updated, and
     a message is sent to player PCs and Pi's indicating the update.
     '''
-    if settings.verbose: print("Starting central process")
+    if settings.verbose: print("Starting central process", flush=True)
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     receiver = comms.Receiver((comms.piConfirmation,
@@ -258,6 +257,7 @@ def centralNodeProcess(stop):
                                comms.direction,
                                comms.command,
                                comms.ready,
+                               comms.powerUp,
                                comms.rotation),
                               clientId)
     transmitter = comms.Transmitter()
@@ -290,7 +290,7 @@ def centralNodeProcess(stop):
         
         # Check if any packages in the queue
         if len(receiver.packages):
-            if settings.verbose: print("Central first loop found", receiver.packages)
+            if settings.verbose: print("Central first loop found", receiver.packages, flush=True)
             # If yes, unpack the first one and use to identify which device is
             # now connected. Confirmation topics are for the first step in the 
             # handshake, providing central with a client ID for the PC or Pi.
@@ -315,14 +315,14 @@ def centralNodeProcess(stop):
         # Repeat until no devices left to join
         devicesPending = len(pcs)+len(pis)+len(readiesPC)+len(readiesPi)
         if settings.verbose:
-            print("Pending pis:", pis)
-            print("Pending pcs:", pcs)
-            print("Pending ready pis:", readiesPi)
-            print("Pending ready pcs:", readiesPC)
+            print("Pending pis:", pis, flush=True)
+            print("Pending pcs:", pcs, flush=True)
+            print("Pending ready pis:", readiesPi, flush=True)
+            print("Pending ready pcs:", readiesPC, flush=True)
         time.sleep(1)
     
     game.start = True
-    if settings.verbose: print("All player devices connected")
+    if settings.verbose: print("All player devices connected", flush=True)
     package = game.pack(game.start)
     transmitter.transmit(comms.start, package)
     
@@ -334,14 +334,17 @@ def centralNodeProcess(stop):
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            topic, message = game.unpack(receiver.packages.pop(0))
+            print("Central attempting unpack:", receiver.packages, flush=True)
+            package = receiver.packages.pop(0)
+            topic, message = game.unpack(package)
+            #topic, message = game.unpack(receiver.packages.pop(0))
                         
             # Generally this should result in some outbound message
             if message:
                 transmitter.transmit(topic, message)
             else:
                 if settings.verbose:
-                    print("No outbound message to send")
+                    print("No outbound message to send", flush=True)
         
         # Check if a rotation cooldown is in place
         if game.playSpace.rotationCoolDownTime:
@@ -364,14 +367,14 @@ if __name__ == '__main__':
     if settings.isPi:
         #piProcess()
         try:
-            if settings.verbose: print("will run pi stuff")
+            if settings.verbose: print("will run pi stuff", flush=True)
             piProcess()
         except:
-            print("An error occurred with pi processes")
+            print("An error occurred with pi processes", flush=True)
             traceback.print_exc() 
     elif settings.isPrimary:
         try:
-            if settings.verbose: print("will run central stuff")
+            if settings.verbose: print("will run central stuff", flush=True)
             # central = Thread(target=centralNodeProcess)
             # player = Thread(target=pcProcess)
             
@@ -391,13 +394,13 @@ if __name__ == '__main__':
             player.join()
             central.join()
         except:
-            print("An error occurred with primary node processes")
+            print("An error occurred with primary node processes", flush=True)
             traceback.print_exc() 
     else:
         # Only other case is this is the playerPC
         try:
-            if settings.verbose: print("will run pc stuff")
+            if settings.verbose: print("will run pc stuff", flush=True)
             pcProcess()
         except:
-            print("An error occurred with non primary node processes")
+            print("An error occurred with non primary node processes", flush=True)
             traceback.print_exc() 
