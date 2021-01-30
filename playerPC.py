@@ -34,18 +34,7 @@ phrases = {
     "power up" : comms.powerUp
 }
 
-googlecloud_json = {
-  "type": "service_account",
-  "project_id": "inbound-isotope-303321",
-  "private_key_id": "5adda750dc6dcb39d68920254877149e4b43a263",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQChbonZlCzAZPXF\nbPAPkDiKe043pYeyzbSXoDhai/4f1o5ByvLxRY9BW+JPAzr1+sPzweceXH2zT5kH\nCtOcF/85weNIDEvPN7m3SBgdmgd+SgQQZKvIQfGtQnUmhII/5+ZBj621QOakoloW\nmPMKW+dPVI6VOm/O7/SGWbnVdZWRjqZxjbWD78KTFlgS9Wyhb7LZ36j1K3ZxqkHB\nn2RAFfbeCPj7rcTAC/SEqH4aFuz8fTvpR6oTXW29Jul47c1naOwtRgH4iXWBDp3w\nln2hZ1akTzH9dF4JApr25OUiBFKKpWxWUtC+5HOaiuuKjv6573zglPacjRVqKDXQ\nI5++W5rNAgMBAAECggEAAYWl30COUcu8j9LjX44xTkhJLZf4s9Gh3dpzoDzuKuAu\nbAXibQPGIkG1cZ/FlvX5PNY2RuXB2fvf5OkFTj/hVurSU7FT/KfumcELAypwNCYK\nrESQDxMPbjNbIJTCwqCoiIk22XzmFSV3untQ3VHjrYPjVUUICALgrWyb+9yANMSy\n9u7PqG9ak5q0h84Zf2tksQV7HzmT7iYUKdeerF1HBViR0G6dujQ3esolyuSLhAcK\n0M1A5gctl3nY5WqaG6YVnK6xeuBskyrYS4fXMaRfvgSABXJrxGguSwVw14Ako3GP\nvV2blVH2fDGH9DbCmvF4JPTa+X7bLR2vSFHRuLqmqQKBgQDUPnxBYLmGvrQTe04y\n1f+Z+3Bk+MexoNEHBSuFdpwYdXG3k4cd+5vtAD/OgVKpjsAGXQrRkOM7b76H2T5f\nvHttJwJH5BOZcyuRm35ePeMrUDSmj1ex6i1F+HKhDJwdwvQ4KRafczkIQTa02/uO\ngATV2LcAcMZ4LfM3m6lBHJ4tiQKBgQDCtlrH5VbASIvHm+o3VeRmK5hBhLazodtY\nHWJKcPmxIVQ+9HQPAKv1AmfSwrZadgkXF7kV/CUUB44inFZPbH8d1KoPQfgSbVie\nu9oyLWNZiGlh/O4CiayLbLCslFNmN8ejTp1U2e0qcmvwojJKwHZw25tJ4sq4c77k\nT0vHZNtWJQKBgQCkI4q+mMoBzdu/sT1hjSP19oEOZWMyGLduoW3t8jN3quP934bA\nBkSo/edakaLW5EHW6f+i4FULMzj7IGPfcAlX+bIG3PjXVD0eh00sHtpfNdDx+qsM\nOZk3opMrv2/AiHOMNyJ6v4YcvypKplGd+51BsC6elZi3enm8yJIVe8dMWQKBgQCF\nMzxdHS3AcqB019tdKXwKzO3mfESEFEi6ObfA1xJpMzSvsIkorjv0a0XdL2iR78d+\nLbNnL8uprRV15d9BjCZVoOMJdwaejIEgbb/xrY0WdbQp3V5xC/+mjZ87IGkBN01y\nEVid8EtHS2k9/6dJ7enYgNL1s5kcn8nJ49kiOYO2pQKBgQCo7Ock+R9gmv8Xm/td\nUzFSFI/JrNNeDOd8UbWEt3dbLEaZFx05Yo29Iz4DzJ+JO6brJrhuzyIty4qIuPbv\nis8goFFo3HUuw2IGm3fYkUJrXwRByFJzrhmWxskK1YQmcZqRMtT1sk4nD5oPbffA\negAbjvbDsvsXqd0StF+RBpGDlA==\n-----END PRIVATE KEY-----\n",
-  "client_email": "virtualtag@inbound-isotope-303321.iam.gserviceaccount.com",
-  "client_id": "107918678020018201409",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/virtualtag%40inbound-isotope-303321.iam.gserviceaccount.com"
-}
+googlecloud_json = {}
 
 
 class PlayerPC:
