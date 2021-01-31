@@ -327,7 +327,7 @@ def centralNodeProcess(stop):
     transmitter.transmit(comms.start, package)
     
     # Then start the game
-    while not game.gameOver and not stop.value:
+    while not game.isGameOver() and not stop.value:
         
         # Poll for messages in queue
         if len(receiver.packages):
