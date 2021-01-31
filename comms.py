@@ -8,6 +8,7 @@ Created on Mon Nov 23 15:55:26 2020
 from paho.mqtt import client as mqtt_client
 import json
 import settings
+import datetime
 
 broker = 'broker.emqx.io'
 port = 1883
@@ -60,9 +61,21 @@ class Transmitter:
             print("Failed to connect, return code %d\n", rc, flush=True)
             
     def transmit(self, topic, package):
-        if settings.verbose:
-            print("Sending", package, "from", topic, flush=True)
-        self.client.publish(topic, json.dumps(package), qos=qos_)
+        unsent = 1
+        count = 5
+        package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
+        while unsent and count:
+            unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
+            count = count - 1
+        
+        if unsent:
+            log = f"Failed to published `{package}` from `{topic}`"
+            #self.logger.info(log)
+            if settings.verbose: print(log)
+        else:
+            log = f"Published `{package}` from `{topic}`"
+            #self.logger.info(log)
+            if settings.verbose: print(log)
         
 class Receiver:
     '''
