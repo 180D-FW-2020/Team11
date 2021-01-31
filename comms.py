@@ -8,9 +8,11 @@ Created on Mon Nov 23 15:55:26 2020
 from paho.mqtt import client as mqtt_client
 import json
 import settings
+import datetime
 
 broker = 'broker.emqx.io'
 port = 1883
+qos_ = 1
 
 ### Topics ###
 initial = settings.uniqueComms + "ece180d/team11/init"
@@ -28,7 +30,6 @@ rotation = settings.uniqueComms + "ece180d/team11/rot"
 coolDown = settings.uniqueComms + "ece180d/team11/cool"
 piConfirmation = settings.uniqueComms + "ece180d/team11/piconf"
 pcConfirmation = settings.uniqueComms + "ece180d/team11/pcconf"
-
 
 class Transmitter:
     '''
@@ -59,9 +60,21 @@ class Transmitter:
             print("Failed to connect, return code %d\n", rc, flush=True)
             
     def transmit(self, topic, package):
-        if settings.verbose:
-            print("Sending", package, "from", topic, flush=True)
-        self.client.publish(topic, json.dumps(package), qos=0)
+        unsent = 1
+        count = 5
+        package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
+        while unsent and count:
+            unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
+            count = count - 1
+        
+        if unsent:
+            log = f"Failed to published `{package}` from `{topic}`"
+            #self.logger.info(log)
+            if settings.verbose: print(log)
+        else:
+            log = f"Published `{package}` from `{topic}`"
+            #self.logger.info(log)
+            if settings.verbose: print(log)
         
 class Receiver:
     '''
@@ -91,10 +104,10 @@ class Receiver:
         if type(topic) == tuple:
             topics = []
             for t in topic:
-                topics.append((t, 0))
+                topics.append((t, qos_))
             self.topic = topics
         else:
-            self.topic = (topic, 0)
+            self.topic = (topic, qos_)
         
         self.connected = False
         self.clientId = clientId
@@ -118,7 +131,7 @@ class Receiver:
                 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         if settings.verbose:
-            print("Subscribed, mid = ", mid, flush=True)
+            print(f"Subscribed, qos `{granted_qos}`", flush=True)
 
     def on_message(self, client, userdata, msg):
         if settings.verbose:
