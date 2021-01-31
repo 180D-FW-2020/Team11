@@ -11,7 +11,7 @@ import settings
 
 broker = 'broker.emqx.io'
 port = 1883
-qos_ = 1
+qos_ = 0
 
 ### Topics ###
 initial = settings.uniqueComms + "ece180d/team11/init"
