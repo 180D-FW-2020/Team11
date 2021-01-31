@@ -11,6 +11,7 @@ import settings
 
 broker = 'broker.emqx.io'
 port = 1883
+qos_ = 1
 
 ### Topics ###
 initial = settings.uniqueComms + "ece180d/team11/init"
@@ -61,7 +62,7 @@ class Transmitter:
     def transmit(self, topic, package):
         if settings.verbose:
             print("Sending", package, "from", topic, flush=True)
-        self.client.publish(topic, json.dumps(package), qos=0)
+        self.client.publish(topic, json.dumps(package), qos=qos_)
         
 class Receiver:
     '''
@@ -91,10 +92,10 @@ class Receiver:
         if type(topic) == tuple:
             topics = []
             for t in topic:
-                topics.append((t, 0))
+                topics.append((t, qos_))
             self.topic = topics
         else:
-            self.topic = (topic, 0)
+            self.topic = (topic, qos_)
         
         self.connected = False
         self.clientId = clientId
