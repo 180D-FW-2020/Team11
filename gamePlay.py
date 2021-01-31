@@ -25,7 +25,7 @@ class GamePlay:
             self.playSpace = PlaySpace(*args)
             
         except:
-            print("An error occurred initializing GamePlay")
+            print("An error occurred initializing GamePlay", flush=True)
             traceback.print_exc() 
     
     def settings(self):
@@ -43,7 +43,7 @@ class GamePlay:
             return self.numPlayers, edgeLength, numObstacles, numPowerups
 
         except:
-            print("An error occurred getting settings")
+            print("An error occurred getting settings", flush=True)
             traceback.print_exc() 
     
     def unpack(self, package):
@@ -55,7 +55,7 @@ class GamePlay:
         '''
         try:
             topic, message = package
-            print("Central unpacking message:", message, topic)
+            print("Central unpacking message:", message, topic, flush=True)
             
             if self.start:
                 if topic == comms.direction:
@@ -64,7 +64,8 @@ class GamePlay:
                 elif topic == comms.rotation:
                     return self.playSpace.rotatePlaySpace(message['val'])
                 else:
-                    print("Message received after game start without direction or rotation")
+                    print("Message received after game start without direction or rotation", flush=True)
+                    return False, False
             else:
                 # Before game start, messages are returned with values
                 # clientId (str), playerId (int), pi (bool), pc (bool), ready
@@ -77,11 +78,11 @@ class GamePlay:
                     return 0, message['playerId'], False, False, True
                 # Unplanned case
                 else:
-                    print("Message received before game start without pi or pc confirmation")
+                    print("Message received before game start without pi or pc confirmation", flush=True)
                     return False, False, False, False, False
             
         except:
-            print("An error occurred getting player input")
+            print("An error occurred getting player input", flush=True)
             traceback.print_exc() 
     
     def pack(self, message = None, clientId = None, playerId = None):
@@ -108,7 +109,7 @@ class GamePlay:
             else:
                 return {'val': message}
         except:
-            print("An error occurred packing the playspace")
+            print("An error occurred packing the playspace", flush=True)
             traceback.print_exc() 
             
 class PlaySpace:

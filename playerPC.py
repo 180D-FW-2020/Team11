@@ -13,6 +13,7 @@ import copy
 import comms
 import speech_recognition as sr
 import settings
+import json
 
 cameraWorking = True
 
@@ -28,8 +29,13 @@ itColor = (255, 198, 220)
 phrases = {
     "ready" : comms.ready,
     "start" : comms.start,
-    "stop" : comms.stop
+    "stop" : comms.stop,
+    "powerup" : comms.powerUp,
+    "power up" : comms.powerUp
 }
+
+googlecloud_json = {}
+
 
 class PlayerPC:
     '''
@@ -59,7 +65,7 @@ class PlayerPC:
             self.start = False
             
         except:
-            print("An error occurred initializing PlayerPC")
+            print("An error occurred initializing PlayerPC", flush=True)
             traceback.print_exc() 
             
     def getDirection(self, frameCapture):
@@ -70,19 +76,18 @@ class PlayerPC:
             direction = self.camera.getDirection(frameCapture)
             return direction
         except:
-            print("Error getting direction information from the camera")
+            print("Error getting direction information from the camera", flush=True)
             traceback.print_exc() 
 
-    def getCommand(self):
+    def getCommand(self, stop):
         ''' 
         Gets command information from the microphone.
         '''
         try:
-            self.microphone.listen()
-            command = self.microphone.getCommand()
+            command = self.microphone.getCommand(stop)
             return command
         except:
-            print("Error getting command information from microphone")
+            print("Error getting command information from microphone", flush=True)
             traceback.print_exc() 
             
     def pack(self, val):
@@ -98,7 +103,7 @@ class PlayerPC:
                        'val': val}
             return message
         except:
-            print("Error sending package to primary node")
+            print("Error sending package to primary node", flush=True)
             traceback.print_exc() 
     
     def unpack(self, package):
@@ -152,7 +157,7 @@ class PlayerPC:
                     self.start = True
             return False
         except:
-            print("Error getting package from primary node")
+            print("Error getting package from primary node", flush=True)
             traceback.print_exc() 
         
     def updateDisplay(self, event = True):
@@ -205,7 +210,7 @@ class PlayerPC:
                 cv2.imshow('display',self.display)
             #self.displayUpdate = False
         except:
-            print("Error updating display")
+            print("Error updating display", flush=True)
             traceback.print_exc() 
 
 class Camera:
@@ -213,7 +218,7 @@ class Camera:
         try:
             pass
         except:
-            print("Error initializing camera")
+            print("Error initializing camera", flush=True)
             traceback.print_exc() 
             
     def getDirection(self, frameCapture):
@@ -320,51 +325,64 @@ class Camera:
                 # if direction:
                 #     return direction
         except:
-            print("Error getting direction from camera")
+            print("Error getting direction from camera", flush=True)
             traceback.print_exc() 
             
 class Microphone:
     def __init__(self):
-        self.active = False
+        #self.active = False
+        self.recognizer = sr.Recognizer()
+        self.microphone = sr.Microphone()
+        # for i, mic in enumerate(self.microphone.list_microphone_names()):
+        #     print(i,mic)
+        # print("Device", self.microphone.device_index)
+            # if "sound mapper" not in mic.lower():
+            #     self.microphone.device_index = i
+            #     break
 
-    def listen(self):
-        self.active = True
+    # def listen(self):
+    #     self.active = True
 
-    def stop(self):
-        self.active = False
+    # def stop(self):
+    #     self.active = False
             
-    def getCommand(self):
+    def getCommand(self, stop):
         '''
         Listens for a voice command, and when one is found, classifies and
         returns it.
         '''
-        while(True):
-            r = sr.Recognizer()
-            with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source)
-            if self.active:
-                with sr.Microphone() as source:
-                    print("Please say something...")
-    
-                    audio = r.listen(source)
-    
-                    command = ""
-    
+        try:
+            with self.microphone as source:
+                while not stop[0]:
+                    
+                    # UnknownValueError occurs when speech recognition can't
+                    # interpret detected input
+                    #with suppress(sr.UnknownValueError):
+                    self.recognizer.adjust_for_ambient_noise(source)
+                    
+                    print("######## Please say something... #########", flush=True)
+                    
+                    audio = self.recognizer.listen(source, phrase_time_limit=3)
+                    
                     try:
-                        # All the getting command stuff. 0 is a dummy number
-                        command = r.recognize_google(audio)
-    
-    
-                        print("You said : \n " + command)
-    
-    
-                        #Check for conditionals
+                        #command = self.recognizer.recognize_google_cloud(audio, credentials_json=json.dumps(googlecloud_json))
+                        command = self.recognizer.recognize_google(audio)
+                        #command = self.recognizer.recognize_ibm(audio, username=IBM_USERNAME, password=IBM_PASSWORD)
+                        print("######## You said : " + command + "##########", flush=True)
+
+                        # Check for valid input
                         for key in phrases:
                             if(key.lower() in command.lower()):
                                 return phrases[key]
-    
-                    except:
-                        print("Error getting command from microphone")
-                        traceback.print_exc() 
+                    except sr.UnknownValueError:
+                        print("Speech to Text could not understand audio")
+                return False
+        # except Exception as ex:
+        #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        #     message = template.format(type(ex).__name__, ex.args)
+        #     print (message)
+        except:
+            print("Error getting command from microphone", flush=True)
+            traceback.print_exc() 
 
 

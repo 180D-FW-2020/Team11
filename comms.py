@@ -8,9 +8,11 @@ Created on Mon Nov 23 15:55:26 2020
 from paho.mqtt import client as mqtt_client
 import json
 import settings
+import datetime
 
 broker = 'broker.emqx.io'
 port = 1883
+qos_ = 0
 
 ### Topics ###
 initial = settings.uniqueComms + "ece180d/team11/init"
@@ -21,6 +23,7 @@ axes = settings.uniqueComms + "ece180d/team11/axes"
 direction = settings.uniqueComms + "ece180d/team11/direc"
 ready = settings.uniqueComms + "ece180d/team11/ready"
 command = settings.uniqueComms + "ece180d/team11/command"
+powerUp = settings.uniqueComms + "ece180d/team11/powerUp"
 start = settings.uniqueComms + "ece180d/team11/start"
 stop = settings.uniqueComms + "ece180d/team11/stop"
 rotation = settings.uniqueComms + "ece180d/team11/rot"
@@ -53,14 +56,26 @@ class Transmitter:
         if rc == 0:
             self.connected = True
             if settings.verbose:
-                print("Transmitter connected")
+                print("Transmitter connected", flush=True)
         else:
-            print("Failed to connect, return code %d\n", rc)
+            print("Failed to connect, return code %d\n", rc, flush=True)
             
     def transmit(self, topic, package):
-        if settings.verbose:
-            print("Sending", package, "from", topic)
-        self.client.publish(topic, json.dumps(package), qos=0)
+        unsent = 1
+        count = 5
+        package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
+        while unsent and count:
+            unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
+            count = count - 1
+        
+        if unsent:
+            log = f"Failed to published `{package}` from `{topic}`"
+            #self.logger.info(log)
+            if settings.verbose: print(log)
+        else:
+            log = f"Published `{package}` from `{topic}`"
+            #self.logger.info(log)
+            if settings.verbose: print(log)
         
 class Receiver:
     '''
@@ -90,10 +105,10 @@ class Receiver:
         if type(topic) == tuple:
             topics = []
             for t in topic:
-                topics.append((t, 0))
+                topics.append((t, qos_))
             self.topic = topics
         else:
-            self.topic = (topic, 0)
+            self.topic = (topic, qos_)
         
         self.connected = False
         self.clientId = clientId
@@ -110,18 +125,18 @@ class Receiver:
         if rc == 0:
             self.client.subscribe(self.topic)
             if settings.verbose:
-                print("Receiver connected: ", self.topic, self.clientId)
+                print("Receiver connected: ", self.topic, self.clientId, flush=True)
         else:
             if settings.verbose:
-                print("Failed to connect, return code %d\n", rc)
+                print("Failed to connect, return code %d\n", rc, flush=True)
                 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         if settings.verbose:
-            print("Subscribed, mid = ", mid)
+            print("Subscribed, mid = ", mid, flush=True)
 
     def on_message(self, client, userdata, msg):
         if settings.verbose:
-            print(f"Received `{msg.payload.decode()}` from `{msg.topic}`")
+            print(f"Received `{msg.payload.decode()}` from `{msg.topic}`", flush=True)
         
         # Store topic and decoded dictionary payload
         self.packages.append((msg.topic, json.loads(msg.payload.decode())))
