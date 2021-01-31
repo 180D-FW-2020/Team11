@@ -16,3 +16,8 @@ motionDelay = 2 # seconds
 camera = 0 # default 
 verbose = True
 uniqueComms = "test"
+
+# Modes:
+#  * infinite - use for solo testing
+#  * standard - game ends when all players have been tagged it at least once
+playMode = "infinite"

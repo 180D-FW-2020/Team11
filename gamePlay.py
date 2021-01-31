@@ -20,6 +20,7 @@ class GamePlay:
             self.gameOver = False
             self.start = False
             self.numPlayers = 0
+            self.playMode = 0
             
             args = self.settings()
             self.playSpace = PlaySpace(*args)
@@ -39,8 +40,8 @@ class GamePlay:
         try:
             # These are dummy values
 
-            self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.numPlayers, 10, 0, 4)
-            return self.numPlayers, edgeLength, numObstacles, numPowerups
+            self.playMode, self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.playMode, settings.numPlayers, 10, 0, 4)
+            return self.numPlayers, edgeLength, numObstacles, numPowerups 
 
         except:
             print("An error occurred getting settings", flush=True)
@@ -115,9 +116,15 @@ class GamePlay:
     
     def isGameOver(self):
         try:
-            if len(self.playSpace.playersNotIt) == 0:
+            # Standard play mode: play until everyone has been tagged at least once
+            if self.playMode == "standard" and len(self.playSpace.playersNotIt) == 0:
                 return True
-            return False
+            # Infinite play mode: play forever
+            elif self.playMode == "infinite":
+                return False
+            # Any other play mode is not handled: play like infinite
+            else:
+                return False
         except:
             print("An error occurred determining if the game is over")
             traceback.print_exc() 
