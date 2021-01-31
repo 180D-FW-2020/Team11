@@ -111,7 +111,17 @@ class GamePlay:
         except:
             print("An error occurred packing the playspace", flush=True)
             traceback.print_exc() 
-            
+
+    
+    def isGameOver(self):
+        try:
+            if len(self.playSpace.playersNotIt) == 0:
+                return True
+            return False
+        except:
+            print("An error occurred determining if the game is over")
+            traceback.print_exc() 
+
 class PlaySpace:
     def __init__(self, numPlayers, edgeLength, numObstacles, numPowerups):
         try:
