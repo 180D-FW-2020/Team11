@@ -170,9 +170,9 @@ def pcProcess(stopCentral = 0):
     packageReceipt.start()
     
     # transmitCommand methods not yet fully implemented
-    transmit = Thread(target=pcTransmit, args = (transmitter, pc, stop,))
-    transmit.daemon = True
-    transmit.start()
+    # transmit = Thread(target=pcTransmit, args = (transmitter, pc, stop,))
+    # transmit.daemon = True
+    # transmit.start()
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -210,7 +210,7 @@ def pcProcess(stopCentral = 0):
         
     stop[0] = True
     packageReceipt.join()
-    transmit.join()
+    # transmit.join()
     if stopCentral:
         stopCentral.value = True
     receiver.stop()

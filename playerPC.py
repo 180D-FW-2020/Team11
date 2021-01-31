@@ -343,8 +343,8 @@ class Microphone:
                     audio = self.recognizer.listen(source)
                     
                     try:
-                        command = self.recognizer.recognize_google_cloud(audio, credentials_json=json.dumps(googlecloud_json))
-                        #command = self.recognizer.recognize_google(audio)
+                        #command = self.recognizer.recognize_google_cloud(audio, credentials_json=json.dumps(googlecloud_json))
+                        command = self.recognizer.recognize_google(audio)
                         #command = self.recognizer.recognize_ibm(audio, username=IBM_USERNAME, password=IBM_PASSWORD)
                         print("######## You said : " + command + "##########", flush=True)
 
