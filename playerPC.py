@@ -200,19 +200,13 @@ class PlayerPC:
                 self.gameOver = True
             elif self.start:
                 if topic == comms.move:
-                    self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+                    self.setMove(message)
                 elif topic == comms.axes:
-                    self.playSpace.verticalAxis = message['verticalAxis']
-                    self.playSpace.horizontalAxis = message['horizontalAxis']
-                    self.playSpace.rotationCoolDownTime = message['coolDown']
+                    self.setRotation(message)
                 elif topic == comms.coolDown:
-                    self.playSpace.rotationCoolDownTime = message['coolDown']
+                    self.setCooldown(message)
                 elif topic == comms.pickup:
-                    self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
-                    self.playSpace.powerUps.pop(message['index'])
-                    newPower = {'powerUp': message['powerUp'],
-                                'position': message['positionpower']}
-                    self.playSpace.powerUps.append(newPower)
+                    self.setPickup(message)
                 elif topic == comms.tag:
                     self.playSpace.players[message['tagged'] - 1]['it'] = True
                     self.playSpace.players[message['untagged'] - 1]['it'] = False
@@ -234,16 +228,7 @@ class PlayerPC:
                         self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
             else:
                 if topic == comms.initial and not self.initialReceived:
-                    self.playSpace.__dict__= message
-                    self.dist = int(1000/(self.playSpace.edgeLength + 2))
-                    self.displayBase = np.zeros((1000,1700,3), np.uint8)
-                    for i in range(self.playSpace.edgeLength + 1):
-                        self.displayBase = cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
-                    for i in range(self.playSpace.edgeLength + 1):
-                        self.displayBase = cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
-                    # Return True for initial message
-                    self.initialReceived = True
-                    #return True
+                    self.setPlayspace(message)
                 elif topic == comms.assign:
                     if not self.playerId and message['clientId'] == self.clientId:
                         self.playerId = message['playerId']
@@ -253,11 +238,169 @@ class PlayerPC:
             return False
         except:
             print("Error getting package from primary node", flush=True)
-            traceback.print_exc() 
+            traceback.print_exc()
+            
+    def setPlayspace(self, message):
+        '''
+        Loads the playspace. If input message is not None, it's the initial playspace.
+        Otherwise just reload based on new axes. This can also
+        be called as the final step of another display update, in which case
+        passDisplay should be updated with the new move instead of the current
+        display.
+        '''
+        if message:
+            self.playSpace.__dict__= message
+            self.dist = int(1000/(self.playSpace.edgeLength + 2))
+            self.initialReceived = True
+            
+        display = np.zeros((1000,1700,3), np.uint8)
+            
+        for i in range(self.playSpace.edgeLength + 1):
+            display = cv2.line(display, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
+        for i in range(self.playSpace.edgeLength + 1):
+            display = cv2.line(display, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
         
+        for i, player in enumerate(self.playSpace.players):
+            hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
+            if hpos<0:
+                hpos = self.playSpace.edgeLength + hpos + 1
+            vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
+            if vpos<0:
+                vpos = self.playSpace.edgeLength + vpos + 1
+            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                  int(self.dist/3), playerColors[i], -1)
+            if player['it']:
+                display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                  int(self.dist/3), itColor, int(self.dist/10))
+
+        for i, obstacles in enumerate(self.playSpace.obstacles):
+            hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
+            if hpos<0:
+                hpos = self.playSpace.edgeLength + hpos + 1
+            vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
+            if vpos<0:
+                vpos = self.playSpace.edgeLength + vpos + 1
+            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                  int(self.dist/3), playerColors[2], -1)
+        
+        for i, powerups in enumerate(self.playSpace.powerUps):
+            hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
+            if hpos<0:
+                hpos = self.playSpace.edgeLength + hpos + 1
+            vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
+            if vpos<0:
+                vpos = self.playSpace.edgeLength + vpos + 1
+            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                                  int(self.dist/3), playerColors[3], -1)
+        
+        self.display = display
+        
+    
+    def setMove(self, message, passDisplay = None):
+        '''
+        Moves a player on the display, based on the input message. This can also
+        be called as the final step of another display update, in which case
+        passDisplay should be updated with the new move instead of the current
+        display.
+        '''
+        
+        if passDisplay is None:
+            display = copy.deepcopy(self.display)
+        else:
+            display = passDisplay
+        oldpos = self.playSpace.players[message['playerId'] - 1]['position']
+        self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+        
+        # Clear existing player
+        hpos = np.dot(self.playSpace.horizontalAxis, oldpos)
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, oldpos)
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        
+        # Place in new position
+        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['playerId'] - 1]['position'])
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['playerId'] - 1]['position'])
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), playerColors[message['playerId'] - 1], -1)
+        if self.playSpace.players[message['playerId'] - 1]['it']:
+            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), itColor, int(self.dist/10))
+        
+        self.display = display
+
+    def setRotation(self, message):
+        '''
+        Updates the axes, updates the display accordingly, writes the cooldown
+        message. The cooldown message is actually set to the display separately
+        from other updates, but it's not frequent enough to add a high lag and
+        the fractional delay in the display won't produce confusion.       
+        '''
+        # Set new axes
+        self.playSpace.verticalAxis = message['verticalAxis']
+        self.playSpace.horizontalAxis = message['horizontalAxis']
+        self.playSpace.rotationCoolDownTime = message['coolDown']
+        
+        # Reload the playspace according to new axes
+        self.setPlayspace(None)
+        
+        # Set the cooldown message
+        cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+    def setCooldown(self, message):
+        '''
+        Turns off the cooldown message.
+        '''
+        self.playSpace.rotationCoolDownTime = message['coolDown']
+        cv2.rectangle(self.display, (10,0), (1000, 32), (0,0,0), -1)
+    
+    def setPickup(self, message):
+        '''
+        Removes the powerup that was picked up, places a new one, and moves the
+        player.
+        '''
+        display = copy.deepcopy(self.display)
+        # Update powerups list
+        oldPowerUp = self.playSpace.powerUps.pop(message['index'])
+        oldpos = oldPowerUp['position']
+        newPower = {'powerUp': message['powerUp'],
+                    'position': message['positionpower']}
+        self.playSpace.powerUps.append(newPower)
+        
+        # Clear existing powerup
+        hpos = np.dot(self.playSpace.horizontalAxis, oldpos)
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, oldpos)
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        
+        # Place in new position
+        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.powerUps[-1]['position'])
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), playerColors[3], -1)
+        
+        # Move player, which also sets the display
+        self.setMove(message, passDisplay = display)
+    
     def updateDisplay(self, event = True):
         '''
         Prints current contents of local playSpace to player's screen.
+        UPDATE: Currently, only called for the case where event = False.
         '''
         try:
             if event:

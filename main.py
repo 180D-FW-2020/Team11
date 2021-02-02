@@ -238,7 +238,7 @@ def pcPackageReceipt(receiver, pc, stop):
     while not pc.gameOver and not stop[0]:
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
-            pc.updateDisplay()
+            #pc.updateDisplay()
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
     #cv2.destroyAllWindows()
