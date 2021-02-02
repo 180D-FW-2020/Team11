@@ -107,7 +107,7 @@ def piTransmit(transmitter, pi, stop):
             # before that return message is received
             pi.coolDown = True
 
-def pcProcess(stopCentral = 0):
+def pcProcess():
     '''
     Processes run on the pc. This detects a direction with the camera, sends it,
     and then waits for permission to detect a new direction. It also runs a
@@ -136,46 +136,55 @@ def pcProcess(stopCentral = 0):
     transmitter = comms.Transmitter()
     receiver.start()
     
+    # Send receiver to separate thread
+    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
+    packageReceipt.daemon = True
+    packageReceipt.start()
+    
+    # Get settings. If not isPrimary, other returned variables are all 0
+    isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
+    
+    if isPrimary:
+        stopCentral = multiprocessing.Value('i', False)
+        central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
+        central.daemon = True
+        central.start()
+        
     #First, get initial load with full playspace info
     while not pc.initialReceived:
-        
-        # Keep checking for an initial load
-        if len(receiver.packages):
+        pass
+        # # Keep checking for an initial load
+        # if len(receiver.packages):
             
-            # Get initial load and set the base display background
-            pc.unpack(receiver.packages.pop(0))
-            pc.updateDisplay()
-    
+        #     # Get initial load and set the base display background
+        #     pc.unpack(receiver.packages.pop(0))
+        #     pc.updateDisplay()
+        
     # Send handshake to confirm receipt of first load
     package = pc.pack(pc.clientId)
     transmitter.transmit(comms.pcConfirmation, package)
     
     # Check for assignment of a player ID
     while not pc.playerId:
+        pass
+        # # Keep checking for assignment
+        # if len(receiver.packages):
+        #     pc.unpack(receiver.packages.pop(0))
+        
+    # # Get confirmation from player that they are ready, and send that to central
+    # # to complete handshake process
+    # while not pc.ready:
+    #     command = pc.getCommand(stop)
+    #     if command == comms.ready:
+    #         pc.ready = True
+    #         package = pc.pack(pc.ready)
+    #         transmitter.transmit(comms.ready, package)
     
-        # Keep checking for assignment
-        if len(receiver.packages):
-            pc.unpack(receiver.packages.pop(0))
-    
-    # Get confirmation from player that they are ready, and send that to central
-    # to complete handshake process
-    while not pc.ready:
-        command = pc.getCommand(stop)
-        if command == comms.ready:
-            pc.ready = True
-            package = pc.pack(pc.ready)
-            transmitter.transmit(comms.ready, package)
-    
-    # Send main gameplay loop to separate thread
-    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
-    packageReceipt.daemon = True
-    packageReceipt.start()
-    
-    # transmitCommand methods not yet fully implemented
-    transmit = Thread(target=pcTransmit, args = (transmitter, pc, stop,))
-    transmit.daemon = True
-    transmit.start()
-    
+    # Send command receipt to separate loop
+    command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
+    command.daemon = True
+    command.start()
+
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
     # while not pc.gameOver:
@@ -214,9 +223,10 @@ def pcProcess(stopCentral = 0):
         
     stop[0] = True
     packageReceipt.join()
-    transmit.join()
-    if stopCentral:
+    command.join()
+    if isPrimary:
         stopCentral.value = True
+        central.join()
     receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
@@ -233,7 +243,7 @@ def pcPackageReceipt(receiver, pc, stop):
         #     break
     #cv2.destroyAllWindows()
         
-def pcTransmit(transmitter, pc, stop):
+def pcCommand(transmitter, pc, stop):
     '''
     Separate thread for receiving player input on PC and transmitting it to 
     central.
@@ -245,7 +255,7 @@ def pcTransmit(transmitter, pc, stop):
             package = pc.pack(command)
             transmitter.transmit(command, package)
     
-def centralNodeProcess(stop):
+def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
     '''
     Processes run on the central node only, which will run on a separate thread
     from that particular player's personal processes (pcProcess above). This
@@ -268,7 +278,7 @@ def centralNodeProcess(stop):
     transmitter = comms.Transmitter()
     receiver.start()
     
-    game = g.GamePlay()
+    game = g.GamePlay(playMode, numPlayers, edgeLength, numObstacles, numPowerups)
 
     initialPackage = game.pack()
     
@@ -377,30 +387,30 @@ if __name__ == '__main__':
         except:
             print("An error occurred with pi processes", flush=True)
             traceback.print_exc() 
-    elif settings.isPrimary:
-        try:
-            if settings.verbose: print("will run central stuff", flush=True)
-            # central = Thread(target=centralNodeProcess)
-            # player = Thread(target=pcProcess)
+    # elif settings.isPrimary:
+    #     try:
+    #         if settings.verbose: print("will run central stuff", flush=True)
+    #         # central = Thread(target=centralNodeProcess)
+    #         # player = Thread(target=pcProcess)
             
             
-            stop = multiprocessing.Value('i', False)
+    #         stop = multiprocessing.Value('i', False)
             
-            # player multiprocess must created first for Mac compatibility with
-            # OpenCV when displaying stuff later
-            player = multiprocessing.Process(target=pcProcess, args = (stop, ))
-            player.daemon = True
-            central = multiprocessing.Process(target=centralNodeProcess, args = (stop, ))
-            central.daemon = True
+    #         # player multiprocess must created first for Mac compatibility with
+    #         # OpenCV when displaying stuff later
+    #         player = multiprocessing.Process(target=pcProcess, args = (stop, ))
+    #         player.daemon = True
+    #         central = multiprocessing.Process(target=centralNodeProcess, args = (stop, ))
+    #         central.daemon = True
             
-            player.start()
-            central.start()
+    #         player.start()
+    #         central.start()
             
-            player.join()
-            central.join()
-        except:
-            print("An error occurred with primary node processes", flush=True)
-            traceback.print_exc() 
+    #         player.join()
+    #         central.join()
+    #     except:
+    #         print("An error occurred with primary node processes", flush=True)
+    #         traceback.print_exc() 
     else:
         # Only other case is this is the playerPC
         try:

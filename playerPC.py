@@ -35,10 +35,6 @@ phrases = {
     "power up" : comms.powerUp
 }
 
-googlecloud_json = {}
-
-
-
 class PlayerPC:
     '''
     This class manages all tasks relevant to each player at the PC level. This
@@ -70,6 +66,79 @@ class PlayerPC:
             print("An error occurred initializing PlayerPC", flush=True)
             traceback.print_exc() 
             
+    def settings(self):
+        try:
+            menu = np.zeros((1000,1700,3), np.uint8)
+            cv2.namedWindow('menu1')
+            cv2.createTrackbar('Primary?', 'menu1', 0, 1, self.nothing)
+            while(True):
+                isPrimary = cv2.getTrackbarPos('Primary?','menu1')
+                cv2.putText(menu,
+                            "Set to 1 if you're the primary player. Only one person can be primary!",
+                            (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(menu,
+                            "Press space to continue.",
+                            (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.imshow('menu1',menu)
+                
+                k = cv2.waitKey(1) & 0xFF
+                if k == 32:
+                    break
+            
+            cv2.destroyWindow('menu1')
+            
+            if isPrimary:
+                cv2.namedWindow('menu2')
+                
+                menu = np.zeros((1000,1700,3), np.uint8)
+    
+                cv2.createTrackbar('Play Mode', 'menu2', 0, 1, self.nothing)
+                cv2.createTrackbar('Players', 'menu2', 1, 10, self.nothing)
+                cv2.createTrackbar('Play Size', 'menu2', 10, 20, self.nothing)
+                cv2.createTrackbar('Obstacles', 'menu2', 10, 20, self.nothing)
+                cv2.createTrackbar('Powerups', 'menu2', 3, 10, self.nothing)
+                
+                while(True):
+                    playMode = cv2.getTrackbarPos('Play Mode','menu2')
+                    numPlayers = cv2.getTrackbarPos('Players','menu2')
+                    edgeLength = cv2.getTrackbarPos('Play Size','menu2')
+                    numObstacles = cv2.getTrackbarPos('Obstacles','menu2')
+                    numPowerups = cv2.getTrackbarPos('Powerups','menu2')
+                
+                    cv2.putText(menu,
+                                "Play Modes: 0 - Standard - last person tagged wins",
+                                (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(menu,
+                                "            1 - Infinite Mode",
+                                (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(menu,
+                                "Press space to continue.",
+                                (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    if numPlayers == 0:
+                        cv2.putText(menu,
+                                "There must be at least 1 player.",
+                                (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    if edgeLength < 6:
+                        cv2.putText(menu,
+                                "Play size must be at least 6 for a 6x6 grid.",
+                                (50,250), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    
+                    cv2.imshow('menu2',menu)
+                    k = cv2.waitKey(1) & 0xFF
+                    if k == 32 and numPlayers != 0 and edgeLength >= 5:
+                        break
+                cv2.destroyWindow('menu2')
+            else:
+                playMode, numPlayers, edgeLength, numObstacles, numPowerups = (0, 0, 0, 0, 0)
+            #isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = (settings.isPrimary, settings.playMode, settings.numPlayers, 10, 0, 4)
+            return isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups 
+        except:
+            print("An error occurred getting settings", flush=True)
+            traceback.print_exc()
+
+    def nothing(self, x):
+        pass
+    
     def getDirection(self, frameCapture):
         '''
         Gets direction information from the camera.
