@@ -476,7 +476,7 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[message['playerId'] - 1], -1)
+                              int(self.dist/3), playerColors[message['untagged'] - 1], -1)
         
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
         if hpos<0:
@@ -485,7 +485,7 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[message['playerId'] - 1], -1)
+                              int(self.dist/3), playerColors[message['untagged'] - 1], -1)
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                               int(self.dist/3), itColor, int(self.dist/10))
         
