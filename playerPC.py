@@ -85,7 +85,10 @@ class PlayerPC:
                 if k == 32:
                     break
             
-            cv2.destroyWindow('menu1')
+            cv2.waitKey(1)
+            cv2.destroyAllWindows()
+            
+            #cv2.destroyWindow('menu1')
             
             if isPrimary:
                 cv2.namedWindow('menu2')
@@ -127,7 +130,7 @@ class PlayerPC:
                     k = cv2.waitKey(1) & 0xFF
                     if k == 32 and numPlayers != 0 and edgeLength >= 5:
                         break
-                cv2.destroyWindow('menu2')
+                #cv2.destroyWindow('menu2')
                 cv2.waitKey(1)
                 cv2.destroyAllWindows()
             else:
