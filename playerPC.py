@@ -246,7 +246,7 @@ class PlayerPC:
                 elif topic == comms.pickup:
                     self.setPickup(message)
                 elif topic == comms.tag:
-                    self.tag(message)
+                    self.setTag(message)
                 elif topic == comms.activePower:
                     if message['powerUp'] == 0:
                         self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
@@ -471,8 +471,8 @@ class PlayerPC:
                               int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                               int(self.dist/3), playerColors[message['tagged'] - 1], -1)
-        # display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-        #                       int(self.dist/3), itColor, int(self.dist/10))
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), itColor, int(self.dist/10))
         
         self.display = display
     
@@ -483,54 +483,55 @@ class PlayerPC:
         '''
         try:
             if event:
-                self.display = copy.deepcopy(self.displayBase)
-                # Prints current state of playspace based on received package
-                for i, player in enumerate(self.playSpace.players):
-                    hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
-                    if hpos<0:
-                        hpos = self.playSpace.edgeLength + hpos + 1
-                    vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
-                    if vpos<0:
-                        vpos = self.playSpace.edgeLength + vpos + 1
-                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          int(self.dist/3), playerColors[i], -1)
-                    if player['it']:
-                        self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          int(self.dist/3), itColor, int(self.dist/10))
+                pass
+                # self.display = copy.deepcopy(self.displayBase)
+                # # Prints current state of playspace based on received package
+                # for i, player in enumerate(self.playSpace.players):
+                #     hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
+                #     if hpos<0:
+                #         hpos = self.playSpace.edgeLength + hpos + 1
+                #     vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
+                #     if vpos<0:
+                #         vpos = self.playSpace.edgeLength + vpos + 1
+                #     self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                #                           int(self.dist/3), playerColors[i], -1)
+                #     if player['it']:
+                #         self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                #                           int(self.dist/3), itColor, int(self.dist/10))
 
-                for i, obstacles in enumerate(self.playSpace.obstacles):
-                    hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
-                    if hpos<0:
-                        hpos = self.playSpace.edgeLength + hpos + 1
-                    vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
-                    if vpos<0:
-                        vpos = self.playSpace.edgeLength + vpos + 1
-                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          int(self.dist/3), playerColors[2], -1)
+                # for i, obstacles in enumerate(self.playSpace.obstacles):
+                #     hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
+                #     if hpos<0:
+                #         hpos = self.playSpace.edgeLength + hpos + 1
+                #     vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
+                #     if vpos<0:
+                #         vpos = self.playSpace.edgeLength + vpos + 1
+                #     self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                #                           int(self.dist/3), playerColors[2], -1)
                 
-                for i, powerups in enumerate(self.playSpace.powerUps):
-                    hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
-                    if hpos<0:
-                        hpos = self.playSpace.edgeLength + hpos + 1
-                    vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
-                    if vpos<0:
-                        vpos = self.playSpace.edgeLength + vpos + 1
-                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                          int(self.dist/3), playerColors[3], -1)
+                # for i, powerups in enumerate(self.playSpace.powerUps):
+                #     hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
+                #     if hpos<0:
+                #         hpos = self.playSpace.edgeLength + hpos + 1
+                #     vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
+                #     if vpos<0:
+                #         vpos = self.playSpace.edgeLength + vpos + 1
+                #     self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                #                           int(self.dist/3), playerColors[3], -1)
 
 
-                if self.playSpace.rotationCoolDownTime:
-                    self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                # if self.playSpace.rotationCoolDownTime:
+                #     self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-                if self.playSpace.powerUpTimerRemaining(0):
-                    self.display = cv2.putText(self.display, "Freeze!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                # if self.playSpace.powerUpTimerRemaining(0):
+                #     self.display = cv2.putText(self.display, "Freeze!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 
-                if self.playSpace.players[self.playerId-1]['powerUpActive'] == 1:
-                    self.display = cv2.putText(self.display, "Freeze!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                # if self.playSpace.players[self.playerId-1]['powerUpActive'] == 1:
+                #     self.display = cv2.putText(self.display, "Freeze!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-                if self.swap == True:
-                    self.swap = False
-                    self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                # if self.swap == True:
+                #     self.swap = False
+                #     self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
             elif type(self.cameraImage) != int:
                 self.display[260:740, 980:1620] = self.cameraImage
