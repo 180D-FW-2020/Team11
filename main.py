@@ -199,10 +199,6 @@ def pcProcess(stopCentral = 0):
             #cv2.imshow('frame',pc.cameraImage)
             pc.updateDisplay(event = False)
             
-  #          command = pc.getCommand(stop)
-            if command == comms.powerUp:
-                package = pc.pack(command)
-                transmitter.transmit(comms.power, package)
 
             if direction and datetime.datetime.now()>delay:
                 package = pc.pack(direction)
