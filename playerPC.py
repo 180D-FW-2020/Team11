@@ -87,7 +87,7 @@ class PlayerPC:
             
             cv2.destroyWindow('menu1')
             cv2.waitKey(1)
-            cv2.destroyAllWindows()
+            #cv2.destroyAllWindows()
             
             if isPrimary:
                 cv2.namedWindow('menu2')
@@ -131,7 +131,7 @@ class PlayerPC:
                         break
                 cv2.destroyWindow('menu2')
                 cv2.waitKey(1)
-                cv2.destroyAllWindows()
+                #cv2.destroyAllWindows()
             else:
                 playMode, numPlayers, edgeLength, numObstacles, numPowerups = (0, 0, 0, 0, 0)
             #isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = (settings.isPrimary, settings.playMode, settings.numPlayers, 10, 0, 4)
