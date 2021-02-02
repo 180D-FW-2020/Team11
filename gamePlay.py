@@ -16,37 +16,36 @@ import copy
 ITSPEED = 2 #spaces
 
 class GamePlay:
-    def __init__(self):
+    def __init__(self, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
         try:
             self.gameOver = False
             self.start = False
-            self.numPlayers = 0
-            self.playMode = 0
+            self.numPlayers = numPlayers
+            self.playMode = playMode
             
-            args = self.settings()
-            self.playSpace = PlaySpace(*args)
+            self.playSpace = PlaySpace(self.numPlayers, edgeLength, numObstacles, numPowerups)
             
         except:
             print("An error occurred initializing GamePlay", flush=True)
             traceback.print_exc() 
     
-    def settings(self):
-        '''
-        This prompts the central node player for game settings: edgelength,
-        number of obstacles, and number of powerups. Number of players too
-        would be ideal.
+    # def settings(self):
+    #     '''
+    #     This prompts the central node player for game settings: edgelength,
+    #     number of obstacles, and number of powerups. Number of players too
+    #     would be ideal.
         
-        Returns those settings.
-        '''
-        try:
-            # These are dummy values
+    #     Returns those settings.
+    #     '''
+    #     try:
+    #         # These are dummy values
 
-            self.playMode, self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.playMode, settings.numPlayers, 10, 4, 4)
-            return self.numPlayers, edgeLength, numObstacles, numPowerups 
+    #         self.playMode, self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.playMode, settings.numPlayers, 10, 4, 4)
+    #         return self.numPlayers, edgeLength, numObstacles, numPowerups 
 
-        except:
-            print("An error occurred getting settings", flush=True)
-            traceback.print_exc() 
+    #     except:
+    #         print("An error occurred getting settings", flush=True)
+    #         traceback.print_exc() 
     
     def unpack(self, package):
         '''
