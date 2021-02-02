@@ -11,9 +11,10 @@ import cv2
 import traceback
 import copy
 import comms
-import speech_recognition as sr
 import settings
 import json
+if not settings.isPi:
+    import speech_recognition as sr
 
 cameraWorking = True
 
