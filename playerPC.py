@@ -128,6 +128,8 @@ class PlayerPC:
                     if k == 32 and numPlayers != 0 and edgeLength >= 5:
                         break
                 cv2.destroyWindow('menu2')
+                cv2.waitKey(1)
+                cv2.destroyAllWindows()
             else:
                 playMode, numPlayers, edgeLength, numObstacles, numPowerups = (0, 0, 0, 0, 0)
             #isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = (settings.isPrimary, settings.playMode, settings.numPlayers, 10, 0, 4)
