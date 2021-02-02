@@ -37,6 +37,7 @@ phrases = {
 googlecloud_json = {}
 
 
+
 class PlayerPC:
     '''
     This class manages all tasks relevant to each player at the PC level. This
@@ -63,7 +64,7 @@ class PlayerPC:
             self.gameOver = False
             self.ready = False
             self.start = False
-            
+            self.swap = False     
         except:
             print("An error occurred initializing PlayerPC", flush=True)
             traceback.print_exc() 
@@ -99,8 +100,11 @@ class PlayerPC:
         Returns the message for transmission.
         '''
         try:
-            message = {'playerId': self.playerId,
-                       'val': val}
+            if val:
+                message = {'playerId': self.playerId,
+                        'val': val}
+            else:
+                message = {'playerId': self.playerId}
             return message
         except:
             print("Error sending package to primary node", flush=True)
@@ -133,10 +137,31 @@ class PlayerPC:
                     self.playSpace.rotationCoolDownTime = message['coolDown']
                 elif topic == comms.coolDown:
                     self.playSpace.rotationCoolDownTime = message['coolDown']
+                elif topic == comms.pickup:
+                    self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+                    self.playSpace.powerUps.pop(message['index'])
+                    newPower = {'powerUp': message['powerUp'],
+                                'position': message['positionpower']}
+                    self.playSpace.powerUps.append(newPower)
                 elif topic == comms.tag:
                     self.playSpace.players[message['tagged'] - 1]['it'] = True
                     self.playSpace.players[message['untagged'] - 1]['it'] = False
                     self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+                elif topic == comms.activePower:
+                    if message['powerUp'] == 0:
+                        self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    elif message['powerUp'] == 1:
+                        self.playSpace.setPowerUpTimer([message['playerId']])
+                        self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+                        self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
+                    elif message['powerUp'] == 2:
+                        self.playSpace.setPowerUpTimer(0)
+                        self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
+                        self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+                    elif message['powerUp'] == 3:
+                        self.swap = True
+                        self.playSpace.players[message['swap'] - 1]['position'] = self.playSpace.players[message['playerId'] - 1]['position']
+                        self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
             else:
                 if topic == comms.initial and not self.initialReceived:
                     self.playSpace.__dict__= message
@@ -166,7 +191,7 @@ class PlayerPC:
         '''
         try:
             if event:
-                display = copy.deepcopy(self.displayBase)
+                self.display = copy.deepcopy(self.displayBase)
                 # Prints current state of playspace based on received package
                 for i, player in enumerate(self.playSpace.players):
                     hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -175,10 +200,10 @@ class PlayerPC:
                     vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
                     if vpos<0:
                         vpos = self.playSpace.edgeLength + vpos + 1
-                    display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                                           int(self.dist/3), playerColors[i], -1)
                     if player['it']:
-                        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                        self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                                           int(self.dist/3), itColor, int(self.dist/10))
 
                 for i, obstacles in enumerate(self.playSpace.obstacles):
@@ -188,7 +213,7 @@ class PlayerPC:
                     vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
                     if vpos<0:
                         vpos = self.playSpace.edgeLength + vpos + 1
-                    display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                                           int(self.dist/3), playerColors[2], -1)
                 
                 for i, powerups in enumerate(self.playSpace.powerUps):
@@ -198,14 +223,23 @@ class PlayerPC:
                     vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
                     if vpos<0:
                         vpos = self.playSpace.edgeLength + vpos + 1
-                    display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                    self.display = cv2.circle(self.display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                                           int(self.dist/3), playerColors[3], -1)
 
 
                 if self.playSpace.rotationCoolDownTime:
-                    display = cv2.putText(display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    self.display = cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+                if self.playSpace.powerUpTimerRemaining(0):
+                    self.display = cv2.putText(self.display, "Freeze!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                
+                if self.playSpace.players[self.playerId-1]['powerUpActive'] == 1:
+                    self.display = cv2.putText(self.display, "Freeze!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+                if self.swap == True:
+                    self.swap = False
+                    self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
-                self.display = display
             elif type(self.cameraImage) != int:
                 self.display[260:740, 980:1620] = self.cameraImage
                 cv2.imshow('display',self.display)

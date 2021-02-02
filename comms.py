@@ -24,12 +24,15 @@ direction = settings.uniqueComms + "ece180d/team11/direc"
 ready = settings.uniqueComms + "ece180d/team11/ready"
 command = settings.uniqueComms + "ece180d/team11/command"
 powerUp = settings.uniqueComms + "ece180d/team11/powerUp"
+power = settings.uniqueComms + "ece180d/team11/power"
 start = settings.uniqueComms + "ece180d/team11/start"
 stop = settings.uniqueComms + "ece180d/team11/stop"
 rotation = settings.uniqueComms + "ece180d/team11/rot"
 coolDown = settings.uniqueComms + "ece180d/team11/cool"
 piConfirmation = settings.uniqueComms + "ece180d/team11/piconf"
 pcConfirmation = settings.uniqueComms + "ece180d/team11/pcconf"
+pickup = settings.uniqueComms + "ece180d/team11/pickup"
+activePower = settings.uniqueComms + "ece180d/team11/activePower"
 
 
 class Transmitter:

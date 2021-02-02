@@ -22,7 +22,7 @@ import traceback
 import datetime
 #import sys
 
-testWithoutPi = False
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -129,7 +129,9 @@ def pcProcess(stopCentral = 0):
                                comms.start,
                                comms.stop,
                                comms.axes,
-                               comms.coolDown),
+                               comms.coolDown,
+                               comms.pickup,
+                               comms.activePower),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -197,11 +199,17 @@ def pcProcess(stopCentral = 0):
             #cv2.imshow('frame',pc.cameraImage)
             pc.updateDisplay(event = False)
             
+  #          command = pc.getCommand(stop)
+            if command == comms.powerUp:
+                package = pc.pack(command)
+                transmitter.transmit(comms.power, package)
+
             if direction and datetime.datetime.now()>delay:
                 package = pc.pack(direction)
                 transmitter.transmit(comms.direction, package)
                 delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
                 
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         #time.sleep(settings.motionDelay)
@@ -258,7 +266,8 @@ def centralNodeProcess(stop):
                                comms.command,
                                comms.ready,
                                comms.powerUp,
-                               comms.rotation),
+                               comms.rotation,
+                               comms.pickup),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -404,3 +413,4 @@ if __name__ == '__main__':
         except:
             print("An error occurred with non primary node processes", flush=True)
             traceback.print_exc() 
+
