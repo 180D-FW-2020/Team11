@@ -665,9 +665,12 @@ class PlaySpace:
                     self.players[playerSwap-1]['position'][1] = yValue
                     self.players[playerSwap-1]['position'][2] = zValue
 
-                    message = {'powerUp' : 3, 'swap' : playerSwap, 'position': self.players[playerId-1]['position']}
+                    message = {'powerUp' : 3, 'swap' : playerSwap, 'position': self.players[playerId-1]['position'].tolist()}
                     if self.numPlayers == 1:
-                        message = {'powerUp' : 3, 'swap' : playerId, 'position': self.players[playerId-1]['position']}
+                        message = {'powerUp' : 3, 'swap' : playerId, 'position': self.players[playerId-1]['position'].tolist()}
+                else:
+                    print("Invalid power up")
+
             message['playerId'] = playerId
             return comms.activePower , message
         except:
@@ -680,6 +683,7 @@ class PlaySpace:
         '''
         try:
             if playerId != 0:
+                if setting.verbose: print(type(playerId))
                 time = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
                 self.players[playerId-1]['powerUpTimer'] = time
             else:
@@ -773,17 +777,3 @@ class PlaySpace:
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()
-
-if __name__ == '__main__':
-    myp = PlaySpace(1,10,1,1)
-    myp.obstacles[0]['position'] = np.array([5,10,5])
-   # myp.powerUps[0]['powerUp'] = 1
-    myp.players[0]['position'] = np.array([5,9,5])
-    myp.players[0]['it'] = True
-
-    myp.movePlayer(1, '^')
-    myp.activatePowerUp(1)
-    myp.movePlayer(1, '>')
-    print(myp.players[0]['position'])
-    #for i in range(len(myp.powerUps)):
-    #    print(myp.powerUps[i])
