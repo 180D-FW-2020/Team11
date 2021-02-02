@@ -230,9 +230,7 @@ class PlayerPC:
                 if topic == comms.initial and not self.initialReceived:
                     self.setPlayspace(message)
                 elif topic == comms.assign:
-                    if not self.playerId and message['clientId'] == self.clientId:
-                        self.playerId = message['playerId']
-                        if settings.verbose: print('########## playerId set to ############', self.playerId)
+                    self.setAssign(message)
                 elif topic == comms.start:
                     self.start = True
             return False
@@ -295,7 +293,6 @@ class PlayerPC:
         
         self.display = display
         
-    
     def setMove(self, message, passDisplay = None):
         '''
         Moves a player on the display, based on the input message. This can also
@@ -396,6 +393,14 @@ class PlayerPC:
         
         # Move player, which also sets the display
         self.setMove(message, passDisplay = display)
+    
+    def setAssign(self, message):
+        '''
+        Sets player ID. Pending: announce loaded players to loading screen
+        '''
+        if not self.playerId and message['clientId'] == self.clientId:
+            self.playerId = message['playerId']
+        if settings.verbose: print('########## playerId set to ############', self.playerId)
     
     def updateDisplay(self, event = True):
         '''
