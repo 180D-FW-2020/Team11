@@ -72,13 +72,27 @@ class PlayerPC:
             cv2.namedWindow('menu1')
             cv2.createTrackbar('Primary?', 'menu1', 0, 1, self.nothing)
             while(True):
+                menu = np.zeros((1000,1700,3), np.uint8)
+                
                 isPrimary = cv2.getTrackbarPos('Primary?','menu1')
+                
                 cv2.putText(menu,
                             "Set to 1 if you're the primary player. Only one person can be primary!",
                             (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.putText(menu,
-                            "Press space to continue.",
+                            "Move the trackbar slider right to be primary, otherwise leave it on the left.",
                             (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                if isPrimary == 0:
+                    cv2.putText(menu,
+                            "You chose: not primary",
+                            (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2, cv2.LINE_AA)
+                else:
+                    cv2.putText(menu,
+                            "You chose: primary",
+                            (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
+                cv2.putText(menu,
+                            "Press space to continue...",
+                            (50,250), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
                 cv2.imshow('menu1',menu)
                 
                 k = cv2.waitKey(1) & 0xFF
@@ -101,29 +115,49 @@ class PlayerPC:
                 cv2.createTrackbar('Powerups', 'menu2', 3, 10, self.nothing)
                 
                 while(True):
+                    menu = np.zeros((1000,1700,3), np.uint8)
+                    
                     playMode = cv2.getTrackbarPos('Play Mode','menu2')
                     numPlayers = cv2.getTrackbarPos('Players','menu2')
                     edgeLength = cv2.getTrackbarPos('Play Size','menu2')
                     numObstacles = cv2.getTrackbarPos('Obstacles','menu2')
                     numPowerups = cv2.getTrackbarPos('Powerups','menu2')
                 
-                    cv2.putText(menu,
-                                "Play Modes: 0 - Standard - last person tagged wins",
-                                (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                    cv2.putText(menu,
-                                "            1 - Infinite Mode",
-                                (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                    cv2.putText(menu,
-                                "Press space to continue.",
-                                (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    if playMode == 0:
+                        cv2.putText(menu,
+                                    "Play Mode: Standard - last person tagged wins",
+                                    (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    else:
+                        cv2.putText(menu,
+                                    "Play Mode: Infinite!",
+                                    (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                     if numPlayers == 0:
                         cv2.putText(menu,
-                                "There must be at least 1 player.",
-                                (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                                    "Number of Players: 0. At least one player required.",
+                                    (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                    else:
+                        cv2.putText(menu,
+                                    f"Number of Players: {numPlayers}",
+                                    (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    
                     if edgeLength < 6:
                         cv2.putText(menu,
-                                "Play size must be at least 6 for a 6x6 grid.",
+                                    f"Play area size: {edgeLength}x{edgeLength}. At least 6x6 is required.",
+                                    (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                    else:
+                        cv2.putText(menu,
+                                    f"Play area size: {edgeLength}x{edgeLength}. At least 6x6 is required.",
+                                    (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    
+                    cv2.putText(menu,
+                                f"Number of obstacles: {numObstacles}",
+                                (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(menu,
+                                f"Number of powerups: {numPowerups}",
                                 (50,250), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(menu,
+                                "Press space to continue...",
+                                (50,350), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
                     
                     cv2.imshow('menu2',menu)
                     k = cv2.waitKey(1) & 0xFF
@@ -212,9 +246,7 @@ class PlayerPC:
                 elif topic == comms.pickup:
                     self.setPickup(message)
                 elif topic == comms.tag:
-                    self.playSpace.players[message['tagged'] - 1]['it'] = True
-                    self.playSpace.players[message['untagged'] - 1]['it'] = False
-                    self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+                    self.tag(message)
                 elif topic == comms.activePower:
                     if message['powerUp'] == 0:
                         self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
@@ -405,6 +437,59 @@ class PlayerPC:
         if not self.playerId and message['clientId'] == self.clientId:
             self.playerId = message['playerId']
         if settings.verbose: print('########## playerId set to ############', self.playerId)
+    
+    def setTag(self, message):
+        '''
+        Updates tagged player to have a tag indicator, and untagged player to
+        not.
+        '''
+        self.playSpace.players[message['tagged'] - 1]['it'] = True
+        self.playSpace.players[message['untagged'] - 1]['it'] = False
+        self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+        
+        display = copy.deepcopy(self.display)
+        
+        # Clear previous marks for players
+        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['untagged'] - 1]['position'])
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        
+        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        
+        # Replace player marks with update
+        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['untagged'] - 1]['position'])
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['untagged'] - 1]['position'])
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), playerColors[message['playerId'] - 1], -1)
+        
+        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
+        if hpos<0:
+            hpos = self.playSpace.edgeLength + hpos + 1
+        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
+        if vpos<0:
+            vpos = self.playSpace.edgeLength + vpos + 1
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), playerColors[message['playerId'] - 1], -1)
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), itColor, int(self.dist/10))
+        
+        self.display = display
     
     def updateDisplay(self, event = True):
         '''
