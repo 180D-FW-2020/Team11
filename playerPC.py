@@ -471,8 +471,8 @@ class PlayerPC:
                               int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                               int(self.dist/3), playerColors[message['tagged'] - 1], -1)
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), itColor, int(self.dist/10))
+        # display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+        #                       int(self.dist/3), itColor, int(self.dist/10))
         
         self.display = display
     
