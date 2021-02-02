@@ -617,7 +617,7 @@ class Microphone:
                     
                     print("######## Please say something... #########", flush=True)
                     
-                    audio = self.recognizer.listen(source, phrase_time_limit=3)
+                    audio = self.recognizer.listen(source, phrase_time_limit=2)
                     
                     try:
                         #command = self.recognizer.recognize_google_cloud(audio, credentials_json=json.dumps(googlecloud_json))
