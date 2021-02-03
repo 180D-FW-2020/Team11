@@ -127,6 +127,10 @@ def pcProcess():
     pygame.init()
     pygame.mixer.init()
 
+    # Start settings soundtrack
+    pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
+    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.play(-1)
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(clientId)
@@ -162,11 +166,7 @@ def pcProcess():
         central.start()
     
     pc.loading("Waiting for initial game state...")
-    
-    # Start settings soundtrack
-    pygame.mixer.music.load('SoundEffects/read_two_run.wav')
-    pygame.mixer.music.set_volume(0.3)
-    pygame.mixer.music.play(-1)
+
     #First, get initial load with full playspace info
     while not pc.initialReceived and not breakEarly:
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -239,6 +239,7 @@ def pcProcess():
             breakEarly = True
             break
             
+    pygame.mixer.music.stop()
     cv2.destroyAllWindows()
     cv2.waitKey(1)
     
