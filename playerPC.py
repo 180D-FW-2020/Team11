@@ -16,6 +16,7 @@ import json
 import platform
 if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
+    import pygame
 
 cameraWorking = True
 
@@ -65,9 +66,16 @@ class PlayerPC:
             self.swap = False   
             self.powerUp = 0
             
+            # Initialize the PyGame
+            pygame.init()
+            pygame.mixer.init()
+            
+            # Set up local sound effects
+            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.mp3')
+            
         except:
             print("An error occurred initializing PlayerPC", flush=True)
-            traceback.print_exc() 
+            traceback.print_exc()
             
     def settings(self):
         try:
@@ -419,6 +427,9 @@ class PlayerPC:
         
         # Reload the playspace according to new axes
         self.setPlayspace(None)
+
+        # Play rotation SFX
+        self.rotationSound.play()
         
         # Set the cooldown message
         cv2.putText(self.display, "Cooldown!", (60,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
@@ -453,6 +464,9 @@ class PlayerPC:
             vpos = self.playSpace.edgeLength + vpos + 1
         cv2.rectangle(display, (self.dist*hpos + int(self.dist/8), self.dist*vpos + int(self.dist/8)),
                           (self.dist*hpos + int(self.dist*7/8), self.dist*vpos + int(self.dist*7/8)), (0,0,0), -1)
+        
+        # Play's pick up sound
+        #self.pickUpSound.play()
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
@@ -496,6 +510,9 @@ class PlayerPC:
         self.playSpace.players[message['tagged'] - 1]['it'] = True
         self.playSpace.players[message['untagged'] - 1]['it'] = False
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+        
+        # Play sound to indicate tag
+        #self.tagSound.play()
         
         display = copy.deepcopy(self.display)
         
