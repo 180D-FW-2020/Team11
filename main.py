@@ -11,7 +11,9 @@ Created on Mon Nov  9 12:54:08 2020
 import settings
 import gamePlay as g
 if settings.isPi: import playerPi
-else: import playerPC
+else:
+    import playerPC
+    import pygame
 import comms
 from threading import Thread
 import cv2
@@ -20,7 +22,6 @@ import random
 import time
 import traceback
 import datetime
-import pygame
 #import sys
 
 testWithoutPi = False
