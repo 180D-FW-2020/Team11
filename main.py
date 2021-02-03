@@ -20,7 +20,7 @@ import random
 import time
 import traceback
 import datetime
-#import sys
+import numpy as np
 
 testWithoutPi = False
             
@@ -141,32 +141,36 @@ def pcProcess():
     packageReceipt.daemon = True
     packageReceipt.start()
     
-    # Get settings. If not isPrimary, other returned variables are all 0
+    # Get settings. If not isPrimary, other returned variables are all 0. If
+    # primary, spawn primary player stuff
     isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
-    
     if isPrimary:
         stopCentral = multiprocessing.Value('i', False)
         central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
         central.daemon = True
         central.start()
-        
+    
+    pc.loading("Waiting for initial game state...")
     #First, get initial load with full playspace info
     while not pc.initialReceived:
-        pass
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         # # Keep checking for an initial load
         # if len(receiver.packages):
             
         #     # Get initial load and set the base display background
         #     pc.unpack(receiver.packages.pop(0))
         #     pc.updateDisplay()
-        
+    
+    pc.loading("Initial game state received. Waiting for player ID assignment...")
     # Send handshake to confirm receipt of first load
     package = pc.pack(pc.clientId)
     transmitter.transmit(comms.pcConfirmation, package)
     
     # Check for assignment of a player ID
     while not pc.playerId:
-        pass
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         # # Keep checking for assignment
         # if len(receiver.packages):
         #     pc.unpack(receiver.packages.pop(0))
@@ -180,6 +184,7 @@ def pcProcess():
     #         package = pc.pack(pc.ready)
     #         transmitter.transmit(comms.ready, package)
     
+    pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
     # Send command receipt to separate loop
     command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
     command.daemon = True
@@ -200,8 +205,14 @@ def pcProcess():
     frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     
+    while not pc.start:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    
     delay = datetime.datetime.now()
-    cv2.startWindowThread()
+    #cv2.startWindowThread()
     while not pc.gameOver:
         if pc.start:
             direction, pc.cameraImage = pc.getDirection(frameCapture)
@@ -254,6 +265,10 @@ def pcCommand(transmitter, pc, stop):
         if command:
             package = pc.pack(command)
             transmitter.transmit(command, package)
+        if command == comms.ready:
+            pc.loading(f"You are ready! Waiting for other players to be ready...")
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
     
 def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
     '''
