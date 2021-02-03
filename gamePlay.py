@@ -168,11 +168,10 @@ class PlaySpace:
         of players, and a list of just the players who are not It.
         '''
         try:
-            # In solo player mode, generate a dummy second player
-            playerIt = r.randrange(1, max(3, numPlayers+1), 1)
+            playerIt = r.randrange(1, numPlayers+1, 1)
             players = []
             playersNotIt = []
-            for i in range (1, max(3, numPlayers+1)):
+            for i in range (1, numPlayers+1):
                 
                 if self.edgeLength:
                     position = np.array([r.randrange(1, self.edgeLength + 1, 1),
@@ -691,7 +690,7 @@ class PlaySpace:
         '''
         try:
             if playerId != 0:
-                if settings.verbose: print(type(playerId))
+                if setting.verbose: print(type(playerId))
                 time = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
                 self.players[playerId-1]['powerUpTimer'] = time
             else:
