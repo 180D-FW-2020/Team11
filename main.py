@@ -22,7 +22,7 @@ import traceback
 import datetime
 #import sys
 
-testWithoutPi = False
+testWithoutPi = True
             
 def piProcess():
     '''
