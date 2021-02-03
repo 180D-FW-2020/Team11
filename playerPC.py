@@ -450,7 +450,7 @@ class PlayerPC:
                               int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
         
         # Play's pick up sound
-        self.pickUpSound.play()
+        #self.pickUpSound.play()
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
@@ -483,7 +483,7 @@ class PlayerPC:
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
         
         # Play sound to indicate tag
-        self.tagSound.play()
+        #self.tagSound.play()
         
         display = copy.deepcopy(self.display)
         

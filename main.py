@@ -230,7 +230,7 @@ def pcProcess():
         pass
     
     pygame.mixer.music.load('SoundEffects/Run.wav')
-    pygame.mixer.music.set_volume(0.3)
+    #pygame.mixer.music.set_volume(0.3)
     pygame.mixer.music.play(-1)
     
     readySent = False
