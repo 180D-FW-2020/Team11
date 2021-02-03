@@ -20,6 +20,7 @@ import random
 import time
 import traceback
 import datetime
+import pygame
 #import sys
 
 testWithoutPi = False
@@ -117,6 +118,10 @@ def pcProcess():
     '''   
     if settings.verbose: print("Starting pc process", flush=True)
     
+    # Initialize the PyGame
+    pygame.init()
+    pygame.mixer.init()
+    
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(clientId)
     #displayReceived = False
@@ -199,6 +204,14 @@ def pcProcess():
     frameCapture = cv2.VideoCapture(settings.camera)
     frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
+    # loop waits until pc.start is true
+    while not pc.start:
+        pass
+    
+    pygame.mixer.music.load('SoundEffects/Run.wav')
+    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.play(-1)
     
     delay = datetime.datetime.now()
     cv2.startWindowThread()
