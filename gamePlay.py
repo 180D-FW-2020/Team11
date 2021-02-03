@@ -14,6 +14,8 @@ import settings
 import copy
 
 ITSPEED = 2 #spaces
+ROTATION_COOLDOWN = 10 #seconds
+POWERUP_TIMER = 15 # seconds
 
 class GamePlay:
     def __init__(self, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
@@ -683,10 +685,10 @@ class PlaySpace:
         try:
             if playerId != 0:
                 if setting.verbose: print(type(playerId))
-                time = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
+                time = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
                 self.players[playerId-1]['powerUpTimer'] = time
             else:
-                self.freezeTimer = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
+                self.freezeTimer = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
         except:
             print("An error occurred setting the timer ")
             traceback.print_exc() 
@@ -744,7 +746,7 @@ class PlaySpace:
         Sets the rotation cooldown to end a designated time after now
         '''
         try:
-            self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = settings.ROTATION_COOLDOWN)
+            self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = ROTATION_COOLDOWN)
         except:
             print("An error occurred setting the rotation cooldown")
             traceback.print_exc() 

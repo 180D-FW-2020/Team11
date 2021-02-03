@@ -14,8 +14,7 @@ import comms
 import settings
 import json
 import platform
-if not settings.isPi:
-#if 'arm' not in platform.machine().lower():
+if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
 
 cameraWorking = True
