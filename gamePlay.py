@@ -117,7 +117,6 @@ class GamePlay:
             print("An error occurred packing the playspace", flush=True)
             traceback.print_exc() 
 
-    
     def isGameOver(self):
         try:
             # Standard play mode: play until everyone has been tagged at least once
@@ -171,13 +170,20 @@ class PlaySpace:
             playerIt = r.randrange(1, numPlayers+1, 1)
             players = []
             playersNotIt = []
+            mask = np.array([1, 1, 0])
             for i in range (1, numPlayers+1):
                 
                 if self.edgeLength:
-                    position = np.array([r.randrange(1, self.edgeLength + 1, 1),
-                                r.randrange(1, self.edgeLength + 1, 1),
-                                r.randrange(1, self.edgeLength + 1, 1)])
-                    
+                    unique = False
+                    while not unique:
+                        position = np.array([r.randrange(1, self.edgeLength + 1, 1),
+                                    r.randrange(1, self.edgeLength + 1, 1),
+                                    r.randrange(1, self.edgeLength + 1, 1)])
+                        unique = True
+                        for p in players:
+                            if unique and np.array_equal(position * mask, p['position'] * mask):
+                                unique = False
+                                
                 else: position = np.array([0, 0, 0])
                 
                 if(i == playerIt): 
