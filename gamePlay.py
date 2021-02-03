@@ -360,10 +360,13 @@ class PlaySpace:
                 topic = comms.move
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
+                
+                if bool(replacement): 
+                    displayUpdates.update(replacement)
+                    topic = comms.pickup
+            
             if settings.verbose: print("end of move: ", self.players[playerId-1])
-            if bool(replacement): 
-                displayUpdates.update(replacement)
-                topic = comms.pickup
+            
             return topic, displayUpdates
         
         except:
