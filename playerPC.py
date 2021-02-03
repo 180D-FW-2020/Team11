@@ -264,20 +264,21 @@ class PlayerPC:
                 elif topic == comms.tag:
                     self.setTag(message)
                 elif topic == comms.activePower:
-                    if message['powerUp'] == 0:
-                        self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                    elif message['powerUp'] == 1:
-                        self.playSpace.setPowerUpTimer([message['playerId']])
-                        self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
-                        self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
-                    elif message['powerUp'] == 2:
-                        self.playSpace.setPowerUpTimer(0)
-                        self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
-                        self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
-                    elif message['powerUp'] == 3:
-                        self.swap = True
-                        self.playSpace.players[message['swap'] - 1]['position'] = self.playSpace.players[message['playerId'] - 1]['position']
-                        self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+                    self.setActivePower(message)
+                    # if message['powerUp'] == 0:
+                    #     self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    # elif message['powerUp'] == 1:
+                    #     self.playSpace.setPowerUpTimer([message['playerId']])
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
+                    # elif message['powerUp'] == 2:
+                    #     self.playSpace.setPowerUpTimer(0)
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+                    # elif message['powerUp'] == 3:
+                    #     self.swap = True
+                    #     self.playSpace.players[message['swap'] - 1]['position'] = self.playSpace.players[message['playerId'] - 1]['position']
+                    #     self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
             else:
                 if topic == comms.initial and not self.initialReceived:
                     self.setPlayspace(message)
@@ -531,7 +532,45 @@ class PlayerPC:
             cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
         
         self.display = display
-    
+
+    def setActivePower(self, message):
+        if message['playerId'] == self.playerId and message['powerUp'] == 0:
+            pass
+            #self.display = cv2.putText(self.display, "No powerups held!", (1050,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        elif message['playerId'] == self.playerId and message['powerUp'] == 1:
+            display = copy.deepcopy(self.display)
+            
+            # clear previous message
+            cv2.rectangle(display, (540,0), (1000, 34), (0,0,0), -1)
+            
+            # display current active powerup
+            cv2.putText(display, "Speed powerup active!", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            
+            self.display = display
+            # self.playSpace.setPowerUpTimer([message['playerId']])
+            # self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+            # self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
+            
+        elif message['playerId'] == self.playerId and message['powerUp'] == 2:
+            display = copy.deepcopy(self.display)
+            
+            # clear previous message
+            cv2.rectangle(display, (540,0), (1000, 34), (0,0,0), -1)
+            
+            # display current active powerup
+            cv2.putText(display, "Freeze powerup active!", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            
+            self.display = display
+            # self.playSpace.setPowerUpTimer(0)
+            # self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
+            # self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+            
+        elif (message['playerId'] == self.playerId or message['swap'] == self.playerId) and message['powerUp'] == 3:
+            self.swap = True
+            self.playSpace.players[message['swap'] - 1]['position'] = self.playSpace.players[message['playerId'] - 1]['position']
+            self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+        
     def updateDisplay(self, event = True):
         '''
         Prints current contents of local playSpace to player's screen.
