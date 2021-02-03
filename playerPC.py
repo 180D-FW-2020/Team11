@@ -63,15 +63,12 @@ class PlayerPC:
             self.gameOver = False
             self.ready = False
             self.start = False
-            self.swap = False     
-        except:
-            print("An error occurred initializing PlayerPC", flush=True)
-            traceback.print_exc() 
+            self.swap = False
             
             # Initialize the PyGame
             pygame.init()
             pygame.mixer.init()
-
+            
             # Set up local sound effects
             self.tagSound = pygame.mixer.Sound('SoundEffects/tag2.mp3')
             self.collisionSound = pygame.mixer.Sound('SoundEffects/Wall_Player_Collision.mp3')
@@ -80,6 +77,10 @@ class PlayerPC:
             self.teleportSound = pygame.mixer.Sound('SoundEffects/Teleport.mp3')
             self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.mp3')
             self.pickUpSound = pygame.mixer.Sound('SoundEffects/PickUp.mp3')
+            
+        except:
+            print("An error occurred initializing PlayerPC", flush=True)
+            traceback.print_exc()
             
     def settings(self):
         try:
