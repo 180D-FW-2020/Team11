@@ -15,7 +15,7 @@ POWERUP_TIMER = 15 # seconds
 motionDelay = 2 # seconds
 camera = 0 # default 
 verbose = True
-uniqueComms = "test11"
+uniqueComms = "test0202"
 
 # Modes:
 #  * infinite - use for solo testing

@@ -13,7 +13,9 @@ import copy
 import comms
 import settings
 import json
+import platform
 if not settings.isPi:
+#if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
 
 cameraWorking = True
@@ -223,6 +225,9 @@ class PlayerPC:
                         'val': val}
             else:
                 message = {'playerId': self.playerId}
+            
+            if val == comms.ready:
+                self.ready = True
             return message
         except:
             print("Error sending package to primary node", flush=True)

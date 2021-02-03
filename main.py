@@ -152,8 +152,9 @@ def pcProcess():
     
     pc.loading("Waiting for initial game state...")
     #First, get initial load with full playspace info
-    while not pc.initialReceived:
+    while not pc.initialReceived and not stop[0]:
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            stop[0] = True
             break
         # # Keep checking for an initial load
         # if len(receiver.packages):
@@ -162,14 +163,16 @@ def pcProcess():
         #     pc.unpack(receiver.packages.pop(0))
         #     pc.updateDisplay()
     
-    pc.loading("Initial game state received. Waiting for player ID assignment...")
-    # Send handshake to confirm receipt of first load
-    package = pc.pack(pc.clientId)
-    transmitter.transmit(comms.pcConfirmation, package)
+    if not stop[0]:
+        pc.loading("Initial game state received. Waiting for player ID assignment...")
+        # Send handshake to confirm receipt of first load
+        package = pc.pack(pc.clientId)
+        transmitter.transmit(comms.pcConfirmation, package)
     
     # Check for assignment of a player ID
-    while not pc.playerId:
+    while not pc.playerId and not stop[0]:
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            stop[0] = True
             break
         # # Keep checking for assignment
         # if len(receiver.packages):
@@ -184,11 +187,12 @@ def pcProcess():
     #         package = pc.pack(pc.ready)
     #         transmitter.transmit(comms.ready, package)
     
-    pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
-    # Send command receipt to separate loop
-    command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
-    command.daemon = True
-    command.start()
+    if not stop[0]:
+        pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
+        # Send command receipt to separate loop
+        command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
+        command.daemon = True
+        command.start()
 
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -201,33 +205,38 @@ def pcProcess():
     #         break
     # cv2.destroyAllWindows()
     
-    frameCapture = cv2.VideoCapture(settings.camera)
-    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    if not stop[0]:
+        frameCapture = cv2.VideoCapture(settings.camera)
+        frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     
-    while not pc.start:
+    readySent = False
+    while not pc.start and not stop[0]:
+        if not readySent and pc.ready:
+            pc.loading(f"You are ready! Waiting for other players to be ready...")
+            readySent = True
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            stop[0] = True
             break
+        
     cv2.destroyAllWindows()
     cv2.waitKey(1)
     
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
-    while not pc.gameOver:
-        if pc.start:
-            direction, pc.cameraImage = pc.getDirection(frameCapture)
-            #cv2.imshow('frame',pc.cameraImage)
-            pc.updateDisplay(event = False)
+    while not pc.gameOver and not stop[0]:
+        direction, pc.cameraImage = pc.getDirection(frameCapture)
+        #cv2.imshow('frame',pc.cameraImage)
+        pc.updateDisplay(event = False)
+
+        if direction and datetime.datetime.now()>delay:
+            package = pc.pack(direction)
+            transmitter.transmit(comms.direction, package)
+            delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
             
 
-            if direction and datetime.datetime.now()>delay:
-                package = pc.pack(direction)
-                transmitter.transmit(comms.direction, package)
-                delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
-                
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         #time.sleep(settings.motionDelay)
     frameCapture.release()
     cv2.destroyAllWindows()
@@ -265,10 +274,6 @@ def pcCommand(transmitter, pc, stop):
         if command:
             package = pc.pack(command)
             transmitter.transmit(command, package)
-        if command == comms.ready:
-            pc.loading(f"You are ready! Waiting for other players to be ready...")
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
     
 def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
     '''

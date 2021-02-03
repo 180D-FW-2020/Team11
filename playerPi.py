@@ -11,7 +11,9 @@ import math
 import traceback
 import comms
 import time
+import platform
 if settings.isPi:
+#if 'arm' in platform.machine().lower():
     import IMU
 
 # IMU values
