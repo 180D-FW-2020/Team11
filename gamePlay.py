@@ -18,36 +18,37 @@ ROTATION_COOLDOWN = 10 #seconds
 POWERUP_TIMER = 15 # seconds
 
 class GamePlay:
-    def __init__(self, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
+    def __init__(self):
         try:
             self.gameOver = False
             self.start = False
-            self.numPlayers = numPlayers
-            self.playMode = playMode
+            self.numPlayers = 0
+            self.playMode = 0
             
-            self.playSpace = PlaySpace(self.numPlayers, edgeLength, numObstacles, numPowerups)
+            args = self.settings()
+            self.playSpace = PlaySpace(*args)
             
         except:
             print("An error occurred initializing GamePlay", flush=True)
             traceback.print_exc() 
     
-    # def settings(self):
-    #     '''
-    #     This prompts the central node player for game settings: edgelength,
-    #     number of obstacles, and number of powerups. Number of players too
-    #     would be ideal.
+    def settings(self):
+        '''
+        This prompts the central node player for game settings: edgelength,
+        number of obstacles, and number of powerups. Number of players too
+        would be ideal.
         
-    #     Returns those settings.
-    #     '''
-    #     try:
-    #         # These are dummy values
+        Returns those settings.
+        '''
+        try:
+            # These are dummy values
 
-    #         self.playMode, self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.playMode, settings.numPlayers, 10, 4, 4)
-    #         return self.numPlayers, edgeLength, numObstacles, numPowerups 
+            self.playMode, self.numPlayers, edgeLength, numObstacles, numPowerups = (settings.playMode, settings.numPlayers, 10, 4, 4)
+            return self.numPlayers, edgeLength, numObstacles, numPowerups 
 
-    #     except:
-    #         print("An error occurred getting settings", flush=True)
-    #         traceback.print_exc() 
+        except:
+            print("An error occurred getting settings", flush=True)
+            traceback.print_exc() 
     
     def unpack(self, package):
         '''
@@ -354,10 +355,11 @@ class PlaySpace:
                 topic = comms.move
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
+                if bool(replacement): 
+                    displayUpdates.update(replacement)
+                    topic = comms.pickup
+
             if settings.verbose: print("end of move: ", self.players[playerId-1])
-            if bool(replacement): 
-                displayUpdates.update(replacement)
-                topic = comms.pickup
             return topic, displayUpdates
         
         except:
@@ -424,8 +426,11 @@ class PlaySpace:
                 else:
                     position[0] += 1          
         
-        self.powerUps[index]['powerUp'] = powerupID
-        self.powerUps[index]['position'] = position
+        self.powerUps.pop(index)
+        newPower = {'powerUp': powerupID,
+                    'position': position}
+        self.powerUps.append(newPower)
+        
         # update display to indicate new powerup
         displayUpdates = {'index': index,
                                   'powerUp': powerupID,
@@ -437,7 +442,7 @@ class PlaySpace:
         Takes a player and direction, figures out if they are going to run into 
         stuff.
         
-        Return tuple (collision, tag, powerup, overlap):
+        Return tuple (collision, tag, powerup, overlap, replacement):
          - collision: bool indicating a collision with obstacle, edge, or
              another player where the moving player is not it
          - tag: if the moving player is it and the obstacle is another
@@ -690,8 +695,8 @@ class PlaySpace:
         '''
         try:
             if playerId != 0:
-                if setting.verbose: print(type(playerId))
-                time = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
+                if settings.verbose: print(type(playerId))
+                time = datetime.datetime.now() + datetime.timedelta(seconds = settings.POWERUP_TIMER)
                 self.players[playerId-1]['powerUpTimer'] = time
             else:
                 self.freezeTimer = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
@@ -710,8 +715,7 @@ class PlaySpace:
             if playerID != 0:
                 if not self.players[playerID-1]['powerUpTimer']:
                     if settings.verbose:
-                        print("powerUpTimerRemaining called without checking",
-                            "if timer in place.")
+                        print("no powerup timer active for player ", playerID, "1.")
                     return False
                 
                 # If timer is in place, check to see if it ended before now. If
@@ -727,8 +731,7 @@ class PlaySpace:
             else:
                 if not self.freezeTimer:
                     if settings.verbose:
-                        print("powerUpTimerRemaining called without checking",
-                            "if timer in place.")
+                        print("no powerup timer active.")
                     return False
                 
                 # If timer is in place, check to see if it ended before now. If
