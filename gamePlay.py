@@ -191,9 +191,9 @@ class PlaySpace:
                 gp = r.randrange(0, 256)
                 rp = r.randrange(0, 256)
                 
-                bi = min(bp + 50, 255)
-                gi = min(gp + 50, 255)
-                ri = min(rp + 50, 255)
+                bi = min(bp + 70, 255)
+                gi = min(gp + 70, 255)
+                ri = min(rp + 70, 255)
                 
                 color = (bp, gp, rp)
                 itColor = (bi, gi, ri)

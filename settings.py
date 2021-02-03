@@ -15,7 +15,7 @@ Values configured on a player/device level
 # motionDelay = 2 # seconds
 camera = 0 # default 
 verbose = False
-uniqueComms = "test0202"
+uniqueComms = "zefyr"
 
 # Modes:
 #  * infinite - use for solo testing
