@@ -535,7 +535,7 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                   int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+                   int(self.dist/3)+10, (0,0,0), -1)
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                    int(self.dist/3), self.playSpace.players[message['untagged'] - 1]['color'], -1)
         
