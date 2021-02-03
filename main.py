@@ -265,6 +265,7 @@ def pcProcess():
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        pygame.mixer.music.stop()
         
     if frameCapture:
         frameCapture.release()
