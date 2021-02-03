@@ -20,12 +20,12 @@ if 'arm' not in platform.machine().lower():
 cameraWorking = True
 
 ## Display dummy values
-player1c = (255, 99, 174)
-player2c = (0, 127, 255)
-player3c = (255, 0, 255)
-player4c = (255, 255, 0)
-playerColors = [player1c, player2c, player3c, player4c]
-itColor = (255, 198, 220)
+# player1c = (255, 99, 174)
+# player2c = (0, 127, 255)
+OBSTACLE_COLOR = (255, 0, 255)
+POWERUP_COLOR = (255, 255, 0)
+# playerColors = [player1c, player2c, player3c, player4c]
+# itColor = (255, 198, 220)
 
 ## Commands
 phrases = {
@@ -329,7 +329,7 @@ class PlayerPC:
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
             display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                  int(self.dist/3), playerColors[2], -1)
+                                  int(self.dist/3), OBSTACLE_COLOR, -1)
         
         for i, powerups in enumerate(self.playSpace.powerUps):
             hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
@@ -339,7 +339,7 @@ class PlayerPC:
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
             display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                  int(self.dist/3), playerColors[3], -1)
+                                  int(self.dist/3), POWERUP_COLOR, -1)
         
         self.display = display
         
@@ -439,7 +439,7 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[3], -1)
+                              int(self.dist/3), POWERUP_COLOR, -1)
         
         # Move player, which also sets the display
         self.setMove(message, passDisplay = display)
