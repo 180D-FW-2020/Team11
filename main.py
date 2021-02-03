@@ -25,7 +25,7 @@ import platform
 if 'arm' not in platform.machine().lower():
     import pygame
 
-MOTION_DELAY = 2
+MOTION_DELAY = 1
 
 testWithoutPi = False
             
