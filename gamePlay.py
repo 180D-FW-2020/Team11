@@ -433,8 +433,10 @@ class PlaySpace:
                 else:
                     position[0] += 1          
         
-        self.powerUps[index]['powerUp'] = powerupID
-        self.powerUps[index]['position'] = position
+        self.powerUps.pop(index)
+        newPower = {'powerUp' : powerupID,
+                    'position' : position}
+        self.powerUps.append(newPower)
         # update display to indicate new powerup
         displayUpdates = {'index': index,
                                   'powerUp': powerupID,
