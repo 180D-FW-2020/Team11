@@ -400,14 +400,14 @@ class PlaySpace:
                 if abs(self.horizontalAxis[i]) == 1:
                     horizontalindex = i
             
-            for i in range(len(self.players)):
-                for j in range(len(self.players)):
-                    if j > i:
-                        if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
-                            if self.players[i]['position'][horizontalindex] != 1:
-                                self.players[i]['position'][horizontalindex] -= 1
-                            else:
-                                self.players[i]['position'][horizontalindex] += 1
+            # for i in range(len(self.players)):
+            #     for j in range(len(self.players)):
+            #         if j > i:
+            #             if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
+            #                 if self.players[i]['position'][horizontalindex] != 1:
+            #                     self.players[i]['position'][horizontalindex] -= 1
+            #                 else:
+            #                     self.players[i]['position'][horizontalindex] += 1
 
             return comms.axes, displayUpdates  
         except:

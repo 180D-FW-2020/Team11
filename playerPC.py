@@ -320,12 +320,12 @@ class PlayerPC:
             # set rows
             for i in range(self.playSpace.edgeLength + 1):
                 cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist - 9,(i+1)*self.dist),(0,255,0),int(self.dist/10))
-            # set player frame
-            cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
-            if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
-        
+            
         display = copy.deepcopy(self.displayBase)
+        
+        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        if self.playSpace.players[self.playerId - 1]['it']:
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -503,6 +503,12 @@ class PlayerPC:
         '''
         if not self.playerId and message['clientId'] == self.clientId:
             self.playerId = message['playerId']
+        # set player frame
+        display = copy.deepcopy(self.display)
+        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        if self.playSpace.players[self.playerId - 1]['it']:
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+        self.display = display
         if settings.verbose: print('########## playerId set to ############', self.playerId)
     
     def setTag(self, message):
@@ -545,10 +551,10 @@ class PlayerPC:
                    int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], 10)
         
         # reset player frame
-        cv2.rectangle(self.displayBase, (950, 230), (1650, 770), (0,0,0), -1)
-        cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        cv2.rectangle(display, (950, 230), (1650, 770), (0,0,0), -1)
+        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
         if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
         
         self.display = display
     
