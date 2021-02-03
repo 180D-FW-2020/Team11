@@ -13,7 +13,8 @@ import copy
 import comms
 import settings
 import json
-if not settings.isPi:
+import platform
+if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
 
 cameraWorking = True
@@ -176,6 +177,16 @@ class PlayerPC:
 
     def nothing(self, x):
         pass
+
+    def loading(self, message):
+        try:
+            loading = np.zeros((1000,1700,3), np.uint8)
+            cv2.putText(loading, message,
+                        (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.imshow('loading', loading)
+        except:
+            print("An error occurred in the loading process", flush=True)
+            traceback.print_exc()
     
     def getDirection(self, frameCapture):
         '''
@@ -213,6 +224,9 @@ class PlayerPC:
                         'val': val}
             else:
                 message = {'playerId': self.playerId}
+            
+            if val == comms.ready:
+                self.ready = True
             return message
         except:
             print("Error sending package to primary node", flush=True)

@@ -10,8 +10,8 @@ Created on Mon Nov  9 12:54:08 2020
 
 import settings
 import gamePlay as g
-if settings.isPi: import playerPi
-else: import playerPC
+import playerPi
+import playerPC
 import comms
 from threading import Thread
 import cv2
@@ -20,7 +20,10 @@ import random
 import time
 import traceback
 import datetime
-#import sys
+import numpy as np
+import platform
+
+MOTION_DELAY = 2
 
 testWithoutPi = False
             
@@ -116,6 +119,7 @@ def pcProcess():
     received message.
     '''   
     if settings.verbose: print("Starting pc process", flush=True)
+    breakEarly = False
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(clientId)
@@ -141,32 +145,39 @@ def pcProcess():
     packageReceipt.daemon = True
     packageReceipt.start()
     
-    # Get settings. If not isPrimary, other returned variables are all 0
+    # Get settings. If not isPrimary, other returned variables are all 0. If
+    # primary, spawn primary player stuff
     isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
-    
     if isPrimary:
         stopCentral = multiprocessing.Value('i', False)
         central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
         central.daemon = True
         central.start()
-        
+    
+    pc.loading("Waiting for initial game state...")
     #First, get initial load with full playspace info
-    while not pc.initialReceived:
-        pass
+    while not pc.initialReceived and not breakEarly:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            breakEarly = True
+            break
         # # Keep checking for an initial load
         # if len(receiver.packages):
             
         #     # Get initial load and set the base display background
         #     pc.unpack(receiver.packages.pop(0))
         #     pc.updateDisplay()
-        
-    # Send handshake to confirm receipt of first load
-    package = pc.pack(pc.clientId)
-    transmitter.transmit(comms.pcConfirmation, package)
+    
+    if not breakEarly:
+        pc.loading("Initial game state received. Waiting for player ID assignment...")
+        # Send handshake to confirm receipt of first load
+        package = pc.pack(pc.clientId)
+        transmitter.transmit(comms.pcConfirmation, package)
     
     # Check for assignment of a player ID
-    while not pc.playerId:
-        pass
+    while not pc.playerId and not breakEarly:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            breakEarly = True
+            break
         # # Keep checking for assignment
         # if len(receiver.packages):
         #     pc.unpack(receiver.packages.pop(0))
@@ -180,10 +191,14 @@ def pcProcess():
     #         package = pc.pack(pc.ready)
     #         transmitter.transmit(comms.ready, package)
     
-    # Send command receipt to separate loop
-    command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
-    command.daemon = True
-    command.start()
+    if not breakEarly:
+        pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
+        # Send command receipt to separate loop
+        command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
+        command.daemon = True
+        command.start()
+    else:
+        command = 0
 
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # update the display and may end the game also.
@@ -196,34 +211,51 @@ def pcProcess():
     #         break
     # cv2.destroyAllWindows()
     
-    frameCapture = cv2.VideoCapture(settings.camera)
-    frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    if not breakEarly:
+        frameCapture = cv2.VideoCapture(settings.camera)
+        frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    else:
+        frameCapture = 0
+    
+    readySent = False
+    while not pc.start and not breakEarly:
+        if not readySent and pc.ready:
+            pc.loading(f"You are ready! Waiting for other players to be ready...")
+            readySent = True
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            breakEarly = True
+            break
+        
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
     
     delay = datetime.datetime.now()
-    cv2.startWindowThread()
-    while not pc.gameOver:
-        if pc.start:
-            direction, pc.cameraImage = pc.getDirection(frameCapture)
-            #cv2.imshow('frame',pc.cameraImage)
-            pc.updateDisplay(event = False)
+    #cv2.startWindowThread()
+    if breakEarly: stop[0] = True
+        
+    while not pc.gameOver and not stop[0] and not breakEarly:
+        direction, pc.cameraImage = pc.getDirection(frameCapture)
+        #cv2.imshow('frame',pc.cameraImage)
+        pc.updateDisplay(event = False)
+
+        if direction and datetime.datetime.now()>delay:
+            package = pc.pack(direction)
+            transmitter.transmit(comms.direction, package)
+            delay = datetime.datetime.now() + datetime.timedelta(seconds = MOTION_DELAY)
             
 
-            if direction and datetime.datetime.now()>delay:
-                package = pc.pack(direction)
-                transmitter.transmit(comms.direction, package)
-                delay = datetime.datetime.now() + datetime.timedelta(seconds = settings.motionDelay)
-                
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        #time.sleep(settings.motionDelay)
-    frameCapture.release()
-    cv2.destroyAllWindows()
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         
+    if frameCapture:
+        frameCapture.release()
+    cv2.destroyAllWindows()
+    
     stop[0] = True
     packageReceipt.join()
-    command.join()
+    if command:
+        command.join()
     if isPrimary:
         stopCentral.value = True
         central.join()
@@ -379,7 +411,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
 
 ### Select processes to run for instance
 if __name__ == '__main__':
-    if settings.isPi:
+    if 'arm' in platform.machine().lower():
         #piProcess()
         try:
             if settings.verbose: print("will run pi stuff", flush=True)
