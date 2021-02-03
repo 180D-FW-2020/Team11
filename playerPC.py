@@ -13,18 +13,20 @@ import copy
 import comms
 import settings
 import json
-if not settings.isPi:
+import platform
+if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
+    import pygame
 
 cameraWorking = True
 
 ## Display dummy values
-player1c = (255, 99, 174)
-player2c = (0, 127, 255)
-player3c = (255, 0, 255)
-player4c = (255, 255, 0)
-playerColors = [player1c, player2c, player3c, player4c]
-itColor = (255, 198, 220)
+# player1c = (255, 99, 174)
+# player2c = (0, 127, 255)
+OBSTACLE_COLOR = (255, 0, 255)
+POWERUP_COLOR = (255, 255, 0)
+# playerColors = [player1c, player2c, player3c, player4c]
+# itColor = (255, 198, 220)
 
 ## Commands
 phrases = {
@@ -61,10 +63,19 @@ class PlayerPC:
             self.gameOver = False
             self.ready = False
             self.start = False
-            self.swap = False     
+            self.swap = False   
+            self.powerUp = 0
+            
+            # Initialize the PyGame
+            pygame.init()
+            pygame.mixer.init()
+            
+            # Set up local sound effects
+            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.mp3')
+            
         except:
             print("An error occurred initializing PlayerPC", flush=True)
-            traceback.print_exc() 
+            traceback.print_exc()
             
     def settings(self):
         try:
@@ -176,6 +187,16 @@ class PlayerPC:
 
     def nothing(self, x):
         pass
+
+    def loading(self, message):
+        try:
+            loading = np.zeros((1000,1700,3), np.uint8)
+            cv2.putText(loading, message,
+                        (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.imshow('loading', loading)
+        except:
+            print("An error occurred in the loading process", flush=True)
+            traceback.print_exc()
     
     def getDirection(self, frameCapture):
         '''
@@ -213,6 +234,9 @@ class PlayerPC:
                         'val': val}
             else:
                 message = {'playerId': self.playerId}
+            
+            if val == comms.ready:
+                self.ready = True
             return message
         except:
             print("Error sending package to primary node", flush=True)
@@ -276,7 +300,7 @@ class PlayerPC:
             
     def setPlayspace(self, message):
         '''
-        Loads the playspace. If input message is not None, it's the initial playspace.
+        Loads the playspace. If input message, it's the initial playspace.
         Otherwise just reload based on new axes. This can also
         be called as the final step of another display update, in which case
         passDisplay should be updated with the new move instead of the current
@@ -286,13 +310,19 @@ class PlayerPC:
             self.playSpace.__dict__= message
             self.dist = int(1000/(self.playSpace.edgeLength + 2))
             self.initialReceived = True
-            
-        display = np.zeros((1000,1700,3), np.uint8)
-            
-        for i in range(self.playSpace.edgeLength + 1):
-            display = cv2.line(display, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist),(0,255,0),10)
-        for i in range(self.playSpace.edgeLength + 1):
-            display = cv2.line(display, (self.dist,(i+1)*self.dist), (1000-self.dist,(i+1)*self.dist),(0,255,0),10)
+            self.displayBase = np.zeros((1000,1700,3), np.uint8)
+            # set columns
+            for i in range(self.playSpace.edgeLength + 1):
+                cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist - 9),(0,255,0),10)
+            # set rows
+            for i in range(self.playSpace.edgeLength + 1):
+                cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist - 9,(i+1)*self.dist),(0,255,0),10)
+            # set player frame
+            cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            if self.playSpace.players[self.playerId - 1]['it']:
+                cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+        
+        display = copy.deepcopy(self.displayBase)
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -301,11 +331,11 @@ class PlayerPC:
             vpos = -1*np.dot(self.playSpace.verticalAxis, player['position'])
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
-            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                  int(self.dist/3), playerColors[i], -1)
+            cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)), 
+                       int(self.dist/3), player['color'], -1)
             if player['it']:
-                display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                  int(self.dist/3), itColor, int(self.dist/10))
+                cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                           int(self.dist/3), player['itColor'], int(self.dist/10))
 
         for i, obstacles in enumerate(self.playSpace.obstacles):
             hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
@@ -314,8 +344,10 @@ class PlayerPC:
             vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
-            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                  int(self.dist/3), playerColors[2], -1)
+            # cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+            #            int(self.dist/3), OBSTACLE_COLOR, -1)
+            cv2.rectangle(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
+                          (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), OBSTACLE_COLOR, -1)
         
         for i, powerups in enumerate(self.playSpace.powerUps):
             hpos = np.dot(self.playSpace.horizontalAxis, powerups['position'])
@@ -324,9 +356,21 @@ class PlayerPC:
             vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
-            display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                                  int(self.dist/3), playerColors[3], -1)
+            # cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+            #            int(self.dist/3), POWERUP_COLOR, -1)
+            cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
+                     (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, 20)
+            cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
+                     (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, 20)
         
+        # Set display message
+        if self.powerUp == 1:
+            cv2.putText(display, "Speed powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        elif self.powerUp == 2:
+            cv2.putText(display, "Freeze powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        elif self.powerUp == 3:
+            cv2.putText(display, "Swap powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
         self.display = display
         
     def setMove(self, message, passDisplay = None):
@@ -362,10 +406,10 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[message['playerId'] - 1], -1)
+                              int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['color'], -1)
         if self.playSpace.players[message['playerId'] - 1]['it']:
             display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), itColor, int(self.dist/10))
+                              int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['itColor'], int(self.dist/10))
         
         self.display = display
 
@@ -383,16 +427,19 @@ class PlayerPC:
         
         # Reload the playspace according to new axes
         self.setPlayspace(None)
+
+        # Play rotation SFX
+        self.rotationSound.play()
         
         # Set the cooldown message
-        cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(self.display, "Cooldown!", (60,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
     def setCooldown(self, message):
         '''
         Turns off the cooldown message.
         '''
         self.playSpace.rotationCoolDownTime = message['coolDown']
-        cv2.rectangle(self.display, (10,0), (1000, 32), (0,0,0), -1)
+        cv2.rectangle(self.display, (50,0), (500, 34), (0,0,0), -1)
     
     def setPickup(self, message):
         '''
@@ -402,6 +449,7 @@ class PlayerPC:
         display = copy.deepcopy(self.display)
         # Update powerups list
         oldPowerUp = self.playSpace.powerUps.pop(message['index'])
+        self.powerUp = oldPowerUp['powerUp']
         oldpos = oldPowerUp['position']
         newPower = {'powerUp': message['powerUp'],
                     'position': message['positionpower']}
@@ -414,8 +462,11 @@ class PlayerPC:
         vpos = -1*np.dot(self.playSpace.verticalAxis, oldpos)
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        cv2.rectangle(display, (self.dist*hpos + int(self.dist/8), self.dist*vpos + int(self.dist/8)),
+                          (self.dist*hpos + int(self.dist*7/8), self.dist*vpos + int(self.dist*7/8)), (0,0,0), -1)
+        
+        # Play's pick up sound
+        #self.pickUpSound.play()
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
@@ -424,9 +475,22 @@ class PlayerPC:
         vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.powerUps[-1]['position'])
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[3], -1)
+        # display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+        #                       int(self.dist/3), POWERUP_COLOR, -1)
+        cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
+                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, 20)
+        cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
+                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, 20)
         
+        # Set display message
+        cv2.rectangle(display, (540,0), (1000, 34), (0,0,0), -1)
+        if self.powerUp == 1:
+            cv2.putText(display, "Speed powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        elif self.powerUp == 2:
+            cv2.putText(display, "Freeze powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        elif self.powerUp == 3:
+            cv2.putText(display, "Swap powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
         # Move player, which also sets the display
         self.setMove(message, passDisplay = display)
     
@@ -447,6 +511,9 @@ class PlayerPC:
         self.playSpace.players[message['untagged'] - 1]['it'] = False
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
         
+        # Play sound to indicate tag
+        #self.tagSound.play()
+        
         display = copy.deepcopy(self.display)
         
         # Clear previous marks for players and replace with new ones
@@ -456,10 +523,10 @@ class PlayerPC:
         vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['untagged'] - 1]['position'])
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[message['untagged'] - 1], -1)
+        cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                   int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                   int(self.dist/3), self.playSpace.players[message['untagged'] - 1]['color'], -1)
         
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
         if hpos<0:
@@ -467,12 +534,18 @@ class PlayerPC:
         vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.players[message['tagged'] - 1]['position'])
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), playerColors[message['tagged'] - 1], -1)
-        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), itColor, int(self.dist/10))
+        cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                   int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+        cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                   int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['color'], -1)
+        cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                   int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], int(self.dist/10))
+        
+        # reset player frame
+        cv2.rectangle(self.displayBase, (950, 230), (1650, 770), (0,0,0), -1)
+        cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        if self.playSpace.players[self.playerId - 1]['it']:
+            cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
         
         self.display = display
     
