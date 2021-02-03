@@ -172,19 +172,12 @@ class PlaySpace:
             players = []
             playersNotIt = []
             for i in range (1, numPlayers+1):
-                # Get a random position a reasonable distance from other players
-                # with respect to edge length. Don't use origin, this is dummy code
                 
                 if self.edgeLength:
                     position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1)])
-         #           if len(self.players) != 0:
-          #              if (self.players[i-1]['position'][0] == postion[0]) and (self.players[i-1]['position'][1] == postion[1]):
-           #                 if position[0] != 1:
-            #                    position[0] -= 1
-             #               else:
-              #                  position[0] += 1
+                    
                 else: position = np.array([0, 0, 0])
                 
                 if(i == playerIt): 
@@ -193,12 +186,25 @@ class PlaySpace:
                 else:
                     it = False
                     playersNotIt.append(i)
+                
+                bp = r.randrange(0, 256)
+                gp = r.randrange(0, 256)
+                rp = r.randrange(0, 256)
+                
+                bi = min(bp + 70, 255)
+                gi = min(gp + 70, 255)
+                ri = min(rp + 70, 255)
+                
+                color = (bp, gp, rp)
+                itColor = (bi, gi, ri)
                 players.append({'playerId': i,
                                 'position': position,
                                 'it': it,
                                 'powerUpHeld': 0,
                                 'powerUpActive': 0,
-                                'powerUpTimer': 0})
+                                'powerUpTimer': 0,
+                                'color': color,
+                                'itColor': itColor})
             
             return players, playersNotIt
         except:
