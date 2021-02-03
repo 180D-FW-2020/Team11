@@ -626,7 +626,7 @@ class PlaySpace:
                     if (yourloc == myloc).all():
                         if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[j]['powerUp']
-                            replacement = self.replacePowerUp(i)
+                            replacement = self.replacePowerUp(j)
           
                         else:
                             collision = True
