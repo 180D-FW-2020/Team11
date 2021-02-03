@@ -16,6 +16,7 @@ import json
 import platform
 if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
+    import pygame
 
 cameraWorking = True
 
@@ -66,6 +67,19 @@ class PlayerPC:
         except:
             print("An error occurred initializing PlayerPC", flush=True)
             traceback.print_exc() 
+            
+            # Initialize the PyGame
+            pygame.init()
+            pygame.mixer.init()
+
+            # Set up local sound effects
+            self.tagSound = pygame.mixer.Sound('SoundEffects/tag2.mp3')
+            self.collisionSound = pygame.mixer.Sound('SoundEffects/Wall_Player_Collision.mp3')
+            self.boostSound = pygame.mixer.Sound('SoundEffects/Boost.mp3')
+            self.freezeSound = pygame.mixer.Sound('SoundEffects/Freeze.mp3')
+            self.teleportSound = pygame.mixer.Sound('SoundEffects/Teleport.mp3')
+            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.mp3')
+            self.pickUpSound = pygame.mixer.Sound('SoundEffects/PickUp.mp3')
             
     def settings(self):
         try:
@@ -397,6 +411,9 @@ class PlayerPC:
         
         # Reload the playspace according to new axes
         self.setPlayspace(None)
+
+        # Play rotation SFX
+        self.rotationSound.play()
         
         # Set the cooldown message
         cv2.putText(self.display, "Cooldown!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
@@ -431,6 +448,9 @@ class PlayerPC:
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                               int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
         
+        # Play's pick up sound
+        self.pickUpSound.play()
+        
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
         if hpos<0:
@@ -460,6 +480,9 @@ class PlayerPC:
         self.playSpace.players[message['tagged'] - 1]['it'] = True
         self.playSpace.players[message['untagged'] - 1]['it'] = False
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+        
+        # Play sound to indicate tag
+        self.tagSound.play()
         
         display = copy.deepcopy(self.display)
         

@@ -22,6 +22,8 @@ import traceback
 import datetime
 import numpy as np
 import platform
+if 'arm' not in platform.machine().lower():
+    import pygame
 
 MOTION_DELAY = 2
 
@@ -121,6 +123,11 @@ def pcProcess():
     if settings.verbose: print("Starting pc process", flush=True)
     breakEarly = False
     
+    # Initialize the PyGame
+    pygame.init()
+    pygame.mixer.init()
+
+    
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(clientId)
     #displayReceived = False
@@ -217,6 +224,14 @@ def pcProcess():
         frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     else:
         frameCapture = 0
+    
+    # loop waits until pc.start is true
+    while not pc.start:
+        pass
+    
+    pygame.mixer.music.load('SoundEffects/Run.wav')
+    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.play(-1)
     
     readySent = False
     while not pc.start and not breakEarly:
