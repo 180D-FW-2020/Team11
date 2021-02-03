@@ -22,6 +22,8 @@ import traceback
 import datetime
 import numpy as np
 import platform
+if 'arm' not in platform.machine().lower():
+    import pygame
 
 MOTION_DELAY = 2
 
@@ -121,6 +123,15 @@ def pcProcess():
     if settings.verbose: print("Starting pc process", flush=True)
     breakEarly = False
     
+    # Initialize the PyGame
+    pygame.init()
+    pygame.mixer.init()
+
+    # Start settings soundtrack
+    pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
+    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.play(-1)
+    
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
     pc = playerPC.PlayerPC(clientId)
     #displayReceived = False
@@ -155,6 +166,7 @@ def pcProcess():
         central.start()
     
     pc.loading("Waiting for initial game state...")
+
     #First, get initial load with full playspace info
     while not pc.initialReceived and not breakEarly:
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -226,9 +238,15 @@ def pcProcess():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             breakEarly = True
             break
-        
+            
+    pygame.mixer.music.stop()
     cv2.destroyAllWindows()
     cv2.waitKey(1)
+    
+    # Start game soundtrack
+    pygame.mixer.music.load('SoundEffects/Run.wav')
+    pygame.mixer.music.set_volume(0.1)
+    pygame.mixer.music.play(-1)
     
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
