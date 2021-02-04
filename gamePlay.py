@@ -117,7 +117,6 @@ class GamePlay:
             print("An error occurred packing the playspace", flush=True)
             traceback.print_exc() 
 
-    
     def isGameOver(self):
         try:
             # Standard play mode: play until everyone has been tagged at least once
@@ -171,13 +170,20 @@ class PlaySpace:
             playerIt = r.randrange(1, numPlayers+1, 1)
             players = []
             playersNotIt = []
+            mask = np.array([1, 1, 0])
             for i in range (1, numPlayers+1):
                 
                 if self.edgeLength:
-                    position = np.array([r.randrange(1, self.edgeLength + 1, 1),
-                                r.randrange(1, self.edgeLength + 1, 1),
-                                r.randrange(1, self.edgeLength + 1, 1)])
-                    
+                    unique = False
+                    while not unique:
+                        position = np.array([r.randrange(1, self.edgeLength + 1, 1),
+                                    r.randrange(1, self.edgeLength + 1, 1),
+                                    r.randrange(1, self.edgeLength + 1, 1)])
+                        unique = True
+                        for p in players:
+                            if unique and np.array_equal(position * mask, p['position'] * mask):
+                                unique = False
+                                
                 else: position = np.array([0, 0, 0])
                 
                 if(i == playerIt): 
@@ -354,10 +360,13 @@ class PlaySpace:
                 topic = comms.move
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
+                
+                if bool(replacement): 
+                    displayUpdates.update(replacement)
+                    topic = comms.pickup
+            
             if settings.verbose: print("end of move: ", self.players[playerId-1])
-            if bool(replacement): 
-                displayUpdates.update(replacement)
-                topic = comms.pickup
+            
             return topic, displayUpdates
         
         except:
@@ -391,14 +400,14 @@ class PlaySpace:
                 if abs(self.horizontalAxis[i]) == 1:
                     horizontalindex = i
             
-            for i in range(len(self.players)):
-                for j in range(len(self.players)):
-                    if j > i:
-                        if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
-                            if self.players[i]['position'][horizontalindex] != 1:
-                                self.players[i]['position'][horizontalindex] -= 1
-                            else:
-                                self.players[i]['position'][horizontalindex] += 1
+            # for i in range(len(self.players)):
+            #     for j in range(len(self.players)):
+            #         if j > i:
+            #             if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
+            #                 if self.players[i]['position'][horizontalindex] != 1:
+            #                     self.players[i]['position'][horizontalindex] -= 1
+            #                 else:
+            #                     self.players[i]['position'][horizontalindex] += 1
 
             return comms.axes, displayUpdates  
         except:
@@ -424,8 +433,10 @@ class PlaySpace:
                 else:
                     position[0] += 1          
         
-        self.powerUps[index]['powerUp'] = powerupID
-        self.powerUps[index]['position'] = position
+        self.powerUps.pop(index)
+        newPower = {'powerUp' : powerupID,
+                    'position' : position}
+        self.powerUps.append(newPower)
         # update display to indicate new powerup
         displayUpdates = {'index': index,
                                   'powerUp': powerupID,
@@ -617,7 +628,7 @@ class PlaySpace:
                     if (yourloc == myloc).all():
                         if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[j]['powerUp']
-                            replacement = self.replacePowerUp(i)
+                            replacement = self.replacePowerUp(j)
           
                         else:
                             collision = True

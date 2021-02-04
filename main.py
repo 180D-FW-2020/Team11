@@ -25,7 +25,7 @@ import platform
 if 'arm' not in platform.machine().lower():
     import pygame
 
-MOTION_DELAY = 2
+MOTION_DELAY = 500
 
 testWithoutPi = False
             
@@ -260,11 +260,13 @@ def pcProcess():
         if direction and datetime.datetime.now()>delay:
             package = pc.pack(direction)
             transmitter.transmit(comms.direction, package)
-            delay = datetime.datetime.now() + datetime.timedelta(seconds = MOTION_DELAY)
+            delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
             
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        
+    pygame.mixer.music.stop()
         
     if frameCapture:
         frameCapture.release()

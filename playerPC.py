@@ -138,10 +138,12 @@ class PlayerPC:
                         cv2.putText(menu,
                                     "Play Mode: Standard - last person tagged wins",
                                     (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                        playMode = 'standard'
                     else:
                         cv2.putText(menu,
                                     "Play Mode: Infinite!",
                                     (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                        playMode = 'infinite'
                     if numPlayers == 0:
                         cv2.putText(menu,
                                     "Number of Players: 0. At least one player required.",
@@ -272,20 +274,21 @@ class PlayerPC:
                 elif topic == comms.tag:
                     self.setTag(message)
                 elif topic == comms.activePower:
-                    if message['powerUp'] == 0:
-                        self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                    elif message['powerUp'] == 1:
-                        self.playSpace.setPowerUpTimer([message['playerId']])
-                        self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
-                        self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
-                    elif message['powerUp'] == 2:
-                        self.playSpace.setPowerUpTimer(0)
-                        self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
-                        self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
-                    elif message['powerUp'] == 3:
-                        self.swap = True
-                        self.playSpace.players[message['swap'] - 1]['position'] = self.playSpace.players[message['playerId'] - 1]['position']
-                        self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+                    pass
+                    # if message['powerUp'] == 0:
+                    #     self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    # elif message['powerUp'] == 1:
+                    #     self.playSpace.setPowerUpTimer([message['playerId']])
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
+                    # elif message['powerUp'] == 2:
+                    #     self.playSpace.setPowerUpTimer(0)
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
+                    #     self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+                    # elif message['powerUp'] == 3:
+                    #     self.swap = True
+                    #     self.playSpace.players[message['swap'] - 1]['position'] = self.playSpace.players[message['playerId'] - 1]['position']
+                    #     self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
             else:
                 if topic == comms.initial and not self.initialReceived:
                     self.setPlayspace(message)
@@ -313,16 +316,18 @@ class PlayerPC:
             self.displayBase = np.zeros((1000,1700,3), np.uint8)
             # set columns
             for i in range(self.playSpace.edgeLength + 1):
-                cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist - 9),(0,255,0),10)
+                cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist - 9),(0,255,0),int(self.dist/10))
             # set rows
             for i in range(self.playSpace.edgeLength + 1):
-                cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist - 9,(i+1)*self.dist),(0,255,0),10)
-            # set player frame
-            cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
-            if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
-        
+                cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist - 9,(i+1)*self.dist),(0,255,0),int(self.dist/10))
+            
         display = copy.deepcopy(self.displayBase)
+        
+        # if playerId already assigned, set player frame
+        if self.playerId:
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            if self.playSpace.players[self.playerId - 1]['it']:
+                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -335,7 +340,7 @@ class PlayerPC:
                        int(self.dist/3), player['color'], -1)
             if player['it']:
                 cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                           int(self.dist/3), player['itColor'], int(self.dist/10))
+                           int(self.dist/3), player['itColor'], 10)
 
         for i, obstacles in enumerate(self.playSpace.obstacles):
             hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
@@ -359,9 +364,9 @@ class PlayerPC:
             # cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
             #            int(self.dist/3), POWERUP_COLOR, -1)
             cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
-                     (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, 20)
+                     (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, int(self.dist/6))
             cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
-                     (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, 20)
+                     (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, int(self.dist/6))
         
         # Set display message
         if self.powerUp == 1:
@@ -396,7 +401,7 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+                              int(self.dist/3)+10, (0,0,0), -1)
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['playerId'] - 1]['position'])
@@ -409,7 +414,7 @@ class PlayerPC:
                               int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['color'], -1)
         if self.playSpace.players[message['playerId'] - 1]['it']:
             display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['itColor'], int(self.dist/10))
+                              int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['itColor'], 10)
         
         self.display = display
 
@@ -478,9 +483,9 @@ class PlayerPC:
         # display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
         #                       int(self.dist/3), POWERUP_COLOR, -1)
         cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
-                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, 20)
+                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, int(self.dist/6))
         cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
-                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, 20)
+                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, int(self.dist/6))
         
         # Set display message
         cv2.rectangle(display, (540,0), (1000, 34), (0,0,0), -1)
@@ -500,6 +505,12 @@ class PlayerPC:
         '''
         if not self.playerId and message['clientId'] == self.clientId:
             self.playerId = message['playerId']
+        # set player frame
+        display = copy.deepcopy(self.display)
+        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        if self.playSpace.players[self.playerId - 1]['it']:
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+        self.display = display
         if settings.verbose: print('########## playerId set to ############', self.playerId)
     
     def setTag(self, message):
@@ -524,7 +535,7 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                   int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+                   int(self.dist/3)+10, (0,0,0), -1)
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                    int(self.dist/3), self.playSpace.players[message['untagged'] - 1]['color'], -1)
         
@@ -539,13 +550,13 @@ class PlayerPC:
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                    int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['color'], -1)
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                   int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], int(self.dist/10))
+                   int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], 10)
         
         # reset player frame
-        cv2.rectangle(self.displayBase, (950, 230), (1650, 770), (0,0,0), -1)
-        cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        cv2.rectangle(display, (950, 230), (1650, 770), (0,0,0), -1)
+        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
         if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(self.displayBase, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
         
         self.display = display
     
@@ -670,39 +681,41 @@ class Camera:
                             ratio = leftright_x/topbottom_y
                             tiltratio = max(leftright_y,topbottom_x)/area
                             
-                            if tiltratio < 0.01:
-                                # A horizontal to vertical ratio of about 0.48 corresponds with
-                                # a vertical arrow
-                                if ratio - 0.48 < 0.05:
-                                    # if span from bottom to arrow wings is longer than from arrow wings to
-                                    # top, it's an up arrow
-                                    if abs(bottommost[1] - leftmost[1]) > abs(leftmost[1] - topmost[1]):
-                                        direction = '^'
-                                    else: direction = 'v'
-                                    
-                                # A horizontal to vertical ratio of about 2.10 corresponds with
-                                # a horizontal arrow
-                                elif 1/ratio - 2.10 < 0.05:
-                                    # if span from right to arrow wings is longer than from arrow wings to
-                                    # left, it's a left arrow
-                                    if abs(rightmost[0] - topmost[0]) > abs(topmost[0] - leftmost[0]):
-                                        direction = '<'
-                                    else: direction = '>'
-                                    
-                                # Any other ratio is unlikely to be a reasonable orientation of our arrow
-                                else:
-                                    pass
-                            
-                            # if direction found, print stuff to screen
-                            
-                                if direction:
-                                    img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
-                                    img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
-                                    img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
-                                    img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
-                                    frame = cv2.putText(frame, direction, (int(frame.shape[1]/2),frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
-                                                        4, (255, 255, 255), 10)
-                                break
+                            if abs(bottommost[1] - leftmost[1]) > 20 and abs(bottommost[1] - rightmost[1]) > 20 \
+                                and abs(topmost[1] - leftmost[1]) > 20 and abs(topmost[1] - rightmost[1]) > 20:
+                                if tiltratio < 0.01:
+                                    # A horizontal to vertical ratio of about 0.48 corresponds with
+                                    # a vertical arrow
+                                    if ratio - 0.48 < 0.05:
+                                        # if span from bottom to arrow wings is longer than from arrow wings to
+                                        # top, it's an up arrow
+                                        if abs(bottommost[1] - leftmost[1]) > abs(leftmost[1] - topmost[1]):
+                                            direction = '^'
+                                        else: direction = 'v'
+                                        
+                                    # A horizontal to vertical ratio of about 2.10 corresponds with
+                                    # a horizontal arrow
+                                    elif 1/ratio - 2.10 < 0.05:
+                                        # if span from right to arrow wings is longer than from arrow wings to
+                                        # left, it's a left arrow
+                                        if abs(rightmost[0] - topmost[0]) > abs(topmost[0] - leftmost[0]):
+                                            direction = '<'
+                                        else: direction = '>'
+                                        
+                                    # Any other ratio is unlikely to be a reasonable orientation of our arrow
+                                    else:
+                                        pass
+                                
+                                # if direction found, print stuff to screen
+                                
+                                    if direction:
+                                        img = cv2.circle(img,tuple(leftmost), 10, (0,0,255), -1)
+                                        img = cv2.circle(img,tuple(rightmost), 10, (0,0,255), -1)
+                                        img = cv2.circle(img,tuple(topmost), 10, (0,0,255), -1)
+                                        img = cv2.circle(img,tuple(bottommost), 10, (0,0,255), -1)
+                                        frame = cv2.putText(frame, direction, (int(frame.shape[1]/2),frame.shape[0]-10), cv2.FONT_HERSHEY_SIMPLEX,
+                                                            4, (255, 255, 255), 10)
+                                    break
                 
                 frame = cv2.flip(cv2.rectangle(frame,(80, 120), (320,360), (0,255,0),2),1)
                 
