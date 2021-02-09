@@ -71,7 +71,13 @@ class PlayerPC:
             pygame.mixer.init()
             
             # Set up local sound effects
-            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.mp3')
+            self.boostSound = pygame.mixer.Sound('SoundEffects/Boost.wav')
+            self.freezeSound = pygame.mixer.Sound('SoundEffects/Freeze.wav')
+            self.pickupSound = pygame.mixer.Sound('SoundEffects/PickUp.wav')
+            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.wav')
+            self.tagSound = pygame.mixer.Sound('SoundEffects/tag2.wav')
+            self.teleportSound = pygame.mixer.Sound('SoundEffects/Teleport.wav')
+            self.collisionSound = pygame.mixer.Sound('SoundEffects/Wall_Player_Collision.wav')
             
         except:
             print("An error occurred initializing PlayerPC", flush=True)
@@ -471,7 +477,7 @@ class PlayerPC:
                           (self.dist*hpos + int(self.dist*7/8), self.dist*vpos + int(self.dist*7/8)), (0,0,0), -1)
         
         # Play's pick up sound
-        #self.pickUpSound.play()
+        self.pickUpSound.play()
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
@@ -523,7 +529,7 @@ class PlayerPC:
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
         
         # Play sound to indicate tag
-        #self.tagSound.play()
+        self.tagSound.play()
         
         display = copy.deepcopy(self.display)
         
