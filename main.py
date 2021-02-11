@@ -27,7 +27,7 @@ if 'arm' not in platform.machine().lower():
 
 MOTION_DELAY = 500
 
-testWithoutPi = False
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -146,7 +146,8 @@ def pcProcess():
                                comms.axes,
                                comms.coolDown,
                                comms.pickup,
-                               comms.activePower),
+                               comms.activePower,
+                               comms.timerOver),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -424,6 +425,27 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                 
                 # If it's now ended, send a message to announce it
                 transmitter.transmit(topic, message)
+
+        #check if there is a freeze timer in place
+        if game.playSpace.freezeTimer:
+            
+            # If yes, check if it's now ended, in which case a message should
+            # be sent.
+            freeze, topic, message = game.playSpace.powerUpTimerRemaining(0)
+            
+            if not freeze and message:
+                
+                # If it's now ended, send a message to announce it
+                transmitter.transmit(topic, message)
+        
+        for i, player in enumerate(game.playSpace.players):
+            if player['powerUpTimer']:
+                speed, topic, message = game.playSpace.powerUpTimerRemaining(player['playerId'])
+            
+                if not speed and message:
+                    
+                    # If it's now ended, send a message to announce it
+                    transmitter.transmit(topic, message)
     
     message = game.pack(stop.value)
     transmitter.transmit(comms.stop, message)

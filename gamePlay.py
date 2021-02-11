@@ -646,48 +646,53 @@ class PlaySpace:
     
     def activatePowerUp(self, playerId):
         try:
-            message = {}
+            message = {'powerUp': 0}
             if self.players[playerId-1]['powerUpHeld'] == 0:
                 #indicate on display no powerups held
-                message = {'powerUp': 0}
+                pass
             elif self.players[playerId-1]['powerUpHeld'] == 1:
                 #speed powerup
-                self.players[playerId-1]['powerUpHeld'] == 0
+                self.players[playerId-1]['powerUpHeld'] = 0
                 self.players[playerId-1]['powerUpActive'] = 1
-                self.setPowerUpTimer(playerId)
-                message = {'powerUp' : 1, 'speedTimer' : True}
+                time = self.setPowerUpTimer(playerId)
+                message['powerUp'] = 1
+                message['speedTimer'] = True
                 
             elif self.players[playerId-1]['powerUpHeld'] == 2:
                 #freeze powerup
                 self.players[playerId-1]['powerUpHeld'] = 0
                 self.players[playerId-1]['powerUpActive'] = 2
                 self.setPowerUpTimer(0)
-                message = {'powerUp' : 2, 'freezeTimer': True}
+                message['powerUp'] = 2
+                message['speedTimer'] = True
                 
             elif self.players[playerId-1]['powerUpHeld'] == 3:
                 #swap places with an existing player
                 #recquires comms and display updates
+                if self.numPlayers == 1:
+                    self.players[playerId-1]['powerUpHeld'] == 0
+                    return comms.activePower, message
                 playerSwap = r.randrange(1, self.numPlayers+1, 1)
-                if playerSwap == playerId and playerId != 0:
+                if playerSwap == playerId and playerId != 1:
                     playerSwap -= 1
-                elif playerSwap == playerId and playerId == 0:
+                elif playerSwap == playerId and playerId == 1:
                     playerSwap += 1
-                elif playerSwap != playerId:
-                    xValue = self.players[playerId-1]['position'][0]
-                    yValue = self.players[playerId-1]['position'][1]
-                    zValue = self.players[playerId-1]['position'][2]
-                    self.players[playerId-1]['position'][0] = self.players[playerSwap-1]['position'][0]
-                    self.players[playerId-1]['position'][1] = self.players[playerSwap-1]['position'][1]
-                    self.players[playerId-1]['position'][2] = self.players[playerSwap-1]['position'][2]
-                    self.players[playerSwap-1]['position'][0] = xValue
-                    self.players[playerSwap-1]['position'][1] = yValue
-                    self.players[playerSwap-1]['position'][2] = zValue
-
-                    message = {'powerUp' : 3, 'swap' : playerSwap, 'position': self.players[playerId-1]['position'].tolist()}
-                    if self.numPlayers == 1:
-                        message = {'powerUp' : 3, 'swap' : playerId, 'position': self.players[playerId-1]['position'].tolist()}
-                else:
-                    print("Invalid power up")
+                self.players[playerId-1]['powerUpHeld'] == 0
+                xValue = self.players[playerId-1]['position'][0]
+                yValue = self.players[playerId-1]['position'][1]
+                zValue = self.players[playerId-1]['position'][2]
+                self.players[playerId-1]['position'][0] = self.players[playerSwap-1]['position'][0]
+                self.players[playerId-1]['position'][1] = self.players[playerSwap-1]['position'][1]
+                self.players[playerId-1]['position'][2] = self.players[playerSwap-1]['position'][2]
+                self.players[playerSwap-1]['position'][0] = xValue
+                self.players[playerSwap-1]['position'][1] = yValue
+                self.players[playerSwap-1]['position'][2] = zValue
+                message['powerUp'] = 3
+                message['swap'] = playerSwap
+                message['position'] = self.players[playerId-1]['position'].tolist()
+                
+            else:
+                print("Invalid power up")
 
             message['playerId'] = playerId
             return comms.activePower , message
@@ -701,16 +706,18 @@ class PlaySpace:
         '''
         try:
             if playerId != 0:
-                if setting.verbose: print(type(playerId))
+                if settings.verbose: print(type(playerId))
                 time = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
                 self.players[playerId-1]['powerUpTimer'] = time
+                return time
             else:
                 self.freezeTimer = datetime.datetime.now() + datetime.timedelta(seconds = POWERUP_TIMER)
+                return 
         except:
             print("An error occurred setting the timer ")
             traceback.print_exc() 
     
-    def powerUpTimerRemaining(self, playerID):
+    def powerUpTimerRemaining(self, playerId):
         '''
         Checks if the timer is active. Return true if yes, false if no
         '''
@@ -718,19 +725,19 @@ class PlaySpace:
             # Check if a timer is even in place. If not, abort. This should
             # be an edge case: the method should only be called when a timer
             # is known to be active
-            if playerID != 0:
-                if not self.players[playerID-1]['powerUpTimer']:
+            if playerId != 0:
+                if not self.players[playerId-1]['powerUpTimer']:
                     if settings.verbose:
                         print("powerUpTimerRemaining called without checking",
                             "if timer in place.")
-                    return False
+                    return False, 0, 0
                 
                 # If timer is in place, check to see if it ended before now. If
                 # yes, the timer is over, so zero out the timer and return false
-                elif self.players[playerID-1]['powerUpTimer'] < datetime.datetime.now():
-                    self.players[playerID-1]['powerUpTimer'] = 0
-                    self.players[playerID-1]['powerUpActive'] = 0
-                    return False
+                elif self.players[playerId-1]['powerUpTimer'] < datetime.datetime.now():
+                    self.players[playerId-1]['powerUpTimer'] = 0
+                    message = {'power': "speed", 'speedTimer': False, 'playerId': playerId}
+                    return False, comms.timerOver, message
                 
                 # Otherwise the timer is still active, so return true and keep things going
                 else:
@@ -749,7 +756,8 @@ class PlaySpace:
                     for i, player in enumerate(self.players):
                         if player['powerUpActive'] == 2:
                             player['powerUpActive'] = 0
-                            return False
+                            message = {'power': "freeze", 'freezeTimer': False, 'playerId': player['playerId']}
+                            return False, comms.timerOver, message
                 
                 # Otherwise the timer is still active, so return true and keep things going
                 else:
