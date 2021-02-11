@@ -119,7 +119,7 @@ class PlayerPC:
                 
                 menu = np.zeros((1000,1700,3), np.uint8)
     
-                cv2.createTrackbar('Play Mode', 'menu2', 0, 1, self.nothing)
+                cv2.createTrackbar('Play Mode', 'menu2', 1, 1, self.nothing)
                 cv2.createTrackbar('Players', 'menu2', 1, 10, self.nothing)
                 cv2.createTrackbar('Play Size', 'menu2', 10, 20, self.nothing)
                 cv2.createTrackbar('Obstacles', 'menu2', 10, 20, self.nothing)
@@ -170,11 +170,15 @@ class PlayerPC:
                                 (50,250), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                     cv2.putText(menu,
                                 "Press space to continue...",
-                                (50,350), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
+                                (50,500), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
                     
+                    if playMode == 0 and numPlayers == 1:
+                        cv2.putText(menu,
+                                    "Standard play mode is not allowed for single player",
+                                    (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
                     cv2.imshow('menu2',menu)
                     k = cv2.waitKey(1) & 0xFF
-                    if k == 32 and numPlayers != 0 and edgeLength >= 5:
+                    if k == 32 and numPlayers != 0 and edgeLength >= 5 and not (playMode == 0 and numPlayers == 1):
                         break
                 cv2.destroyWindow('menu2')
                 cv2.waitKey(1)
