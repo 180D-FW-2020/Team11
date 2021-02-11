@@ -77,7 +77,7 @@ class PlayerPC:
             self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.wav')
             self.tagSound = pygame.mixer.Sound('SoundEffects/tag2.wav')
             self.teleportSound = pygame.mixer.Sound('SoundEffects/Teleport.wav')
-            self.collisionSound = pygame.mixer.Sound('SoundEffects/Wall_Player_Collision.wav')
+            self.collisionSound = pygame.mixer.Sound('SoundEffects/WallPlayerCollision.wav')
             
         except:
             print("An error occurred initializing PlayerPC", flush=True)
