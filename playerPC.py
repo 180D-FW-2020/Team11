@@ -172,13 +172,14 @@ class PlayerPC:
                                 "Press space to continue...",
                                 (50,500), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2, cv2.LINE_AA)
                     
-                    if playMode == 0 and numPlayers == 1:
+                    if numPlayers == 1 and playMode == 'standard':
                         cv2.putText(menu,
                                     "Standard play mode is not allowed for single player",
-                                    (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                                    (50,300), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                    
                     cv2.imshow('menu2',menu)
                     k = cv2.waitKey(1) & 0xFF
-                    if k == 32 and numPlayers != 0 and edgeLength >= 5 and not (playMode == 0 and numPlayers == 1):
+                    if k == 32 and numPlayers != 0 and edgeLength >= 5 and not (numPlayers == 1 and playMode == 'standard'):
                         break
                 cv2.destroyWindow('menu2')
                 cv2.waitKey(1)
