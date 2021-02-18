@@ -456,7 +456,7 @@ class PlayerPC:
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
         elif message['powerUp'] == 3:
-            self.players[message['playerId']-1]['powerUpHeld'] == 0
+            self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
             oldpos1 = self.playSpace.players[message['playerId'] - 1]['position']
             oldpos2 = message['position']
             self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
