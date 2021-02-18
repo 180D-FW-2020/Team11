@@ -151,8 +151,13 @@ def pcProcess():
     transmitter = comms.Transmitter()
     receiver.start()
     
-    # Send receiver to separate thread
-    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
+    # # Send receiver to separate thread
+    # packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
+    # packageReceipt.daemon = True
+    # packageReceipt.start()
+    
+    # Send receiver to separate process
+    packageReceipt = multiprocessing.Process(target=pcPackageReceipt, args = (receiver, pc, stop,))
     packageReceipt.daemon = True
     packageReceipt.start()
     
