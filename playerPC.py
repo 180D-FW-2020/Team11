@@ -63,7 +63,6 @@ class PlayerPC:
             self.gameOver = False
             self.ready = False
             self.start = False
-            self.swap = False   
             self.powerUp = 0
             
             # Initialize the PyGame
@@ -435,23 +434,34 @@ class PlayerPC:
         cv2.rectangle(self.display, (50,0), (500, 34), (0,0,0), -1)
 
     def setPowerUp(self, message):
+        if settings.verbose:
+            print("powerup held was", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
         if message['powerUp'] == 0:
+            self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
             self.display = cv2.putText(self.display, "No powerups held!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            if settings.verbose:
+                print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
         elif message['powerUp'] == 1:
             #adjusts variables to indicate player now has powerup
             self.playSpace.players[message['playerId'] - 1]['powerUpTimer'] = message['speedTimer']
             self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
             self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
+            if settings.verbose:
+                print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
         elif message['powerUp'] == 2:
             #adjusts variables to indicate player now has powerup
             self.playSpace.freezeTimer = message['freezeTimer']
             self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
             self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+            if settings.verbose:
+                print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
         elif message['powerUp'] == 3:
             self.players[message['playerId']-1]['powerUpHeld'] == 0
             oldpos1 = self.playSpace.players[message['playerId'] - 1]['position']
             oldpos2 = message['position']
             self.playSpace.players[message['playerId'] - 1]['position'] = message['position']
+            if settings.verbose:
+                print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
             
             # Clear existing player 1
             hpos = np.dot(self.playSpace.horizontalAxis, oldpos1)
@@ -509,10 +519,12 @@ class PlayerPC:
     def setTimer(self,message):
         if message['power'] == "freeze":
             self.playSpace.freezeTimer = message['freezeTimer']
-            self.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
+            self.playSpace.players[message['playerId']-1]['powerUpActive'] = 0
         elif message['power'] == "speed":
-            self.playSpace.players[message['playerId']-1]['powerUpTimer'] = message['speedTimer']
-            self.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
+            self.playSpace.players[message['playerId']-1]['powerUpTimer'] = 0
+            self.playSpace.players[message['playerId']-1]['powerUpActive'] = 0
+            if settings.verbose:
+                print("power up timer set to 0 ", self.playSpace.players[message['playerId']-1])
     
     def setPickup(self, message):
         '''
@@ -527,6 +539,7 @@ class PlayerPC:
         newPower = {'powerUp': message['powerUp'],
                     'position': message['positionpower']}
         self.playSpace.powerUps.append(newPower)
+        self.playSpace.players[message['playerId']-1]['powerUpHeld'] = self.powerUp
         
         # Clear existing powerup
         hpos = np.dot(self.playSpace.horizontalAxis, oldpos)

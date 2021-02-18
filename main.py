@@ -27,7 +27,7 @@ if 'arm' not in platform.machine().lower():
 
 MOTION_DELAY = 500
 
-testWithoutPi = True
+testWithoutPi = False
             
 def piProcess():
     '''
@@ -436,6 +436,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             if not freeze and message:
                 
                 # If it's now ended, send a message to announce it
+        #        self.game.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
                 transmitter.transmit(topic, message)
         
         for i, player in enumerate(game.playSpace.players):
@@ -445,6 +446,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                 if not speed and message:
                     
                     # If it's now ended, send a message to announce it
+              #      self.game.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
                     transmitter.transmit(topic, message)
     
     message = game.pack(stop.value)

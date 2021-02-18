@@ -294,7 +294,7 @@ class PlaySpace:
         '''
         try:
             #first check if play is frozen
-            if self.powerUpTimerRemaining(0):
+            if self.freezeTimer:
                 if self.players[playerId-1]['powerUpActive'] != 2:
                     topic = 0
                     displayUpdates = 0
@@ -518,7 +518,7 @@ class PlaySpace:
                 overlap = int(1)
             elif np.linalg.norm((np.linalg.norm(location[index]))-(np.linalg.norm(initloc[index]))) < speed:
                 collision = True
-                overlap = np.linalg.norm(initloc[index])
+                overlap = int(np.linalg.norm(initloc[index]))
 
 
             #check to see if tag by it
@@ -607,7 +607,7 @@ class PlaySpace:
                         distance = myloc - yourloc
                         if (yourloc == myloc).all():
                             collision = True
-                            overlap = 1
+                            overlap = int(1)
 
             #check to see collision with obstacle
                 for j in range(len(self.obstacles)):
@@ -617,7 +617,7 @@ class PlaySpace:
                     distance = myloc - yourloc
                     if (yourloc == myloc).all():
                         collision = True
-                        overlap = 1
+                        overlap = int(1)
 
             #check to see collision with powerup
                 for j in range(len(self.powerUps)):
@@ -632,7 +632,7 @@ class PlaySpace:
           
                         else:
                             collision = True
-                            overlap = 1
+                            overlap = int(1)
 
                     #    elif ((self.players[i]['it'] == True) and (np.linalg.norm(distance) < 1)):
                             # tag = playerId
@@ -664,13 +664,14 @@ class PlaySpace:
                 self.players[playerId-1]['powerUpActive'] = 2
                 self.setPowerUpTimer(0)
                 message['powerUp'] = 2
-                message['speedTimer'] = True
+                message['freezeTimer'] = True
                 
             elif self.players[playerId-1]['powerUpHeld'] == 3:
                 #swap places with an existing player
                 #recquires comms and display updates
                 if self.numPlayers == 1:
                     self.players[playerId-1]['powerUpHeld'] == 0
+                    message['playerId'] = playerId
                     return comms.activePower, message
                 playerSwap = r.randrange(1, self.numPlayers+1, 1)
                 if playerSwap == playerId and playerId != 1:
@@ -728,26 +729,27 @@ class PlaySpace:
             if playerId != 0:
                 if not self.players[playerId-1]['powerUpTimer']:
                     if settings.verbose:
-                        print("powerUpTimerRemaining called without checking",
-                            "if timer in place.")
+                        print("player currently has no active power up")
                     return False, 0, 0
                 
                 # If timer is in place, check to see if it ended before now. If
                 # yes, the timer is over, so zero out the timer and return false
                 elif self.players[playerId-1]['powerUpTimer'] < datetime.datetime.now():
                     self.players[playerId-1]['powerUpTimer'] = 0
+                    self.players[playerId-1]['powerUpActive'] = 0
+                    if settings.verbose:
+                        print(self.players[playerId-1])
                     message = {'power': "speed", 'speedTimer': False, 'playerId': playerId}
                     return False, comms.timerOver, message
                 
                 # Otherwise the timer is still active, so return true and keep things going
                 else:
-                    return True
+                    return True, 0, 0
             else:
                 if not self.freezeTimer:
                     if settings.verbose:
-                        print("powerUpTimerRemaining called without checking",
-                            "if timer in place.")
-                    return False
+                        print("player currently has no active power up")
+                    return False, 0, 0
                 
                 # If timer is in place, check to see if it ended before now. If
                 # yes, the timer is over, so zero out the timer and return false
@@ -761,7 +763,7 @@ class PlaySpace:
                 
                 # Otherwise the timer is still active, so return true and keep things going
                 else:
-                    return True
+                    return True, 0, 0
         except:
             print("An error occurred decrementing the rotation cooldown")
             traceback.print_exc()

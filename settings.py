@@ -14,8 +14,8 @@ Values configured on a player/device level
 # POWERUP_TIMER = 15 # seconds
 # motionDelay = 2 # seconds
 camera = 0 # default 
-verbose = False
-uniqueComms = "zefyr"
+verbose = True
+uniqueComms = "ali"
 
 # Modes:
 #  * infinite - use for solo testing
