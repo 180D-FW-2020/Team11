@@ -531,11 +531,13 @@ class PlayerPC:
         if message['power'] == "freeze":
             self.playSpace.freezeTimer = message['freezeTimer']
             self.playSpace.players[message['playerId']-1]['powerUpActive'] = 0
-            cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
+            if self.playerId == message['playerId']:
+                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
         elif message['power'] == "speed":
             self.playSpace.players[message['playerId']-1]['powerUpTimer'] = 0
             self.playSpace.players[message['playerId']-1]['powerUpActive'] = 0
-            cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
+            if self.playerId == message['playerId']:
+                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
             if settings.verbose:
                 print("power up timer set to 0 ", self.playSpace.players[message['playerId']-1])
     
