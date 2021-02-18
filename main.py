@@ -8,6 +8,7 @@ Created on Mon Nov  9 12:54:08 2020
 
 # Should have better way to set these values than hard coding
 
+import logging
 import settings
 import gamePlay as g
 import playerPi

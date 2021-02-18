@@ -5,6 +5,7 @@ Created on Mon Nov 23 15:55:26 2020
 @author: zefyr
 """
 
+import logging
 from paho.mqtt import client as mqtt_client
 import json
 import settings
