@@ -263,7 +263,7 @@ class PlaySpace:
                     position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1),
                                 r.randrange(1, self.edgeLength + 1, 1)])
-                    powerupID = r.randrange(1,4)
+                    powerupID = r.randrange(1,3) #reminder
                     for j in range(len(self.players)):
                         if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
                             if position[0] != 1:
@@ -419,7 +419,7 @@ class PlaySpace:
         position = np.array([r.randrange(1, self.edgeLength + 1, 1),
                     r.randrange(1, self.edgeLength + 1, 1),
                     r.randrange(1, self.edgeLength + 1, 1)])
-        powerupID = r.randrange(1,4)
+        powerupID = r.randrange(1,3) #reminder
         for j in range(len(self.players)):
             if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
                 if position[0] != 1:
@@ -678,7 +678,7 @@ class PlaySpace:
                     playerSwap -= 1
                 elif playerSwap == playerId and playerId == 1:
                     playerSwap += 1
-                self.players[playerId-1]['powerUpHeld'] == 0
+                self.players[playerId-1]['powerUpHeld'] = 0
                 xValue = self.players[playerId-1]['position'][0]
                 yValue = self.players[playerId-1]['position'][1]
                 zValue = self.players[playerId-1]['position'][2]
