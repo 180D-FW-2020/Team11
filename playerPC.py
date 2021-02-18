@@ -25,6 +25,8 @@ WIDTH, HEIGHT = 900, 500
 WHITE = (255, 255, 255)
 FPS = 60
 
+
+
 cameraWorking = True
 
 ## Display dummy values
@@ -316,13 +318,16 @@ class PlayerPC:
         passDisplay should be updated with the new move instead of the current
         display.
         '''
+        print("****GETTING TO SET PLAYSPACE 1")
         if message:
             self.playSpace.__dict__= message
             self.dist = int(1000/(self.playSpace.edgeLength + 2))
             self.initialReceived = True
-            self.displayBase = np.zeros((1000,1700,3), np.uint8)
-            WIN = pygame.display_set_mode((WIDTH, HEIGHT))
+            # self.displayBase = np.zeros((1000,1700,3), np.uint8)
+            print("****GETTING TO SET PLAYSPACE 2")
+            WIN = pygame.display.set_mode((WIDTH, HEIGHT))
             pygame.display.set_caption("Virtual Tag")
+            
             WIN.fill(WHITE)
             pygame.display.update()
 
@@ -388,7 +393,7 @@ class PlayerPC:
         # elif self.powerUp == 3:
         #     cv2.putText(display, "Swap powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-        self.display = display
+        # self.display = display
         
     def setMove(self, message, passDisplay = None):
         '''
@@ -463,6 +468,7 @@ class PlayerPC:
         Removes the powerup that was picked up, places a new one, and moves the
         player.
         '''
+        pass
         # display = copy.deepcopy(self.display)
         # # Update powerups list
         # oldPowerUp = self.playSpace.powerUps.pop(message['index'])
@@ -630,7 +636,7 @@ class PlayerPC:
                 #     self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
             elif type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
+                # self.display[260:740, 980:1620] = self.cameraImage
                 # cv2.imshow('display',self.display)
                 pygame.display.update()
             #self.displayUpdate = False
