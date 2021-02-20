@@ -5,6 +5,7 @@ Created on Mon Nov 23 15:55:26 2020
 @author: zefyr
 """
 
+import logging
 from paho.mqtt import client as mqtt_client
 import json
 import settings
@@ -73,11 +74,11 @@ class Transmitter:
         
         if unsent:
             log = f"Failed to published `{package}` from `{topic}`"
-            #self.logger.info(log)
+            logging.info(log)
             if settings.verbose: print(log)
         else:
             log = f"Published `{package}` from `{topic}`"
-            #self.logger.info(log)
+            logging.info(log)
             if settings.verbose: print(log)
         
 class Receiver:

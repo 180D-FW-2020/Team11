@@ -5,6 +5,7 @@ Created on Fri Nov  6 22:58:30 2020
 @author: zefyr
 """
 
+import logging
 import gamePlay as g
 import numpy as np
 import cv2

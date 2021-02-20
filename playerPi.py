@@ -5,6 +5,7 @@ Created on Fri Nov  6 22:58:48 2020
 @author: zefyr
 """
 
+import logging
 import settings
 import sys
 import math

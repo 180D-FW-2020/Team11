@@ -4,6 +4,8 @@ Created on Fri Nov  6 20:46:40 2020
 
 @author: zefyr
 """
+
+import logging
 import random as r
 import numpy as np
 import traceback
