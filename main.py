@@ -9,6 +9,17 @@ Created on Mon Nov  9 12:54:08 2020
 # Should have better way to set these values than hard coding
 
 import logging
+import datetime
+import os
+from pathlib import Path
+
+if not os.path.exists("logs"): os.makedirs("logs")
+p = Path("logs")
+file = datetime.datetime.now().strftime("%H%M%S.txt")
+logFormat = "%(asctime)s::%(levelname)s::%(name)s::"\
+             "%(filename)s::%(lineno)d::%(message)s"
+logging.basicConfig(level='DEBUG', filename=p/file, format=logFormat)
+
 import settings
 import gamePlay as g
 import playerPi
@@ -20,7 +31,6 @@ import multiprocessing
 import random
 import time
 import traceback
-import datetime
 import numpy as np
 import platform
 if 'arm' not in platform.machine().lower():

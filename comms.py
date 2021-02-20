@@ -74,11 +74,11 @@ class Transmitter:
         
         if unsent:
             log = f"Failed to published `{package}` from `{topic}`"
-            #self.logger.info(log)
+            logging.info(log)
             if settings.verbose: print(log)
         else:
             log = f"Published `{package}` from `{topic}`"
-            #self.logger.info(log)
+            logging.info(log)
             if settings.verbose: print(log)
         
 class Receiver:
