@@ -34,6 +34,7 @@ piConfirmation = settings.uniqueComms + "ece180d/team11/piconf"
 pcConfirmation = settings.uniqueComms + "ece180d/team11/pcconf"
 pickup = settings.uniqueComms + "ece180d/team11/pickup"
 activePower = settings.uniqueComms + "ece180d/team11/activePower"
+timerOver = settings.uniqueComms + "ece180d/team11/timer"
 
 
 class Transmitter:
