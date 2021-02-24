@@ -71,7 +71,12 @@ class PlayerPC:
             pygame.mixer.init()
             
             # Set up local sound effects
-            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.mp3')
+            self.boostSound = pygame.mixer.Sound('SoundEffects/Boost.wav')
+            self.freezeSound = pygame.mixer.Sound('SoundEffects/Freeze.wav')
+            self.pickupSound = pygame.mixer.Sound('SoundEffects/PickUp.wav')
+            self.rotationSound = pygame.mixer.Sound('SoundEffects/Rotation2.wav')
+            self.tagSound = pygame.mixer.Sound('SoundEffects/tag2.wav')
+            self.teleportSound = pygame.mixer.Sound('SoundEffects/Teleport.wav')
             
         except:
             print("An error occurred initializing PlayerPC", flush=True)
@@ -449,7 +454,11 @@ class PlayerPC:
                 self.display = cv2.putText(self.display, "No powerups held!", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
+                
         elif message['powerUp'] == 1:
+            # Plays speed boost sound
+            self.boostSound.play()
+            
             #adjusts variables to indicate player now has powerup
             self.playSpace.players[message['playerId'] - 1]['powerUpTimer'] = message['speedTimer']
             self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
@@ -459,7 +468,11 @@ class PlayerPC:
                 self.display = cv2.putText(self.display, "RUN! - Speed powerup is active", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
+                
         elif message['powerUp'] == 2:
+            # Plays freeze sound
+            self.freezeSound.play()
+            
             #adjusts variables to indicate player now has powerup
             self.playSpace.freezeTimer = message['freezeTimer']
             self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
@@ -472,7 +485,11 @@ class PlayerPC:
                 self.display = cv2.putText(self.display, "FREEZE! - Someone activated freeze powerup", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
+                
         elif message['powerUp'] == 3:
+            # Plays swap sound
+            self.teleportSound.play()
+            
             self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
             oldpos1 = self.playSpace.players[message['playerId'] - 1]['position']
             oldpos2 = message['position']
@@ -573,7 +590,7 @@ class PlayerPC:
                           (self.dist*hpos + int(self.dist*7/8), self.dist*vpos + int(self.dist*7/8)), (0,0,0), -1)
         
         # Play's pick up sound
-        #self.pickUpSound.play()
+        self.pickUpSound.play()
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
@@ -628,7 +645,7 @@ class PlayerPC:
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
         
         # Play sound to indicate tag
-        #self.tagSound.play()
+        self.tagSound.play()
         
         display = copy.deepcopy(self.display)
         
