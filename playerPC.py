@@ -590,7 +590,7 @@ class PlayerPC:
                           (self.dist*hpos + int(self.dist*7/8), self.dist*vpos + int(self.dist*7/8)), (0,0,0), -1)
         
         # Play's pick up sound
-        self.pickUpSound.play()
+        self.pickupSound.play()
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
