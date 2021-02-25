@@ -28,22 +28,15 @@ MAG_MEDIANTABLESIZE = 9         # Median filter table size for magnetometer. Hig
 
 class PlayerPi:
     def __init__(self, clientId):
-        try:
-            self.playerId = 0
-            self.clientId = clientId
-            
-            self.initialReceived = False
-            self.imu = BerryIMU()
-            self.gameOver = False
-            self.coolDown = False
-            self.start = False
-            
-        except:
-            print("An error occurred initializing PlayerPi", flush=True)
-            traceback.print_exc() 
-    
-    
-
+        self.playerId = 0
+        self.clientId = clientId
+        
+        self.initialReceived = False
+        self.imu = BerryIMU()
+        self.gameOver = False
+        self.coolDown = False
+        self.start = False
+        
     def getRotation(self, stop):
         '''
         Gets rotation information from the BerryIMU.
@@ -80,27 +73,25 @@ class PlayerPi:
         
         Return true if it's the initial package, for handshake.
         '''
-        try:
-            # Message data may contain info that is only relevant for the
-            # playerPC, so this is just looking for the current rotation
-            # cooldown state. If on cooldown rotation, the pi can't send.
-            topic, message = package
-            
-            if self.start and topic in (comms.axes, comms.coolDown):
-                self.coolDown = message['coolDown']
-            elif topic == comms.stop:
-                self.gameOver = True
-            elif topic == comms.initial:
-                self.initialReceived = True
-            elif topic == comms.assign:
-                if message['clientId'] == self.clientId:
-                    self.playerId = message['playerId']
-                if settings.verbose: print('########## playerId set to ############', self.playerId)
-            elif topic == comms.start:
-                self.start = True
-        except:
-            print("Error getting package from primary node", flush=True)
-            traceback.print_exc() 
+        # Message data may contain info that is only relevant for the
+        # playerPC, so this is just looking for the current rotation
+        # cooldown state. If on cooldown rotation, the pi can't send.
+        topic, message = package
+        
+        if self.start and topic in (comms.axes, comms.coolDown):
+            self.coolDown = message['coolDown']
+        elif topic == comms.stop:
+            self.gameOver = True
+        elif topic == comms.initial:
+            self.initialReceived = True
+        elif topic == comms.assign:
+            if message['clientId'] == self.clientId:
+                self.playerId = message['playerId']
+            log = f"########## playerId set to `{self.playerId}`############"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+        elif topic == comms.start:
+            self.start = True
 
 class BerryIMU:
     def __init__(self):

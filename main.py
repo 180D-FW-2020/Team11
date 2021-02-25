@@ -45,35 +45,80 @@ def piProcess():
     Processes run on the pi. This detects a rotation on the pi, sends it,
     and then waits for permission to detect a new rotation.
     '''
-    if settings.verbose: print("Starting pi process", flush=True)
+    log = ("Starting pi processes")
+    logging.info(log)
+    if settings.verbose: print(log, flush=True)
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
-    pi = playerPi.PlayerPi(clientId)
-    #displayReceived = False
-    #stop = False
+    abort = False
     
-    receiver = comms.Receiver((comms.initial,
-                               comms.assign,
-                               comms.coolDown,
-                               comms.axes,
-                               comms.start,
-                               comms.stop),
-                              clientId)
-    transmitter = comms.Transmitter()
-    receiver.start()
+    try:
+        pi = playerPi.PlayerPi(clientId)
+    except:
+        log = "An error occurred initializing PlayerPi"
+        logging.error(log)
+        if settings.verbose: print(log, flush=True)
+        traceback.print_exc()
+        abort = True
+    
+    if not abort:
+        try:
+            receiver = comms.Receiver((comms.initial,
+                                       comms.assign,
+                                       comms.coolDown,
+                                       comms.axes,
+                                       comms.start,
+                                       comms.stop),
+                                      clientId)
+            transmitter = comms.Transmitter()
+        except:
+            log = "An error occurred initializing pi process receiver"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+    
+    if not abort:
+        try:
+            receiver.start()
+        except:
+            log = "An error occurred starting pi process receiver"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
     
     #First, get initial load with full playspace info
     while not pi.initialReceived:
         
         # Keep checking for an initial load
         if len(receiver.packages):
-            # Sets initialReceived to true if initial load
-            pi.unpack(receiver.packages.pop(0))
+            try:
+                # Sets initialReceived to true if initial load
+                pi.unpack(receiver.packages.pop(0))
+            except:
+                log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
             
     # Send handshake to confirm receipt of first load
-    package = pi.pack(pi.clientId)
-    transmitter.transmit(comms.piConfirmation, package)
+    try:
+        package = pi.pack(pi.clientId)
+    except:
+        log = "An error occurred packing the clientId"
+        logging.error(log)
+        if settings.verbose: print(log, flush=True)
+        traceback.print_exc()
+        
+        package = None
     
+    try:
+        transmitter.transmit(comms.piConfirmation, package)
+    except:
+        log = "An error occurred transmitting the clientId"
+        logging.error(log)
+        if settings.verbose: print(log, flush=True)
+        traceback.print_exc()
+        
     # Receive playerId. May not correspond to playerId for the same player's PC
     # but that doesn't matter, this is only for ease of reading logs
     while not pi.playerId:
