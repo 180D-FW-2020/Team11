@@ -70,12 +70,22 @@ def piProcess():
                                        comms.start,
                                        comms.stop),
                                       clientId)
-            transmitter = comms.Transmitter()
         except:
             log = "An error occurred initializing pi process receiver"
             logging.error(log)
             if settings.verbose: print(log, flush=True)
             traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            transmitter = comms.Transmitter()
+        except:
+            log = "An error occurred initializing pi process transmitter"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
     
     if not abort:
         try:
@@ -85,68 +95,114 @@ def piProcess():
             logging.error(log)
             if settings.verbose: print(log, flush=True)
             traceback.print_exc()
+            abort = True
     
-    #First, get initial load with full playspace info
-    while not pi.initialReceived:
-        
-        # Keep checking for an initial load
-        if len(receiver.packages):
-            try:
-                # Sets initialReceived to true if initial load
-                pi.unpack(receiver.packages.pop(0))
-            except:
-                log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
-                logging.error(log)
-                if settings.verbose: print(log, flush=True)
-                traceback.print_exc()
+    if not abort:
+        #First, get initial load with full playspace info
+        while not pi.initialReceived:
             
-    # Send handshake to confirm receipt of first load
-    try:
-        package = pi.pack(pi.clientId)
-    except:
-        log = "An error occurred packing the clientId"
-        logging.error(log)
-        if settings.verbose: print(log, flush=True)
-        traceback.print_exc()
-        
-        package = None
+            # Keep checking for an initial load
+            if len(receiver.packages):
+                try:
+                    # Sets initialReceived to true if initial load
+                    pi.unpack(receiver.packages.pop(0))
+                except:
+                    log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
     
-    try:
-        transmitter.transmit(comms.piConfirmation, package)
-    except:
-        log = "An error occurred transmitting the clientId"
-        logging.error(log)
-        if settings.verbose: print(log, flush=True)
-        traceback.print_exc()
-        
-    # Receive playerId. May not correspond to playerId for the same player's PC
-    # but that doesn't matter, this is only for ease of reading logs
-    while not pi.playerId:
+        # Send handshake to confirm receipt of first load
+        try:
+            package = pi.pack(pi.clientId)
+        except:
+            log = "An error occurred packing the clientId"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
     
-        # Keep checking for a message assigning the player number
-        if len(receiver.packages):
-            # Gets true if initial load received, false and deletes message
-            # from queue otherwise
-            pi.unpack(receiver.packages.pop(0))
+    if not abort:
+        try:
+            transmitter.transmit(comms.piConfirmation, package)
+        except:
+            log = "An error occurred transmitting the clientId"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        # Receive playerId. May not correspond to playerId for the same player's PC
+        # but that doesn't matter, this is only for ease of reading logs
+        while not pi.playerId:
+        
+            # Keep checking for a message assigning the player number
+            if len(receiver.packages):
+                try:
+                    # Gets true if initial load received, false and deletes message
+                    # from queue otherwise
+                    pi.unpack(receiver.packages.pop(0))
+                except:
+                    log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()                
             
-    # Send handshake to confirm receipt of playerId
-    package = pi.pack(pi.playerId)
-    transmitter.transmit(comms.ready, package)
+        try:
+            # Send handshake to confirm receipt of playerId
+            package = pi.pack(pi.playerId)
+        except:
+            log = "An error occurred packing the playerId"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+        
+    if not abort:
+        try:
+            transmitter.transmit(comms.ready, package)
+        except:
+            log = "An error occurred transmitting the playerId"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
     
-    stop = [0]
+    stop = [abort]
     # Send transmitter to separate thread to handle getting player input and
     # sending to central, while current process gets display updates
-    transmit = Thread(target=piTransmit, args = (transmitter, pi, stop,))
-    transmit.daemon = True
-    transmit.start()
+    if not abort:
+        transmit = Thread(target=piTransmit, args = (transmitter, pi, stop,))
+        transmit.daemon = True
+        try:
+            transmit.start()
+        except:
+            log = "An error occurred starting the piTransmit thread"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
     
     # Gameplay receiver loop checks for new packages in the queue. Packages
     # set the rotation cooldown or end the game.
     #while not pi.gameOver:
-    while not pi.gameOver:
-        if len(receiver.packages):
-            pi.unpack(receiver.packages.pop(0))
-    print("pi game over", flush=True)
+    if not abort:
+        while not pi.gameOver:
+            if len(receiver.packages):
+                try:
+                    pi.unpack(receiver.packages.pop(0))
+                except:
+                        log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                        logging.error(log)
+                        if settings.verbose: print(log, flush=True)
+                        traceback.print_exc()
+    if abort:
+        log = "pi processes aborted due to unresolvable errors"
+    else:
+        log = "pi game over"
+    logging.info(log)
+    if settings.verbose: print(log, flush=True)
 
     stop[0] = True
     transmit.join()
@@ -158,15 +214,40 @@ def piTransmit(transmitter, pi, stop):
     central.
     '''
     while not pi.gameOver:
-        rotation = pi.getRotation(stop)
+        try:
+            rotation = pi.getRotation(stop)
+        except:
+            log = "An error occurred getting a rotation"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            rotation = 0
+            
         if rotation:
-            package = pi.pack(rotation)
-            transmitter.transmit(comms.rotation, package)
+            try:
+                package = pi.pack(rotation)
+            except:
+                log = "An error occurred packing a rotation"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
+            
+            if package:
+                try:
+                    transmitter.transmit(comms.rotation, package)
+                    transmitted = True
+                except:
+                    log = "An error occurred transmitting a rotation"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
+                    transmitted = False
             
             # The cooldown will also be set by a message returned from central,
             # but this is here to ensure the pi doesn't send new rotation info
             # before that return message is received
-            pi.coolDown = True
+            if transmitted:
+                pi.coolDown = True
 
 def pcProcess():
     '''
