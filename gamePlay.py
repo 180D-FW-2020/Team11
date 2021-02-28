@@ -147,6 +147,7 @@ class PlaySpace:
             self.horizontalAxis = np.array([1,0,0])
                         
             self.rotationCoolDownTime = 0
+            self.rotationCoolDownSeconds = 0
             self.freezeTimer = 0
             
             if numPlayers:
@@ -391,7 +392,7 @@ class PlaySpace:
                 self.horizontalAxis = -1 * newAxis
             displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
                                   'verticalAxis': self.verticalAxis.tolist(),
-                                  'coolDown': True}
+                                  'coolDown': ROTATION_COOLDOWN}
             self.setRotationCoolDown()
 
             #check that no collisions occur on rotation
@@ -776,6 +777,7 @@ class PlaySpace:
         '''
         try:
             self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = ROTATION_COOLDOWN)
+            self.rotationCoolDownSeconds = ROTATION_COOLDOWN
         except:
             print("An error occurred setting the rotation cooldown")
             traceback.print_exc() 
@@ -784,26 +786,38 @@ class PlaySpace:
         '''
         Checks if the cooldown is active. Return true if yes, false if no
         '''
-        try:
-            # Check if a cooldown is even in place. If not, abort. This should
-            # be an edge case: the method should only be called when a cooldown
-            # is known to be active
-            if not self.rotationCoolDownTime:
-                if settings.verbose:
-                    print("rotationCoolDownRemaining called without checking",
-                          "if cooldown in place.")
-                return False, 0, 0
-            
-            # If cooldown is in place, check to see if it ended before now. If
-            # yes, the cooldown is over, so zero out the cooldown and return false
-            elif self.rotationCoolDownTime < datetime.datetime.now():
-                self.rotationCoolDownTime = 0
-                message = {'coolDown': False}
-                return False, comms.coolDown, message
-            
-            # Otherwise the cooldown is still active, so return true and keep things going
+        # Check if a cooldown is even in place. If not, abort. This should
+        # be an edge case: the method should only be called when a cooldown
+        # is known to be active
+        if not self.rotationCoolDownTime:
+            if settings.verbose:
+                print("rotationCoolDownRemaining called without checking",
+                      "if cooldown in place.")
+            return False, 0, 0
+        
+        else:
+            timeRemaining = self.rotationCoolDownTime - datetime.datetime.now()
+            # If current time is before rotation cooldown end time, timedelta
+            # object will have days = 0. If current time is after cooldown
+            # end time, then days = -1.
+            if not timeRemaining.days:
+                # Only send up to one update per second
+                if not self.rotationCoolDownSeconds == timeRemaining.seconds:
+                    self.rotationCoolDownSeconds = timeRemaining.seconds
+                    message = {'coolDown': timeRemaining.seconds}
+                    return False, comms.coolDown, message
+                else: return False, 0, 0
             else:
-                return True, 0, 0
-        except:
-            print("An error occurred decrementing the rotation cooldown")
-            traceback.print_exc()
+                self.rotationCoolDownTime = 0
+                message = {'coolDown': 0}
+                return False, comms.coolDown, message
+        # # If cooldown is in place, check to see if it ended before now. If
+        # # yes, the cooldown is over, so zero out the cooldown and return false
+        # elif self.rotationCoolDownTime < datetime.datetime.now():
+        #     self.rotationCoolDownTime = 0
+        #     message = {'coolDown': False}
+        #     return False, comms.coolDown, message
+        
+        # # Otherwise the cooldown is still active, so return true and keep things going
+        # else:
+        #     return True, 0, 0

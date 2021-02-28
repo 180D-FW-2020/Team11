@@ -87,7 +87,8 @@ class PlayerPi:
             topic, message = package
             
             if self.start and topic in (comms.axes, comms.coolDown):
-                self.coolDown = message['coolDown']
+                if not message['coolDown']:
+                    self.coolDown = message['coolDown']
             elif topic == comms.stop:
                 self.gameOver = True
             elif topic == comms.initial:
