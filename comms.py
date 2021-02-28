@@ -10,6 +10,7 @@ from paho.mqtt import client as mqtt_client
 import json
 import settings
 import datetime
+import traceback
 
 broker = 'broker.emqx.io'
 port = 1883
@@ -60,15 +61,20 @@ class Transmitter:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.connected = True
-            if settings.verbose:
-                print("Transmitter connected", flush=True)
+            
+            log = "Transmitter connected"
+            logging.info(log)
+            if settings.verbose: print(log, flush=True)
         else:
             print("Failed to connect, return code %d\n", rc, flush=True)
             
     def transmit(self, topic, package):
+        # Add message ID for troubleshooting
+        package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
+        
+        # Retry up to 5 times
         unsent = 1
         count = 5
-        package['MessageId'] = datetime.datetime.now().strftime("%M%S%f")
         while unsent and count:
             unsent, _ = self.client.publish(topic, json.dumps(package), qos=qos_)
             count = count - 1
@@ -76,11 +82,11 @@ class Transmitter:
         if unsent:
             log = f"Failed to published `{package}` from `{topic}`"
             logging.info(log)
-            if settings.verbose: print(log)
+            if settings.verbose: print(log, flush=True)
         else:
             log = f"Published `{package}` from `{topic}`"
             logging.info(log)
-            if settings.verbose: print(log)
+            if settings.verbose: print(log, flush=True)
         
 class Receiver:
     '''
@@ -104,8 +110,7 @@ class Receiver:
         
         receiver.stop()
     '''
-    def __init__(self, topic, clientId):
-        
+    def __init__(self, topic, clientId):        
         # Allow for multiple topic subscriptions
         if type(topic) == tuple:
             topics = []
@@ -124,27 +129,39 @@ class Receiver:
         self.client.on_subscribe = self.on_subscribe
         self.client.connect(broker, port)
         
+        # Queue for package handling. Received packages are added to queue by
+        # MQTT loop activities and then removed by game loop
         self.packages = []
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.client.subscribe(self.topic)
-            if settings.verbose:
-                print("Receiver connected: ", self.topic, self.clientId, flush=True)
+            log = f"Receiver connected: `{self.topic}`"
+            logging.info(log)
+            if settings.verbose: print(log, flush=True)
         else:
-            if settings.verbose:
-                print("Failed to connect, return code %d\n", rc, flush=True)
+            log = f"Failed to connect, return code `{rc}`"
+            logging.info(log)
+            if settings.verbose: print(log, flush=True)
                 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        if settings.verbose:
-            print("Subscribed, mid = ", mid, flush=True)
+        log = "Subscribed"
+        logging.info(log)
+        if settings.verbose: print(log, flush=True)
 
     def on_message(self, client, userdata, msg):
-        if settings.verbose:
-            print(f"Received `{msg.payload.decode()}` from `{msg.topic}`", flush=True)
+        log = f"Received `{msg.payload.decode()}` from `{msg.topic}`"
+        logging.info(log)
+        if settings.verbose: print(log, flush=True)
         
         # Store topic and decoded dictionary payload
-        self.packages.append((msg.topic, json.loads(msg.payload.decode())))
+        try:
+            self.packages.append((msg.topic, json.loads(msg.payload.decode())))
+        except:
+            log = f"Failed to add message to queue: `{msg.payload.decode()}` from `{msg.topic}`"
+            logging.info(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
 
     def start(self):
         self.client.loop_start()
