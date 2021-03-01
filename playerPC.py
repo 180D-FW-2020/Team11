@@ -21,13 +21,16 @@ if 'arm' not in platform.machine().lower():
 
 cameraWorking = True
 
-## Display dummy values
-# player1c = (255, 99, 174)
-# player2c = (0, 127, 255)
+## Display values
 OBSTACLE_COLOR = (255, 0, 255)
 POWERUP_COLOR = (255, 255, 0)
-# playerColors = [player1c, player2c, player3c, player4c]
-# itColor = (255, 198, 220)
+
+COOLDOWN_POSITION = (60,30)
+COOLDOWN_CLEAR_UPPERLEFT = (50,0)
+COOLDOWN_CLEAR_LOWERRIGHT = (500,34)
+COOLDOWN_TIMER_UPPERLEFT = (410,10)
+COOLDOWN_TIMER_LOWERRIGHT = (410,34)
+COOLDOWN_DISTANCE = 500 - 410
 
 ## Commands
 phrases = {
@@ -65,6 +68,7 @@ class PlayerPC:
             self.ready = False
             self.start = False
             self.powerUp = 0
+            self.rotationTimeTotal = 0
             
             # Initialize the PyGame
             pygame.init()
@@ -215,7 +219,8 @@ class PlayerPC:
         Gets direction information from the camera.
         '''
         try:
-            direction = self.camera.getDirection(frameCapture)
+            direction, self.cameraImage = self.camera.getDirection(frameCapture)
+            self.display[260:740, 980:1620] = self.cameraImage
             return direction
         except:
             print("Error getting direction information from the camera", flush=True)
@@ -326,6 +331,8 @@ class PlayerPC:
             cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
             if self.playSpace.players[self.playerId - 1]['it']:
                 cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            if type(self.cameraImage) != int:
+                self.display[260:740, 980:1620] = self.cameraImage
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -428,19 +435,32 @@ class PlayerPC:
         
         # Reload the playspace according to new axes
         self.setPlayspace(None)
+        self.rotationTimeTotal = message['coolDown']
 
         # Play rotation SFX
         self.rotationSound.play()
         
         # Set the cooldown message
-        cv2.putText(self.display, "Cooldown!", (60,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        display = copy.deepcopy(self.display)
+        cv2.putText(display, "Rotation cooldown!", COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+        self.display = display
 
     def setCooldown(self, message):
         '''
-        Turns off the cooldown message.
+        Updates/clears the cooldown message.
         '''
-        self.playSpace.rotationCoolDownTime = message['coolDown']
-        cv2.rectangle(self.display, (50,0), (500, 34), (0,0,0), -1)
+        display = copy.deepcopy(self.display)
+        cv2.rectangle(display, COOLDOWN_CLEAR_UPPERLEFT, COOLDOWN_CLEAR_LOWERRIGHT, (0,0,0), -1)
+        if message['coolDown']:
+            endpos = np.array(COOLDOWN_TIMER_LOWERRIGHT)
+            endpos[0] += int(COOLDOWN_DISTANCE*message['coolDown']/self.rotationTimeTotal)
+            cv2.putText(display, "Rotation cooldown! " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.rectangle(display, COOLDOWN_TIMER_UPPERLEFT, tuple(endpos), (255, 255, 255), -1)
+        else:
+            self.playSpace.rotationCoolDownTime = message['coolDown']
+
+        self.display = display
 
     def setPowerUp(self, message):
         if settings.verbose:
@@ -631,8 +651,10 @@ class PlayerPC:
             
             if self.playSpace.players[self.playerId - 1]['it']:
                 cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            if type(self.cameraImage) != int:
+                self.display[260:740, 980:1620] = self.cameraImage
             self.display = display
-            if settings.verbose: print('########## playerId set to ############', self.playerId)
+            if settings.verbose: print(f'########## playerId set to `{self.playerId}` ############')
     
     def setTag(self, message):
         '''
@@ -740,8 +762,8 @@ class PlayerPC:
                 #     self.swap = False
                 #     self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
-            elif type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
+            elif type(self.display) != int:
+                #self.display[260:740, 980:1620] = self.cameraImage
                 cv2.imshow('display',self.display)
             #self.displayUpdate = False
         except:

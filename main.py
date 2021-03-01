@@ -371,7 +371,7 @@ def pcProcess():
     readySent = False
     while not pc.start and not breakEarly:
         if not readySent and pc.ready:
-            pc.loading(f"You are ready! Waiting for other players to be ready...")
+            pc.loading("You are ready! Waiting for other players to be ready...")
             readySent = True
         if cv2.waitKey(1) & 0xFF == ord('q'):
             breakEarly = True
@@ -391,7 +391,7 @@ def pcProcess():
     if breakEarly: stop[0] = True
         
     while not pc.gameOver and not stop[0] and not breakEarly:
-        direction, pc.cameraImage = pc.getDirection(frameCapture)
+        direction = pc.getDirection(frameCapture)
         #cv2.imshow('frame',pc.cameraImage)
         pc.updateDisplay(event = False)
 
@@ -400,7 +400,6 @@ def pcProcess():
             transmitter.transmit(comms.direction, package)
             delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
             
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         
@@ -411,12 +410,12 @@ def pcProcess():
     cv2.destroyAllWindows()
     
     stop[0] = True
-    packageReceipt.join()
     if command:
         command.join()
     if isPrimary:
         stopCentral.value = True
         central.join()
+    packageReceipt.join()
     receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
