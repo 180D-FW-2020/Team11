@@ -322,10 +322,10 @@ class PlayerPC:
         display = copy.deepcopy(self.displayBase)
         
         # if playerId already assigned, set player frame
-        if self.playerId:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
-            if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+        # if self.playerId:
+        #     cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        #     if self.playSpace.players[self.playerId - 1]['it']:
+        #         cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -629,7 +629,7 @@ class PlayerPC:
         display = copy.deepcopy(self.display)
         cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
         if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
         self.display = display
         if settings.verbose: print('########## playerId set to ############', self.playerId)
     
