@@ -153,6 +153,9 @@ class PlaySpace:
             if numPlayers:
                 self.numPlayers = numPlayers
                 self.players, self.playersNotIt = self.placePlayers(numPlayers)
+                
+                # Counts the number of times each player has been tagged
+                self.tagCount = [0 for i in range(self.numPlayers)]
             
             if numObstacles: 
                 self.obstacles = self.placeObstacles(numObstacles)
@@ -313,9 +316,11 @@ class PlaySpace:
                 if tag in self.playersNotIt:
                     self.playersNotIt.remove(tag)
                 self.it = tag
+                self.tagCount[tag-1] += 1
                 topic = comms.tag
                 displayUpdates = {'tagged': tag,
-                                  'untagged': playerId}
+                                  'untagged': playerId,
+                                  'count': self.tagCount}
             # If collision is obstacle/wall/non tag player bump, do nothing
             elif collision and (overlap == 1):
                 topic = 0

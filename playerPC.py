@@ -32,6 +32,30 @@ COOLDOWN_TIMER_UPPERLEFT = (410,10)
 COOLDOWN_TIMER_LOWERRIGHT = (410,34)
 COOLDOWN_DISTANCE = 500 - 410
 
+CAMERA_IMAGE_TOP = 110
+CAMERA_IMAGE_BOTTOM = 590
+CAMERA_IMAGE_LEFT = 980
+CAMERA_IMAGE_RIGHT = 1620
+FRAME_CLEAR_UPPERLEFT = (950, 80)
+FRAME_CLEAR_LOWERRIGHT = (1650, 620)
+FRAME_UPPERLEFT = (960, 90)
+FRAME_LOWERRIGHT = (1640, 610)
+
+IT_TEXT_POSITION = (990, 650)
+IT_TEXT_CLEAR_UPPERLEFT = (960, 620)
+IT_TEXT_CLEAR_LOWERRIGHT = (1650, 654)
+IT_STATS_PRINT_HORIZONTAL = 990
+IT_STATS_PRINT_VERTICAL = 686
+IT_STATS_CLEAR_LEFT = 960
+IT_STATS_CLEAR_RIGHT = 1650
+IT_STATS_CLEAR_TOP = 660
+IT_STATS_CLEAR_BOTTOM = 695
+IT_STATS_NEWLINE = 35
+IT_STATS_CIRCLE_OFFSET = 10
+
+IT_STATS_MAXCIRCLE = int(35/3)
+IT_STATS_MAXBORDER = int(35/10)
+
 ## Commands
 phrases = {
     "ready" : comms.ready,
@@ -129,7 +153,7 @@ class PlayerPC:
                 menu = np.zeros((1000,1700,3), np.uint8)
     
                 cv2.createTrackbar('Play Mode', 'menu2', 1, 1, self.nothing)
-                cv2.createTrackbar('Players', 'menu2', 1, 10, self.nothing)
+                cv2.createTrackbar('Players', 'menu2', 1, 9, self.nothing)
                 cv2.createTrackbar('Play Size', 'menu2', 10, 20, self.nothing)
                 cv2.createTrackbar('Obstacles', 'menu2', 10, 20, self.nothing)
                 cv2.createTrackbar('Powerups', 'menu2', 3, 10, self.nothing)
@@ -220,7 +244,7 @@ class PlayerPC:
         '''
         try:
             direction, self.cameraImage = self.camera.getDirection(frameCapture)
-            self.display[260:740, 980:1620] = self.cameraImage
+            self.display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
             return direction
         except:
             print("Error getting direction information from the camera", flush=True)
@@ -304,7 +328,7 @@ class PlayerPC:
             print("Error getting package from primary node", flush=True)
             traceback.print_exc()
             
-    def setPlayspace(self, message):
+    def setPlayspace(self, message = None):
         '''
         Loads the playspace. If input message, it's the initial playspace.
         Otherwise just reload based on new axes. This can also
@@ -326,13 +350,16 @@ class PlayerPC:
             
         display = copy.deepcopy(self.displayBase)
         
-        # if playerId already assigned, set player frame
+        # if playerId already assigned, set player frame and it indicator text
         if self.playerId:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['color'], -1)
             if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+                cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+                cv2.putText(display, "You are it!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            else:
+                cv2.putText(display, "You are not it. Run!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
+                display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -343,9 +370,23 @@ class PlayerPC:
                 vpos = self.playSpace.edgeLength + vpos + 1
             cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)), 
                        int(self.dist/3), player['color'], -1)
+            
+            cv2.circle(display,(IT_STATS_PRINT_HORIZONTAL, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*i - IT_STATS_CIRCLE_OFFSET),
+                        min(int(self.dist/3), IT_STATS_MAXCIRCLE), player['color'], -1)
+            if self.playerId and self.playerId - 1 == i:
+                cv2.putText(display, f"has been tagged {self.playSpace.tagCount[i]} times (you)",
+                            (IT_STATS_PRINT_HORIZONTAL + 50, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*i),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+            else:
+                cv2.putText(display, f"has been tagged {self.playSpace.tagCount[i]} times",
+                            (IT_STATS_PRINT_HORIZONTAL + 50, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*i),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+            
             if player['it']:
                 cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                            int(self.dist/3), player['itColor'], int(self.dist/10))
+                cv2.circle(display,(IT_STATS_PRINT_HORIZONTAL, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*i - IT_STATS_CIRCLE_OFFSET),
+                        min(int(self.dist/3), IT_STATS_MAXCIRCLE), player['itColor'], min(int(self.dist/10), IT_STATS_MAXBORDER))
 
         for i, obstacles in enumerate(self.playSpace.obstacles):
             hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
@@ -434,7 +475,7 @@ class PlayerPC:
         self.playSpace.rotationCoolDownTime = message['coolDown']
         
         # Reload the playspace according to new axes
-        self.setPlayspace(None)
+        self.setPlayspace()
         self.rotationTimeTotal = message['coolDown']
 
         # Play rotation SFX
@@ -646,14 +687,26 @@ class PlayerPC:
         if message['clientId'] == self.clientId:
             self.playerId = message['playerId']
             # set player frame
-            display = copy.deepcopy(self.display)
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            self.setPlayspace()
+            # display = copy.deepcopy(self.display)
+            # cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['color'], -1)
             
-            if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
-            if type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
-            self.display = display
+            # if self.playSpace.players[self.playerId - 1]['it']:
+            #     cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            #     cv2.putText(display, "You are it!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            # else:
+            #     cv2.putText(display, "You are not it. Run!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            # if type(self.cameraImage) != int:
+            #     display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
+            
+            # # set player in the stats
+            # cv2.rectangle(display, (IT_STATS_CLEAR_LEFT, IT_STATS_CLEAR_TOP + IT_STATS_NEWLINE*(self.playerId - 1)),
+            #           (IT_STATS_CLEAR_RIGHT,IT_STATS_CLEAR_BOTTOM + IT_STATS_NEWLINE*(message['tagged'] - 1)), (0,0,0), -1)
+            # cv2.putText(display, f"has been tagged {self.playSpace.tagCount[(message['tagged'] - 1)]} times (you)",
+            #             (IT_STATS_PRINT_HORIZONTAL + 70, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['tagged'] - 1)),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+            
+            # self.display = display
             if settings.verbose: print(f'########## playerId set to `{self.playerId}` ############')
     
     def setTag(self, message):
@@ -664,6 +717,7 @@ class PlayerPC:
         self.playSpace.players[message['tagged'] - 1]['it'] = True
         self.playSpace.players[message['untagged'] - 1]['it'] = False
         self.playSpace.it = self.playSpace.players[message['tagged'] - 1]
+        self.playSpace.tagCount = message['count']
         
         # Play sound to indicate tag
         self.tagSound.play()
@@ -698,10 +752,49 @@ class PlayerPC:
                    int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], int(self.dist/10))
         
         # reset player frame
-        cv2.rectangle(display, (950, 230), (1650, 770), (0,0,0), -1)
-        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        cv2.rectangle(display, FRAME_CLEAR_UPPERLEFT, FRAME_CLEAR_LOWERRIGHT, (0,0,0), -1)
+        cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['color'], -1)
         if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+        
+        # if this player was tagged/untagged
+        if self.playerId == message['tagged']:
+            cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            cv2.rectangle(display, IT_TEXT_CLEAR_UPPERLEFT, IT_TEXT_CLEAR_LOWERRIGHT, (0,0,0), -1)
+            cv2.putText(display, "You are it!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        elif self.playerId == message['untagged']:
+            cv2.rectangle(display, IT_TEXT_CLEAR_UPPERLEFT, IT_TEXT_CLEAR_LOWERRIGHT, (0,0,0), -1)
+            cv2.putText(display, "You are not it. Run!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        # update tagged player stats
+        cv2.rectangle(display, (IT_STATS_CLEAR_LEFT, IT_STATS_CLEAR_TOP + IT_STATS_NEWLINE*(message['tagged'] - 1)),
+                      (IT_STATS_CLEAR_RIGHT,IT_STATS_CLEAR_BOTTOM + IT_STATS_NEWLINE*(message['tagged'] - 1)), (0,0,0), -1)
+        cv2.circle(display,(IT_STATS_PRINT_HORIZONTAL, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['tagged'] - 1) - IT_STATS_CIRCLE_OFFSET),
+                    min(int(self.dist/3), IT_STATS_MAXCIRCLE), self.playSpace.players[message['tagged'] - 1]['color'], -1)
+        cv2.circle(display,(IT_STATS_PRINT_HORIZONTAL, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['tagged'] - 1) - IT_STATS_CIRCLE_OFFSET),
+                        min(int(self.dist/3), IT_STATS_MAXCIRCLE), self.playSpace.players[message['tagged'] - 1]['itColor'], min(int(self.dist/10), IT_STATS_MAXBORDER))
+        if self.playerId == message['tagged']:
+            cv2.putText(display, f"has been tagged {self.playSpace.tagCount[(message['tagged'] - 1)]} times (you)",
+                        (IT_STATS_PRINT_HORIZONTAL + 50, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['tagged'] - 1)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+        else:
+            cv2.putText(display, f"has been tagged {self.playSpace.tagCount[(message['tagged'] - 1)]} times",
+                        (IT_STATS_PRINT_HORIZONTAL + 50, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['tagged'] - 1)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+        
+        # update untagged player stats
+        cv2.rectangle(display, (IT_STATS_CLEAR_LEFT, IT_STATS_CLEAR_TOP + IT_STATS_NEWLINE*(message['untagged'] - 1)),
+                      (IT_STATS_CLEAR_RIGHT,IT_STATS_CLEAR_BOTTOM + IT_STATS_NEWLINE*(message['untagged'] - 1)), (0,0,0), -1)
+        cv2.circle(display,(IT_STATS_PRINT_HORIZONTAL, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['untagged'] - 1) - IT_STATS_CIRCLE_OFFSET),
+                    min(int(self.dist/3), IT_STATS_MAXCIRCLE), self.playSpace.players[message['untagged'] - 1]['color'], -1)
+        if self.playerId == message['untagged']:
+            cv2.putText(display, f"has been tagged {self.playSpace.tagCount[(message['untagged'] - 1)]} times (you)",
+                        (IT_STATS_PRINT_HORIZONTAL + 50, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['untagged'] - 1)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+        else:
+            cv2.putText(display, f"has been tagged {self.playSpace.tagCount[(message['untagged'] - 1)]} times",
+                        (IT_STATS_PRINT_HORIZONTAL + 50, IT_STATS_PRINT_VERTICAL + IT_STATS_NEWLINE*(message['untagged'] - 1)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
         
         self.display = display
     
@@ -763,7 +856,7 @@ class PlayerPC:
                 #     self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
             elif type(self.display) != int:
-                #self.display[260:740, 980:1620] = self.cameraImage
+                #self.display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
                 cv2.imshow('display',self.display)
             #self.displayUpdate = False
         except:
