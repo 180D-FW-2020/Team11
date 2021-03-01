@@ -218,7 +218,8 @@ class PlayerPC:
         Gets direction information from the camera.
         '''
         try:
-            direction = self.camera.getDirection(frameCapture)
+            direction, self.cameraImage = self.camera.getDirection(frameCapture)
+            self.display[260:740, 980:1620] = self.cameraImage
             return direction
         except:
             print("Error getting direction information from the camera", flush=True)
@@ -329,6 +330,8 @@ class PlayerPC:
             cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
             if self.playSpace.players[self.playerId - 1]['it']:
                 cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            if type(self.cameraImage) != int:
+                self.display[260:740, 980:1620] = self.cameraImage
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -644,11 +647,12 @@ class PlayerPC:
             # set player frame
             display = copy.deepcopy(self.display)
             cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
-            
             if self.playSpace.players[self.playerId - 1]['it']:
                 cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            if type(self.cameraImage) != int:
+                self.display[260:740, 980:1620] = self.cameraImage
             self.display = display
-            if settings.verbose: print('########## playerId set to ############', self.playerId)
+            if settings.verbose: print(f'########## playerId set to `{self.playerId}` ############')
     
     def setTag(self, message):
         '''
@@ -757,7 +761,7 @@ class PlayerPC:
                 #     self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
             elif type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
+                #self.display[260:740, 980:1620] = self.cameraImage
                 cv2.imshow('display',self.display)
             #self.displayUpdate = False
         except:
