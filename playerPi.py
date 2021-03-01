@@ -79,9 +79,9 @@ class PlayerPi:
         elif topic == comms.assign:
             if message['clientId'] == self.clientId:
                 self.playerId = message['playerId']
-            log = f"########## playerId set to `{self.playerId}`############"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
+                log = f"########## playerId set to `{self.playerId}`############"
+                logging.info(log)
+                if settings.verbose: print(log, flush=True)
         elif topic == comms.start:
             self.start = True
 
