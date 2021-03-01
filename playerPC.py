@@ -290,7 +290,7 @@ class PlayerPC:
             else:
                 if topic == comms.initial and not self.initialReceived:
                     self.setPlayspace(message)
-                elif topic == comms.assign:
+                elif topic == comms.assign and not self.playerId:
                     self.setAssign(message)
                 elif topic == comms.start:
                     self.start = True
@@ -325,7 +325,7 @@ class PlayerPC:
         if self.playerId:
             cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
             if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -338,7 +338,7 @@ class PlayerPC:
                        int(self.dist/3), player['color'], -1)
             if player['it']:
                 cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                           int(self.dist/3), player['itColor'], 10)
+                           int(self.dist/3), player['itColor'], int(self.dist/10))
 
         for i, obstacles in enumerate(self.playSpace.obstacles):
             hpos = np.dot(self.playSpace.horizontalAxis, obstacles['position'])
@@ -347,8 +347,6 @@ class PlayerPC:
             vpos = -1*np.dot(self.playSpace.verticalAxis, obstacles['position'])
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
-            # cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-            #            int(self.dist/3), OBSTACLE_COLOR, -1)
             cv2.rectangle(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
                           (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), OBSTACLE_COLOR, -1)
         
@@ -359,8 +357,6 @@ class PlayerPC:
             vpos = -1*np.dot(self.playSpace.verticalAxis, powerups['position'])
             if vpos<0:
                 vpos = self.playSpace.edgeLength + vpos + 1
-            # cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-            #            int(self.dist/3), POWERUP_COLOR, -1)
             cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
                      (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), POWERUP_COLOR, int(self.dist/6))
             cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
@@ -399,7 +395,9 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3)+10, (0,0,0), -1)
+                              int(self.dist/3), (0,0,0), -1)
+        display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                              int(self.dist/3), (0,0,0), int(self.dist/10))
         
         # Place in new position
         hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.players[message['playerId'] - 1]['position'])
@@ -412,7 +410,7 @@ class PlayerPC:
                               int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['color'], -1)
         if self.playSpace.players[message['playerId'] - 1]['it']:
             display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                              int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['itColor'], 10)
+                              int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['itColor'], int(self.dist/10))
         
         self.display = display
 
@@ -625,15 +623,16 @@ class PlayerPC:
         '''
         Sets player ID. Pending: announce loaded players to loading screen
         '''
-        if not self.playerId and message['clientId'] == self.clientId:
+        if message['clientId'] == self.clientId:
             self.playerId = message['playerId']
-        # set player frame
-        display = copy.deepcopy(self.display)
-        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
-        if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
-        self.display = display
-        if settings.verbose: print('########## playerId set to ############', self.playerId)
+            # set player frame
+            display = copy.deepcopy(self.display)
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            
+            if self.playSpace.players[self.playerId - 1]['it']:
+                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            self.display = display
+            if settings.verbose: print('########## playerId set to ############', self.playerId)
     
     def setTag(self, message):
         '''
@@ -657,7 +656,9 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                   int(self.dist/3)+10, (0,0,0), -1)
+                   int(self.dist/3), (0,0,0), -1)
+        cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
+                   int(self.dist/3), (0,0,0), int(self.dist/10))
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                    int(self.dist/3), self.playSpace.players[message['untagged'] - 1]['color'], -1)
         
@@ -668,17 +669,17 @@ class PlayerPC:
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                   int(self.dist/3)+int(self.dist/15), (0,0,0), -1)
+                   int(self.dist/3), (0,0,0), -1)
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                    int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['color'], -1)
         cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
-                   int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], 10)
+                   int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], int(self.dist/10))
         
         # reset player frame
         cv2.rectangle(display, (950, 230), (1650, 770), (0,0,0), -1)
         cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
         if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], 10)
+            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
         
         self.display = display
     
