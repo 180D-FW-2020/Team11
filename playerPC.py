@@ -32,6 +32,17 @@ COOLDOWN_TIMER_UPPERLEFT = (410,10)
 COOLDOWN_TIMER_LOWERRIGHT = (410,34)
 COOLDOWN_DISTANCE = 500 - 410
 
+CAMERA_IMAGE_TOP = 260
+CAMERA_IMAGE_BOTTOM = 740
+CAMERA_IMAGE_LEFT = 980
+CAMERA_IMAGE_RIGHT = 1620
+FRAME_CLEAR_UPPERLEFT = (950, 230)
+FRAME_CLEAR_LOWERRIGHT = (1650, 770)
+FRAME_UPPERLEFT = (960, 240)
+FRAME_LOWERRIGHT = (1640, 760)
+
+IT_TEXT_POSITION = (960, 820)
+
 ## Commands
 phrases = {
     "ready" : comms.ready,
@@ -220,7 +231,7 @@ class PlayerPC:
         '''
         try:
             direction, self.cameraImage = self.camera.getDirection(frameCapture)
-            self.display[260:740, 980:1620] = self.cameraImage
+            self.display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
             return direction
         except:
             print("Error getting direction information from the camera", flush=True)
@@ -328,11 +339,11 @@ class PlayerPC:
         
         # if playerId already assigned, set player frame
         if self.playerId:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['color'], -1)
             if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+                cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
             if type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
+                display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
         
         for i, player in enumerate(self.playSpace.players):
             hpos = np.dot(self.playSpace.horizontalAxis, player['position'])
@@ -647,12 +658,12 @@ class PlayerPC:
             self.playerId = message['playerId']
             # set player frame
             display = copy.deepcopy(self.display)
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+            cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['color'], -1)
             
             if self.playSpace.players[self.playerId - 1]['it']:
-                cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+                cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
             if type(self.cameraImage) != int:
-                self.display[260:740, 980:1620] = self.cameraImage
+                display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
             self.display = display
             if settings.verbose: print(f'########## playerId set to `{self.playerId}` ############')
     
@@ -698,10 +709,10 @@ class PlayerPC:
                    int(self.dist/3), self.playSpace.players[message['tagged'] - 1]['itColor'], int(self.dist/10))
         
         # reset player frame
-        cv2.rectangle(display, (950, 230), (1650, 770), (0,0,0), -1)
-        cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['color'], -1)
+        cv2.rectangle(display, FRAME_CLEAR_UPPERLEFT, FRAME_CLEAR_LOWERRIGHT, (0,0,0), -1)
+        cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['color'], -1)
         if self.playSpace.players[self.playerId - 1]['it']:
-            cv2.rectangle(display, (960, 240), (1640, 760), self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
+            cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
         
         self.display = display
     
@@ -763,7 +774,7 @@ class PlayerPC:
                 #     self.display = cv2.putText(self.display, "Swap!", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             
             elif type(self.display) != int:
-                #self.display[260:740, 980:1620] = self.cameraImage
+                #self.display[CAMERA_IMAGE_TOP:CAMERA_IMAGE_BOTTOM, CAMERA_IMAGE_LEFT:CAMERA_IMAGE_RIGHT] = self.cameraImage
                 cv2.imshow('display',self.display)
             #self.displayUpdate = False
         except:
