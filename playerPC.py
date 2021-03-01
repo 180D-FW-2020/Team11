@@ -90,6 +90,7 @@ class PlayerPC:
             self.initialReceived = False
             self.gameOver = False
             self.ready = False
+            self.launch = False
             self.start = False
             self.powerUp = 0
             self.rotationTimeTotal = 0
@@ -321,6 +322,8 @@ class PlayerPC:
                     self.setPlayspace(message)
                 elif topic == comms.assign and not self.playerId:
                     self.setAssign(message)
+                elif topic == comms.launch:
+                    self.launch = True
                 elif topic == comms.start:
                     self.start = True
             return False
