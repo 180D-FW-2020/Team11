@@ -22,12 +22,14 @@ if 'arm' not in platform.machine().lower():
 cameraWorking = True
 
 ## Display dummy values
-# player1c = (255, 99, 174)
-# player2c = (0, 127, 255)
 OBSTACLE_COLOR = (255, 0, 255)
 POWERUP_COLOR = (255, 255, 0)
-# playerColors = [player1c, player2c, player3c, player4c]
-# itColor = (255, 198, 220)
+COOLDOWN_POSITION = (60,30)
+COOLDOWN_CLEAR_UPPERLEFT = (50,0)
+COOLDOWN_CLEAR_LOWERRIGHT = (500,34)
+COOLDOWN_TIMER_UPPERLEFT = (410,10)
+COOLDOWN_TIMER_LOWERRIGHT = (410,34)
+COOLDOWN_DISTANCE = 500 - 410
 
 ## Commands
 phrases = {
@@ -65,6 +67,7 @@ class PlayerPC:
             self.ready = False
             self.start = False
             self.powerUp = 0
+            self.rotationTimeTotal = 0
             
             # Initialize the PyGame
             pygame.init()
@@ -428,19 +431,32 @@ class PlayerPC:
         
         # Reload the playspace according to new axes
         self.setPlayspace(None)
+        self.rotationTimeTotal = message['coolDown']
 
         # Play rotation SFX
         self.rotationSound.play()
         
         # Set the cooldown message
-        cv2.putText(self.display, "Cooldown!", (60,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        display = copy.deepcopy(self.display)
+        cv2.putText(display, "Rotation cooldown!", COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+        self.display = display
 
     def setCooldown(self, message):
         '''
-        Turns off the cooldown message.
+        Updates/clears the cooldown message.
         '''
-        self.playSpace.rotationCoolDownTime = message['coolDown']
-        cv2.rectangle(self.display, (50,0), (500, 34), (0,0,0), -1)
+        display = copy.deepcopy(self.display)
+        cv2.rectangle(display, COOLDOWN_CLEAR_UPPERLEFT, COOLDOWN_CLEAR_LOWERRIGHT, (0,0,0), -1)
+        if message['coolDown']:
+            endpos = np.array(COOLDOWN_TIMER_LOWERRIGHT)
+            endpos[0] += int(COOLDOWN_DISTANCE*message['coolDown']/self.rotationTimeTotal)
+            cv2.putText(display, "Rotation cooldown! " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.rectangle(display, COOLDOWN_TIMER_UPPERLEFT, tuple(endpos), (255, 255, 255), -1)
+        else:
+            self.playSpace.rotationCoolDownTime = message['coolDown']
+
+        self.display = display
 
     def setPowerUp(self, message):
         if settings.verbose:

@@ -147,6 +147,7 @@ class PlaySpace:
             self.horizontalAxis = np.array([1,0,0])
                         
             self.rotationCoolDownTime = 0
+            self.rotationCoolDownSeconds = 0
             self.freezeTimer = 0
             
             if numPlayers:
@@ -380,38 +381,41 @@ class PlaySpace:
         Takes a rotation, rotates the playspace, returns movement information.
         '''
         try:
-            newAxis = np.cross(self.horizontalAxis, self.verticalAxis)
-            if rotation == '^':
-                self.verticalAxis = -1 * newAxis
-            elif rotation == 'v':
-                self.verticalAxis = newAxis
-            elif rotation == '<':
-                self.horizontalAxis = newAxis
-            elif rotation == '>':
-                self.horizontalAxis = -1 * newAxis
-            displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
-                                  'verticalAxis': self.verticalAxis.tolist(),
-                                  'coolDown': True}
-            self.setRotationCoolDown()
-
-            #check that no collisions occur on rotation
-            for i in range(len(self.verticalAxis)):
-                if abs(self.verticalAxis[i]) == 1:
-                    verticalindex = i
-            for i in range(len(self.horizontalAxis)):
-                if abs(self.horizontalAxis[i]) == 1:
-                    horizontalindex = i
-            
-            # for i in range(len(self.players)):
-            #     for j in range(len(self.players)):
-            #         if j > i:
-            #             if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
-            #                 if self.players[i]['position'][horizontalindex] != 1:
-            #                     self.players[i]['position'][horizontalindex] -= 1
-            #                 else:
-            #                     self.players[i]['position'][horizontalindex] += 1
-
-            return comms.axes, displayUpdates  
+            if not self.rotationCoolDownSeconds:
+                newAxis = np.cross(self.horizontalAxis, self.verticalAxis)
+                if rotation == '^':
+                    self.verticalAxis = -1 * newAxis
+                elif rotation == 'v':
+                    self.verticalAxis = newAxis
+                elif rotation == '<':
+                    self.horizontalAxis = newAxis
+                elif rotation == '>':
+                    self.horizontalAxis = -1 * newAxis
+                displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
+                                      'verticalAxis': self.verticalAxis.tolist(),
+                                      'coolDown': ROTATION_COOLDOWN}
+                self.setRotationCoolDown()
+    
+                #check that no collisions occur on rotation
+                for i in range(len(self.verticalAxis)):
+                    if abs(self.verticalAxis[i]) == 1:
+                        verticalindex = i
+                for i in range(len(self.horizontalAxis)):
+                    if abs(self.horizontalAxis[i]) == 1:
+                        horizontalindex = i
+                
+                # for i in range(len(self.players)):
+                #     for j in range(len(self.players)):
+                #         if j > i:
+                #             if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
+                #                 if self.players[i]['position'][horizontalindex] != 1:
+                #                     self.players[i]['position'][horizontalindex] -= 1
+                #                 else:
+                #                     self.players[i]['position'][horizontalindex] += 1
+    
+                return comms.axes, displayUpdates
+            else:
+                return 0, 0
         except:
             print("An error occurred rotating", rotation)
             traceback.print_exc() 
@@ -776,6 +780,7 @@ class PlaySpace:
         '''
         try:
             self.rotationCoolDownTime = datetime.datetime.now() + datetime.timedelta(seconds = ROTATION_COOLDOWN)
+            self.rotationCoolDownSeconds = ROTATION_COOLDOWN
         except:
             print("An error occurred setting the rotation cooldown")
             traceback.print_exc() 
@@ -783,27 +788,45 @@ class PlaySpace:
     def rotationCoolDownRemaining(self):
         '''
         Checks if the cooldown is active. Return true if yes, false if no
-        '''
-        try:
-            # Check if a cooldown is even in place. If not, abort. This should
-            # be an edge case: the method should only be called when a cooldown
-            # is known to be active
-            if not self.rotationCoolDownTime:
-                if settings.verbose:
-                    print("rotationCoolDownRemaining called without checking",
-                          "if cooldown in place.")
-                return False, 0, 0
+        '''        
+        # Check if a cooldown is even in place. If not, abort. This should
+        # be an edge case: the method should only be called when a cooldown
+        # is known to be active
+        if not self.rotationCoolDownTime:
+            if settings.verbose:
+                print("rotationCoolDownRemaining called without checking",
+                      "if cooldown in place.")
+            return False, 0, 0
+        
+        else:
+            timeRemaining = self.rotationCoolDownTime - datetime.datetime.now()
             
-            # If cooldown is in place, check to see if it ended before now. If
-            # yes, the cooldown is over, so zero out the cooldown and return false
-            elif self.rotationCoolDownTime < datetime.datetime.now():
-                self.rotationCoolDownTime = 0
-                message = {'coolDown': False}
-                return False, comms.coolDown, message
+            # If current time is before rotation cooldown end time, timedelta
+            # object will have days = 0. If current time is after cooldown
+            # end time, then days = -1.
+            if not timeRemaining.days:
+                
+                # Only send up to one update per second
+                if not self.rotationCoolDownSeconds == timeRemaining.seconds:
+                    self.rotationCoolDownSeconds = timeRemaining.seconds
+                    message = {'coolDown': timeRemaining.seconds}
+                    return False, comms.coolDown, message
+                # Timer still going but no update to send
+                else: return False, 0, 0
             
-            # Otherwise the cooldown is still active, so return true and keep things going
+            # In this case, timer is over
             else:
-                return True, 0, 0
-        except:
-            print("An error occurred decrementing the rotation cooldown")
-            traceback.print_exc()
+                self.rotationCoolDownTime = 0
+                message = {'coolDown': 0}
+                return False, comms.coolDown, message
+            # # If cooldown is in place, check to see if it ended before now. If
+            # # yes, the cooldown is over, so zero out the cooldown and return false
+            # elif self.rotationCoolDownTime < datetime.datetime.now():
+            #     self.rotationCoolDownTime = 0
+            #     message = {'coolDown': False}
+            #     return False, comms.coolDown, message
+            
+            # # Otherwise the cooldown is still active, so return true and keep things going
+            # else:
+            #     return True, 0, 0
+        

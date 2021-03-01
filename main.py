@@ -285,12 +285,12 @@ def pcProcess():
     cv2.destroyAllWindows()
     
     stop[0] = True
-    packageReceipt.join()
     if command:
         command.join()
     if isPrimary:
         stopCentral.value = True
         central.join()
+    packageReceipt.join()
     receiver.stop()
 
 def pcPackageReceipt(receiver, pc, stop):
