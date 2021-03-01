@@ -758,11 +758,11 @@ class PlayerPC:
             cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
         
         # if this player was tagged/untagged
-        if self.playSpace.players[self.playerId - 1]['it']:
+        if self.playerId == message['tagged']:
             cv2.rectangle(display, FRAME_UPPERLEFT, FRAME_LOWERRIGHT, self.playSpace.players[self.playerId - 1]['itColor'], int(self.dist/10))
             cv2.rectangle(display, IT_TEXT_CLEAR_UPPERLEFT, IT_TEXT_CLEAR_LOWERRIGHT, (0,0,0), -1)
             cv2.putText(display, "You are it!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        elif self.playSpace.players[message['untagged'] - 1]['it']:
+        elif self.playerId == message['untagged']:
             cv2.rectangle(display, IT_TEXT_CLEAR_UPPERLEFT, IT_TEXT_CLEAR_LOWERRIGHT, (0,0,0), -1)
             cv2.putText(display, "You are not it. Run!", IT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
