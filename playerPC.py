@@ -441,8 +441,7 @@ class PlayerPC:
         
         # Set the cooldown message
         display = copy.deepcopy(self.display)
-        cv2.putText(display, "Rotation cooldown! " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.rectangle(display, COOLDOWN_TIMER_UPPERLEFT, COOLDOWN_CLEAR_LOWERRIGHT, (255, 255, 255), -1)
+        cv2.putText(display, "Rotation cooldown!", COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
         self.display = display
 
@@ -455,7 +454,7 @@ class PlayerPC:
         if message['coolDown']:
             endpos = np.array(COOLDOWN_TIMER_LOWERRIGHT)
             endpos[0] += int(COOLDOWN_DISTANCE*message['coolDown']/self.rotationTimeTotal)
-            cv2.putText(display, "Rotation cooldown: " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(display, "Rotation cooldown! " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             cv2.rectangle(display, COOLDOWN_TIMER_UPPERLEFT, tuple(endpos), (255, 255, 255), -1)
         else:
             self.playSpace.rotationCoolDownTime = message['coolDown']
