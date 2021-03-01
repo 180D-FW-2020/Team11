@@ -427,7 +427,6 @@ class PlayerPC:
         from other updates, but it's not frequent enough to add a high lag and
         the fractional delay in the display won't produce confusion.       
         '''
-        display = self.display
         # Set new axes
         self.playSpace.verticalAxis = message['verticalAxis']
         self.playSpace.horizontalAxis = message['horizontalAxis']
@@ -441,6 +440,7 @@ class PlayerPC:
         self.rotationSound.play()
         
         # Set the cooldown message
+        display = copy.deepcopy(self.display)
         cv2.putText(display, "Rotation cooldown! " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.rectangle(display, COOLDOWN_TIMER_UPPERLEFT, COOLDOWN_CLEAR_LOWERRIGHT, (255, 255, 255), -1)
         
@@ -450,12 +450,11 @@ class PlayerPC:
         '''
         Updates/clears the cooldown message.
         '''
-        display = self.display
+        display = copy.deepcopy(self.display)
         cv2.rectangle(display, COOLDOWN_CLEAR_UPPERLEFT, COOLDOWN_CLEAR_LOWERRIGHT, (0,0,0), -1)
         if message['coolDown']:
             endpos = np.array(COOLDOWN_TIMER_LOWERRIGHT)
             endpos[0] += int(COOLDOWN_DISTANCE*message['coolDown']/self.rotationTimeTotal)
-            print(endpos)
             cv2.putText(display, "Rotation cooldown: " + str(message['coolDown']), COOLDOWN_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             cv2.rectangle(display, COOLDOWN_TIMER_UPPERLEFT, tuple(endpos), (255, 255, 255), -1)
         else:
