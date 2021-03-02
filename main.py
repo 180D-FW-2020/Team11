@@ -536,7 +536,9 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
     if settings.verbose: print("All player devices connected", flush=True)
     package = game.pack(game.start)
     transmitter.transmit(comms.launch, package)
-    time.sleep(10)
+    
+    # Let players blink on screen a moment before playing
+    time.sleep(3)
     transmitter.transmit(comms.start, package)
     
     # Then start the game
