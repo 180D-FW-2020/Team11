@@ -387,12 +387,6 @@ def pcProcess():
             breakEarly = True
             break
     
-    # Ensure color is correct before people start
-    on = False
-    pc.blinkPlayer(on)
-    pc.updateDisplay()
-    cv2.waitKey(1)
-    
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
     if breakEarly: stop[0] = True
@@ -431,7 +425,9 @@ def pcPackageReceipt(receiver, pc, stop):
     event. Does not update the display on screen, which must be handled in the 
     main thread for Mac compatibility.
     '''
+    
     while not pc.gameOver and not stop[0]:
+        
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
             #pc.updateDisplay()
@@ -538,7 +534,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
     transmitter.transmit(comms.launch, package)
     
     # Let players blink on screen a moment before playing
-    time.sleep(3)
+    time.sleep(5)
     transmitter.transmit(comms.start, package)
     
     # Then start the game
