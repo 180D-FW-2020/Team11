@@ -64,7 +64,8 @@ phrases = {
     "start" : comms.start,
     "stop" : comms.stop,
     "powerup" : comms.powerUp,
-    "power up" : comms.powerUp
+    "power up" : comms.powerUp,
+    "drop" : comms.drop
 }
 
 class PlayerPC:
@@ -319,6 +320,8 @@ class PlayerPC:
                     self.setPowerUp(message)
                 elif topic == comms.timerOver:
                     self.setTimer(message)
+                elif topic == comms.dropped:
+                    self.dropPower(message)
             else:
                 if topic == comms.initial and not self.initialReceived:
                     self.setPlayspace(message)
@@ -507,6 +510,9 @@ class PlayerPC:
                               int(self.dist/3), self.playSpace.players[message['playerId'] - 1]['itColor'], int(self.dist/10))
         
         self.display = display
+
+    def dropPower(self, message):
+        self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
 
     def setRotation(self, message):
         '''
