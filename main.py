@@ -373,19 +373,21 @@ def pcProcess():
     pygame.mixer.music.load('SoundEffects/Run.wav')
     pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
+        
+    blink = Thread(target=pcBlink, args = (pc, stop,))
+    blink.daemon = True
+    blink.start()
     
-    on = True
-    # launch display and blink players before letting people start
+    # launch display and show feed while blink thread blinks players before
+    # letting people start
     while not pc.start and not breakEarly:
-        direction = pc.getDirection(frameCapture)
-        pc.blinkPlayer(on)
+        direction = pc.getDirection(frameCapture)        
         pc.updateDisplay()
-        on = not on
-        time.sleep(0.2)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             breakEarly = True
             break
+    blink.join()
     
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
@@ -419,6 +421,16 @@ def pcProcess():
     packageReceipt.join()
     receiver.stop()
 
+def pcBlink(pc, stop):
+    '''
+    Blinks player on game startup
+    '''
+    on = True
+    while not pc.start and not stop[0]:
+        pc.blinkPlayer(on)
+        on = not on
+        time.sleep(0.3)
+        
 def pcPackageReceipt(receiver, pc, stop):
     '''
     Gets packages from central and updates the display information with the new
