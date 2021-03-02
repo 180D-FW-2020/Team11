@@ -223,6 +223,11 @@ def piTransmit(transmitter, pi, stop):
     Separate thread for receiving player input on Pi and transmitting it to 
     central.
     '''
+    # Hold until receive start message
+    while not pi.start:
+        pass
+    
+    # Get rotation information and transmit it
     while not pi.gameOver:
         try:
             rotation = pi.getRotation(stop)
@@ -241,6 +246,7 @@ def piTransmit(transmitter, pi, stop):
                 logging.error(log)
                 if settings.verbose: print(log, flush=True)
                 traceback.print_exc()
+                package = 0
             
             if package:
                 try:
@@ -288,6 +294,7 @@ def pcProcess():
                                comms.assign,
                                comms.move,
                                comms.tag,
+                               comms.launch,
                                comms.start,
                                comms.stop,
                                comms.axes,
@@ -320,12 +327,6 @@ def pcProcess():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             breakEarly = True
             break
-        # # Keep checking for an initial load
-        # if len(receiver.packages):
-            
-        #     # Get initial load and set the base display background
-        #     pc.unpack(receiver.packages.pop(0))
-        #     pc.updateDisplay()
     
     if not breakEarly:
         pc.loading("Initial game state received. Waiting for player ID assignment...")
@@ -338,18 +339,6 @@ def pcProcess():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             breakEarly = True
             break
-        # # Keep checking for assignment
-        # if len(receiver.packages):
-        #     pc.unpack(receiver.packages.pop(0))
-        
-    # # Get confirmation from player that they are ready, and send that to central
-    # # to complete handshake process
-    # while not pc.ready:
-    #     command = pc.getCommand(stop)
-    #     if command == comms.ready:
-    #         pc.ready = True
-    #         package = pc.pack(pc.ready)
-    #         transmitter.transmit(comms.ready, package)
     
     if not breakEarly:
         pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
@@ -359,17 +348,6 @@ def pcProcess():
         command.start()
     else:
         command = 0
-
-    # Gameplay receiver loop checks for new packages in the queue. Packages
-    # update the display and may end the game also.
-    # while not pc.gameOver:
-    #     if len(receiver.packages):
-    #         pc.unpack(receiver.packages.pop(0))
-    #     #if pc.displayUpdate:
-    #         pc.updateDisplay()
-    #     if cv2.waitKey(1) & 0xFF == ord('q'):
-    #         break
-    # cv2.destroyAllWindows()
     
     if not breakEarly:
         frameCapture = cv2.VideoCapture(settings.camera)
@@ -379,7 +357,7 @@ def pcProcess():
         frameCapture = 0
     
     readySent = False
-    while not pc.start and not breakEarly:
+    while not pc.launch and not breakEarly:
         if not readySent and pc.ready:
             pc.loading("You are ready! Waiting for other players to be ready...")
             readySent = True
@@ -396,6 +374,19 @@ def pcProcess():
     pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
     
+    on = True
+    # launch display and blink players before letting people start
+    while not pc.start and not breakEarly:
+        direction = pc.getDirection(frameCapture)
+        pc.blinkPlayer(on)
+        pc.updateDisplay()
+        on = not on
+        time.sleep(0.2)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            breakEarly = True
+            break
+    
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
     if breakEarly: stop[0] = True
@@ -403,7 +394,7 @@ def pcProcess():
     while not pc.gameOver and not stop[0] and not breakEarly:
         direction = pc.getDirection(frameCapture)
         #cv2.imshow('frame',pc.cameraImage)
-        pc.updateDisplay(event = False)
+        pc.updateDisplay()
 
         if direction and datetime.datetime.now()>delay:
             package = pc.pack(direction)
@@ -434,7 +425,9 @@ def pcPackageReceipt(receiver, pc, stop):
     event. Does not update the display on screen, which must be handled in the 
     main thread for Mac compatibility.
     '''
+    
     while not pc.gameOver and not stop[0]:
+        
         if len(receiver.packages):
             pc.unpack(receiver.packages.pop(0))
             #pc.updateDisplay()
@@ -538,6 +531,10 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
     game.start = True
     if settings.verbose: print("All player devices connected", flush=True)
     package = game.pack(game.start)
+    transmitter.transmit(comms.launch, package)
+    
+    # Let players blink on screen a moment before playing
+    time.sleep(5)
     transmitter.transmit(comms.start, package)
     
     # Then start the game
