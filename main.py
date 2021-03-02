@@ -223,6 +223,11 @@ def piTransmit(transmitter, pi, stop):
     Separate thread for receiving player input on Pi and transmitting it to 
     central.
     '''
+    # Hold until receive start message
+    while not pi.start:
+        pass
+    
+    # Get rotation information and transmit it
     while not pi.gameOver:
         try:
             rotation = pi.getRotation(stop)
@@ -241,6 +246,7 @@ def piTransmit(transmitter, pi, stop):
                 logging.error(log)
                 if settings.verbose: print(log, flush=True)
                 traceback.print_exc()
+                package = 0
             
             if package:
                 try:
@@ -368,13 +374,24 @@ def pcProcess():
     pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
     
+    on = True
+    # launch display and blink players before letting people start
     while not pc.start and not breakEarly:
         direction = pc.getDirection(frameCapture)
-        
-        pc.updateDisplay(event = False)
+        pc.blinkPlayer(on)
+        pc.updateDisplay()
+        on = not on
+        time.sleep(0.2)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            breakEarly = True
             break
+    
+    # Ensure color is correct before people start
+    on = False
+    pc.blinkPlayer(on)
+    pc.updateDisplay()
+    cv2.waitKey(1)
     
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
@@ -383,7 +400,7 @@ def pcProcess():
     while not pc.gameOver and not stop[0] and not breakEarly:
         direction = pc.getDirection(frameCapture)
         #cv2.imshow('frame',pc.cameraImage)
-        pc.updateDisplay(event = False)
+        pc.updateDisplay()
 
         if direction and datetime.datetime.now()>delay:
             package = pc.pack(direction)
