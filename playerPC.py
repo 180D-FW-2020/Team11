@@ -327,9 +327,9 @@ class PlayerPC:
                 elif topic == comms.launch:
                     self.launch = True
                 elif topic == comms.start:
-                    self.start = True
                     on = False
                     self.blinkPlayer(on)
+                    self.start = True                    
             return False
         except:
             print("Error getting package from primary node", flush=True)
