@@ -438,8 +438,8 @@ class PlayerPC:
             #color = list(getattr(color, "tolist", lambda: color)())
             #itColor = np.array([255, 255, 255]) - np.array(self.playSpace.players[self.playerId - 1]['itColor'])
             #itColor = list(getattr(itColor, "tolist", lambda: itColor)())
-            color = (0, 255, 0)
-            itColor = (255, 255, 255)
+            color = (0, 0, 0)
+            itColor = (0, 0, 0)
         else:
             color = self.playSpace.players[self.playerId - 1]['color']
             itColor = self.playSpace.players[self.playerId - 1]['itColor']
