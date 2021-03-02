@@ -512,8 +512,12 @@ class PlayerPC:
         self.display = display
 
     def dropPower(self, message):
+        display = copy.deepcopy(self.display)
         self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
-
+        if self.playerId == message['playerId']:
+                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
+                self.display = cv2.putText(self.display, "No powerups held!", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        self.display = display
     def setRotation(self, message):
         '''
         Updates the axes, updates the display accordingly, writes the cooldown
