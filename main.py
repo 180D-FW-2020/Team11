@@ -108,7 +108,7 @@ def piProcess():
                     # Sets initialReceived to true if initial load
                     pi.unpack(receiver.packages.pop(0))
                 except:
-                    log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                    log = f"An error occurred unpacking a message on the pi queue. Current queue: {receiver.packages}"
                     logging.error(log)
                     if settings.verbose: print(log, flush=True)
                     traceback.print_exc()
@@ -474,7 +474,7 @@ def pcProcess():
         while not pc.initialReceived:
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    breakEarly = True
+                    abort = True
                     break
             except:
                 log = "An error occurred evaluating display close out"
@@ -520,7 +520,7 @@ def pcProcess():
         while not pc.playerId:
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    breakEarly = True
+                    abort = True
                     break
             except:
                 log = "An error occurred evaluating display close out"
@@ -530,20 +530,52 @@ def pcProcess():
                     traceback.print_exc()
     
     if not abort:
-        pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
-        # Send command receipt to separate loop
-        command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
-        command.daemon = True
-        command.start()
-    else:
-        command = 0
+        try:
+            pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
+        except:
+            log = "An error occurred displaying ready instructions"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+        
+    if not abort:
+        try:
+            # Send command thread to separate loop
+            command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
+            command.daemon = True
+        except:
+            log = "An error occurred creating command thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    if not breakEarly:
-        frameCapture = cv2.VideoCapture(settings.camera)
-        frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    else:
-        frameCapture = 0
+    if not abort:
+        try:
+            command.start()
+        except:
+            log = "An error occurred "
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            frameCapture = cv2.VideoCapture(settings.camera)
+            frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        except:
+            log = "An error occurred creating video capture window"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
     readySent = False
     while not pc.launch and not breakEarly:
