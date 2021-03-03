@@ -334,29 +334,72 @@ def pcProcess():
         traceback.print_exc()
         abort = True
     
-    #displayReceived = False
     stop = [0]
     
-    receiver = comms.Receiver((comms.initial,
-                               comms.assign,
-                               comms.move,
-                               comms.tag,
-                               comms.launch,
-                               comms.start,
-                               comms.stop,
-                               comms.axes,
-                               comms.coolDown,
-                               comms.pickup,
-                               comms.activePower,
-                               comms.timerOver),
-                              clientId)
-    transmitter = comms.Transmitter()
-    receiver.start()
+    if not abort:
+        try:
+            receiver = comms.Receiver((comms.initial,
+                                       comms.assign,
+                                       comms.move,
+                                       comms.tag,
+                                       comms.launch,
+                                       comms.start,
+                                       comms.stop,
+                                       comms.axes,
+                                       comms.coolDown,
+                                       comms.pickup,
+                                       comms.activePower,
+                                       comms.timerOver),
+                                      clientId)
+        except:
+            log = "An error occurred initializing PC process reciever"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+            receiver = 0
     
-    # Send receiver to separate thread
-    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
-    packageReceipt.daemon = True
-    packageReceipt.start()
+    if not abort:
+        try:
+            transmitter = comms.Transmitter()
+        except:
+            log = "An error occurred initializing PC process transmitter"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            receiver.start()
+        except:
+            log = "An error occurred starting the PC process receiver"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            # Send receiver to separate thread
+            packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
+            packageReceipt.daemon = True
+        except:
+            log = "An error occurred sending receiver to separate thread"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+        
+    if not abort:
+        try:
+            packageReceipt.start()
+        except:
+            log = "An error occurred starting the package receipt"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
     
     # Get settings. If not isPrimary, other returned variables are all 0. If
     # primary, spawn primary player stuff
