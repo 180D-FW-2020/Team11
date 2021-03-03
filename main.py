@@ -681,7 +681,7 @@ def pcProcess():
                 if settings.verbose:
                     print(log, flush=True)
                     traceback.print_exc()
-                abort = True
+
             try:
                 pc.updateDisplay()
             except:
@@ -690,7 +690,7 @@ def pcProcess():
                 if settings.verbose:
                     print(log, flush=True)
                     traceback.print_exc()
-                abort = True
+
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     abort = True
@@ -702,33 +702,21 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
         
-        if not abort:
-            try:
-                blink.join()
-            except:
-                log = "An error occurred joining the blink thread"
-                logging.error(log, exc_info = True)
-                if settings.verbose:
-                    print(log, flush=True)
-                    traceback.print_exc()
-                abort = True
-    
-    if not abort:
         try:
-            delay = datetime.datetime.now()
+            blink.join()
         except:
-            log = "An error occurred in the delay"
+            log = "An error occurred joining the blink thread"
             logging.error(log, exc_info = True)
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
             abort = True
     
-    
-    #cv2.startWindowThread()
-    if breakEarly: stop[0] = True
+    if not abort:
+        delay = datetime.datetime.now()
+
         
-    while not abort and not pc.gameOver and not stop[0]:
+    while not abort and not pc.gameOver:
         try:
             direction = pc.getDirection(frameCapture)
         except:
@@ -737,10 +725,8 @@ def pcProcess():
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
-            abort = True
         
         try:
-            #cv2.imshow('frame',pc.cameraImage)
             pc.updateDisplay()
         except:
             log = "An error occurred updating the display"
@@ -748,9 +734,9 @@ def pcProcess():
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
-            abort = True
 
-        if not abort and direction and datetime.datetime.now()>delay:
+
+        if direction and datetime.datetime.now()>delay:
             try:
                 package = pc.pack(direction)
             except:
@@ -759,30 +745,29 @@ def pcProcess():
                 if settings.verbose:
                     print(log, flush=True)
                     traceback.print_exc()
-                abort = True
-            if not abort:
+                package = 0
+
+            if package:
                 try:
                     transmitter.transmit(comms.direction, package)
+                    delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
                 except:
                     log = "An error occurred transmitting direction"
                     logging.error(log, exc_info = True)
                     if settings.verbose:
                         print(log, flush=True)
                         traceback.print_exc()
-                    abort = True
-            if not abort:
-                try:
-                    delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
-                except:
-                    log = "An error occurred when delaying position reading"
-                    logging.error(log, exc_info = True)
-                    if settings.verbose:
-                        print(log, flush=True)
-                        traceback.print_exc()
-                    abort = True
-            
-        if not abort and cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                    
+        try:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                abort = True
+                break
+        except:
+            log = "An error occurred closing out display"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
     
     if not abort and not abortPygame:
         try:
@@ -795,7 +780,7 @@ def pcProcess():
                 traceback.print_exc()
             abortPygame = True
         
-    if not abort and frameCapture:
+    if not abort:
         try:
             frameCapture.release()
         except:
@@ -806,16 +791,16 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             
-    if not abort:
-        try:
-            cv2.destroyAllWindows()
-        except:
-            log = "An error occurred destroying the window"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abort = True
+
+    try:
+        cv2.destroyAllWindows()
+    except:
+        log = "An error occurred destroying the window"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
     
     stop[0] = True
     if not abort:
@@ -838,40 +823,34 @@ def pcProcess():
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
-            abort = True
             
-        if not abort:
-            try:
-                central.join()
-            except:
-                log = "An error occurred joining central thread"
-                logging.error(log, exc_info = True)
-                if settings.verbose:
-                    print(log, flush=True)
-                    traceback.print_exc()
-                abort = True
-    
-    if not abort:
         try:
-            packageReceipt.join()
+            central.join()
         except:
-            log = "An error occurred joining thread"
+            log = "An error occurred joining central thread"
             logging.error(log, exc_info = True)
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
-            abort = True
-        
-        if not abort:
-            try:
-                receiver.stop()
-            except:
-                log = "An error occurred stopping receiver"
-                logging.error(log, exc_info = True)
-                if settings.verbose:
-                    print(log, flush=True)
-                    traceback.print_exc()
-                abort = True
+    
+    try:
+        packageReceipt.join()
+    except:
+        log = "An error occurred joining thread"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+
+    try:
+        receiver.stop()
+    except:
+        log = "An error occurred stopping receiver"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
 
 def pcBlink(pc, stop):
     '''
