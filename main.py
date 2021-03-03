@@ -528,18 +528,6 @@ def pcProcess():
                 if settings.verbose:
                     print(log, flush=True)
                     traceback.print_exc()
-    
-    if not abort:
-        try:
-            pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
-        except:
-            log = "An error occurred displaying ready instructions"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abort = True
-        
     if not abort:
         try:
             # Send command thread to separate loop
@@ -563,19 +551,32 @@ def pcProcess():
                 print(log, flush=True)
                 traceback.print_exc()
             abort = True
-    
+            
     if not abort:
         try:
-            frameCapture = cv2.VideoCapture(settings.camera)
-            frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
         except:
-            log = "An error occurred creating video capture window"
+            log = "An error occurred displaying ready instructions"
             logging.error(log, exc_info = True)
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
             abort = True
+        
+    if not abort:
+        # Check for assignment of a player ID
+        while not pc.launch:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    abort = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+
     
     readySent = False
     if not abort:
@@ -618,6 +619,19 @@ def pcProcess():
             cv2.waitKey(1)
         except:
             log = "An error occurred destroying settings windows"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+    if not abort:
+        try:
+            frameCapture = cv2.VideoCapture(settings.camera)
+            frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        except:
+            log = "An error occurred creating video capture window"
             logging.error(log, exc_info = True)
             if settings.verbose:
                 print(log, flush=True)
