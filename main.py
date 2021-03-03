@@ -333,8 +333,6 @@ def pcProcess():
         if settings.verbose: print(log, flush=True)
         traceback.print_exc()
         abort = True
-        
-        abhorrent
     
     #displayReceived = False
     stop = [0]
