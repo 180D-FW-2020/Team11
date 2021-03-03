@@ -108,7 +108,7 @@ def piProcess():
                     # Sets initialReceived to true if initial load
                     pi.unpack(receiver.packages.pop(0))
                 except:
-                    log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                    log = f"An error occurred unpacking a message on the pi queue. Current queue: {receiver.packages}"
                     logging.error(log)
                     if settings.verbose: print(log, flush=True)
                     traceback.print_exc()
@@ -273,88 +273,309 @@ def pcProcess():
     that the display just updates when display information is updated from a
     received message.
     '''   
-    if settings.verbose: print("Starting pc process", flush=True)
-    breakEarly = False
+    log = ("Starting PC processes")
+    logging.info(log)
+    if settings.verbose: print(log, flush=True)
     
-    # Initialize the PyGame
-    pygame.init()
-    pygame.mixer.init()
+    breakEarly = False
+    abort = False
+    abortPygame = False
+    
+    try:
+        # Initialize the PyGame
+        pygame.init()
+    except:
+        log = "An error occurred initializing Pygame"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abortPygame = True
+    
+    if not abortPygame:
+        try:
+            pygame.mixer.init()
+        except:
+            log = "An error occurred initializing Pygame mixer"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
 
-    # Start settings soundtrack
-    pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
-    pygame.mixer.music.set_volume(0.3)
-    pygame.mixer.music.play(-1)
+    if not abortPygame:
+        try:
+            # Start settings soundtrack
+            pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
+            pygame.mixer.music.set_volume(0.3)
+        except:
+            log = "An error occurred loading settings music"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
+    
+    if not abortPygame:
+        try:
+            pygame.mixer.music.play(-1)
+        except:
+            log = "An error occurred starting settings music"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
-    pc = playerPC.PlayerPC(clientId)
-    #displayReceived = False
+    
+    try:
+        pc = playerPC.PlayerPC(clientId)
+    except:
+        log = "An error has occurred initializing PlayerPC"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
+    
     stop = [0]
     
-    receiver = comms.Receiver((comms.initial,
-                               comms.assign,
-                               comms.move,
-                               comms.tag,
-                               comms.launch,
-                               comms.start,
-                               comms.stop,
-                               comms.axes,
-                               comms.coolDown,
-                               comms.pickup,
-                               comms.activePower,
-                               comms.timerOver),
-                              clientId)
-    transmitter = comms.Transmitter()
-    receiver.start()
+    if not abort:
+        try:
+            receiver = comms.Receiver((comms.initial,
+                                       comms.assign,
+                                       comms.move,
+                                       comms.tag,
+                                       comms.launch,
+                                       comms.start,
+                                       comms.stop,
+                                       comms.axes,
+                                       comms.coolDown,
+                                       comms.pickup,
+                                       comms.activePower,
+                                       comms.timerOver),
+                                      clientId)
+        except:
+            log = "An error occurred initializing PC process reciever"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            receiver = 0
     
-    # Send receiver to separate thread
-    packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
-    packageReceipt.daemon = True
-    packageReceipt.start()
+    if not abort:
+        try:
+            transmitter = comms.Transmitter()
+        except:
+            log = "An error occurred initializing PC process transmitter"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    # Get settings. If not isPrimary, other returned variables are all 0. If
-    # primary, spawn primary player stuff
-    isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
-    if isPrimary:
-        stopCentral = multiprocessing.Value('i', False)
-        central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
-        central.daemon = True
-        central.start()
+    if not abort:
+        try:
+            receiver.start()
+        except:
+            log = "An error occurred starting the PC process receiver"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    pc.loading("Waiting for initial game state...")
-
-    #First, get initial load with full playspace info
-    while not pc.initialReceived and not breakEarly:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
+    if not abort:
+        try:
+            # Send receiver to separate thread
+            packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
+            packageReceipt.daemon = True
+        except:
+            log = "An error occurred sending receiver to separate thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+        
+    if not abort:
+        try:
+            packageReceipt.start()
+        except:
+            log = "An error occurred starting the package receipt"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    if not breakEarly:
-        pc.loading("Initial game state received. Waiting for player ID assignment...")
-        # Send handshake to confirm receipt of first load
-        package = pc.pack(pc.clientId)
-        transmitter.transmit(comms.pcConfirmation, package)
+    if not abort:
+        try:
+            # Get settings. If not isPrimary, other returned variables are all 0. If
+            # primary, spawn primary player stuff
+            isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
+        except:
+            log = "An error occurred getting settings"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    # Check for assignment of a player ID
-    while not pc.playerId and not breakEarly:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
+    if not abort and isPrimary:
+        try:
+            stopCentral = multiprocessing.Value('i', False)
+        except:
+            log = "An error occurred creating stop central flag"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+        if not abort:
+            try:
+                central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
+                central.daemon = True
+            except:
+                log = "An error occurred creating central multiprocess"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+                
+        if not abort:
+            try:
+                central.start()
+            except:
+                log = "An error occurred starting central multiprocess"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
     
-    if not breakEarly:
-        pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
-        # Send command receipt to separate loop
-        command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
-        command.daemon = True
-        command.start()
-    else:
-        command = 0
+    if not abort:
+        try:
+            pc.loading("Waiting for initial game state...")
+        except:
+            log = "An error occurred generating loading screen"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    if not breakEarly:
-        frameCapture = cv2.VideoCapture(settings.camera)
-        frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    else:
-        frameCapture = 0
+    if not abort:
+        #First, get initial load with full playspace info
+        while not pc.initialReceived:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    abort = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+    
+    if not abort:
+        try:
+            pc.loading("Initial game state received. Waiting for player ID assignment...")
+        except:
+            log = "An error occurred updating loading screen"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+        
+        try:
+            # Send handshake to confirm receipt of first load
+            package = pc.pack(pc.clientId)
+        except:
+            log = "An error occurred packaging clientID"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            transmitter.transmit(comms.pcConfirmation, package)
+        except:
+            log = "An error occurred transmitting clientID"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+    if not abort:
+        # Check for assignment of a player ID
+        while not pc.playerId:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    abort = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+    
+    if not abort:
+        try:
+            pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
+        except:
+            log = "An error occurred displaying ready instructions"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+        
+    if not abort:
+        try:
+            # Send command thread to separate loop
+            command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
+            command.daemon = True
+        except:
+            log = "An error occurred creating command thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            command.start()
+        except:
+            log = "An error occurred "
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+    
+    if not abort:
+        try:
+            frameCapture = cv2.VideoCapture(settings.camera)
+            frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            frameCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        except:
+            log = "An error occurred creating video capture window"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
     readySent = False
     while not pc.launch and not breakEarly:
