@@ -760,7 +760,6 @@ def pcProcess():
                     
         try:
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                abort = True
                 break
         except:
             log = "An error occurred closing out display"
@@ -814,7 +813,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             
-    if not abort and isPrimary:
+    if isPrimary:
         try:
             stopCentral.value = True
         except:
