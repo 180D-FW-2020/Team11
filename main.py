@@ -273,20 +273,67 @@ def pcProcess():
     that the display just updates when display information is updated from a
     received message.
     '''   
-    if settings.verbose: print("Starting pc process", flush=True)
-    breakEarly = False
+    log = ("Starting PC processes")
+    logging.info(log)
+    if settings.verbose: print(log, flush=True)
     
-    # Initialize the PyGame
-    pygame.init()
-    pygame.mixer.init()
+    breakEarly = False
+    abort = False
+    abortPygame = False
+    
+    try:
+        # Initialize the PyGame
+        pygame.init()
+    except:
+        log = "An error occurred initializing Pygame"
+        logging.error(log)
+        if settings.verbose: print(log, flush=True)
+        traceback.print_exc()
+        abortPygame = True
+    
+    if not abortPygame:
+        try:
+            pygame.mixer.init()
+        except:
+            log = "An error occurred initializing Pygame mixer"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abortPygame = True
 
-    # Start settings soundtrack
-    pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
-    pygame.mixer.music.set_volume(0.3)
-    pygame.mixer.music.play(-1)
+    if not abortPygame:
+        try:
+            # Start settings soundtrack
+            pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
+            pygame.mixer.music.set_volume(0.3)
+        except:
+            log = "An error occurred loading settings music"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abortPygame = True
+    
+    if not abortPygame:
+        try:
+            pygame.mixer.music.play(-1)
+        except:
+            log = "An error occurred starting settings music"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abortPygame = True
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
-    pc = playerPC.PlayerPC(clientId)
+    
+    try:
+        pc = playerPC.PlayerPC(clientId)
+    except:
+        log = "An error has occurred initializing PlayerPC"
+        logging.error(log)
+        if settings.verbose: print(log, flush=True)
+        traceback.print_exc()
+        abort = True
+    
     #displayReceived = False
     stop = [0]
     
