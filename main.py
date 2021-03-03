@@ -286,9 +286,10 @@ def pcProcess():
         pygame.init()
     except:
         log = "An error occurred initializing Pygame"
-        logging.error(log)
-        if settings.verbose: print(log, flush=True)
-        traceback.print_exc()
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
         abortPygame = True
     
     if not abortPygame:
@@ -296,9 +297,10 @@ def pcProcess():
             pygame.mixer.init()
         except:
             log = "An error occurred initializing Pygame mixer"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abortPygame = True
 
     if not abortPygame:
@@ -308,9 +310,10 @@ def pcProcess():
             pygame.mixer.music.set_volume(0.3)
         except:
             log = "An error occurred loading settings music"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abortPygame = True
     
     if not abortPygame:
@@ -318,9 +321,10 @@ def pcProcess():
             pygame.mixer.music.play(-1)
         except:
             log = "An error occurred starting settings music"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abortPygame = True
     
     clientId = f'{datetime.datetime.now().strftime("%H%M%S")}{random.randint(0, 1000)}'
@@ -329,9 +333,10 @@ def pcProcess():
         pc = playerPC.PlayerPC(clientId)
     except:
         log = "An error has occurred initializing PlayerPC"
-        logging.error(log)
-        if settings.verbose: print(log, flush=True)
-        traceback.print_exc()
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
         abort = True
     
     stop = [0]
@@ -353,9 +358,10 @@ def pcProcess():
                                       clientId)
         except:
             log = "An error occurred initializing PC process reciever"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
             receiver = 0
     
@@ -364,9 +370,10 @@ def pcProcess():
             transmitter = comms.Transmitter()
         except:
             log = "An error occurred initializing PC process transmitter"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
     
     if not abort:
@@ -374,9 +381,10 @@ def pcProcess():
             receiver.start()
         except:
             log = "An error occurred starting the PC process receiver"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
     
     if not abort:
@@ -386,9 +394,10 @@ def pcProcess():
             packageReceipt.daemon = True
         except:
             log = "An error occurred sending receiver to separate thread"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
         
     if not abort:
@@ -396,9 +405,10 @@ def pcProcess():
             packageReceipt.start()
         except:
             log = "An error occurred starting the package receipt"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
     
     if not abort:
@@ -408,9 +418,10 @@ def pcProcess():
             isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
         except:
             log = "An error occurred getting settings"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
     
     if not abort and isPrimary:
@@ -418,9 +429,10 @@ def pcProcess():
             stopCentral = multiprocessing.Value('i', False)
         except:
             log = "An error occurred creating stop central flag"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
             abort = True
             
         if not abort:
@@ -429,9 +441,10 @@ def pcProcess():
                 central.daemon = True
             except:
                 log = "An error occurred creating central multiprocess"
-                logging.error(log)
-                if settings.verbose: print(log, flush=True)
-                traceback.print_exc()
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
                 abort = True
                 
         if not abort:
@@ -439,9 +452,10 @@ def pcProcess():
                 central.start()
             except:
                 log = "An error occurred starting central multiprocess"
-                logging.error(log)
-                if settings.verbose: print(log, flush=True)
-                traceback.print_exc()
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
                 abort = True
     
     pc.loading("Waiting for initial game state...")
