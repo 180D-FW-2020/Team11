@@ -458,27 +458,78 @@ def pcProcess():
                     traceback.print_exc()
                 abort = True
     
-    pc.loading("Waiting for initial game state...")
-
-    #First, get initial load with full playspace info
-    while not pc.initialReceived and not breakEarly:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
+    if not abort:
+        try:
+            pc.loading("Waiting for initial game state...")
+        except:
+            log = "An error occurred generating loading screen"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    if not breakEarly:
-        pc.loading("Initial game state received. Waiting for player ID assignment...")
-        # Send handshake to confirm receipt of first load
-        package = pc.pack(pc.clientId)
-        transmitter.transmit(comms.pcConfirmation, package)
+    if not abort:
+        #First, get initial load with full playspace info
+        while not pc.initialReceived:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    breakEarly = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
     
-    # Check for assignment of a player ID
-    while not pc.playerId and not breakEarly:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
+    if not abort:
+        try:
+            pc.loading("Initial game state received. Waiting for player ID assignment...")
+        except:
+            log = "An error occurred updating loading screen"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+        
+        try:
+            # Send handshake to confirm receipt of first load
+            package = pc.pack(pc.clientId)
+        except:
+            log = "An error occurred packaging clientID"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    if not breakEarly:
+    if not abort:
+        try:
+            transmitter.transmit(comms.pcConfirmation, package)
+        except:
+            log = "An error occurred transmitting clientID"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+    if not abort:
+        # Check for assignment of a player ID
+        while not pc.playerId:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    breakEarly = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+    
+    if not abort:
         pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
         # Send command receipt to separate loop
         command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
