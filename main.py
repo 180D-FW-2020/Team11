@@ -401,14 +401,48 @@ def pcProcess():
             traceback.print_exc()
             abort = True
     
-    # Get settings. If not isPrimary, other returned variables are all 0. If
-    # primary, spawn primary player stuff
-    isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
-    if isPrimary:
-        stopCentral = multiprocessing.Value('i', False)
-        central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
-        central.daemon = True
-        central.start()
+    if not abort:
+        try:
+            # Get settings. If not isPrimary, other returned variables are all 0. If
+            # primary, spawn primary player stuff
+            isPrimary, playMode, numPlayers, edgeLength, numObstacles, numPowerups = pc.settings()
+        except:
+            log = "An error occurred getting settings"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+    
+    if not abort and isPrimary:
+        try:
+            stopCentral = multiprocessing.Value('i', False)
+        except:
+            log = "An error occurred creating stop central flag"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            abort = True
+            
+        if not abort:
+            try:
+                central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
+                central.daemon = True
+            except:
+                log = "An error occurred creating central multiprocess"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
+                abort = True
+                
+        if not abort:
+            try:
+                central.start()
+            except:
+                log = "An error occurred starting central multiprocess"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
+                abort = True
     
     pc.loading("Waiting for initial game state...")
 
