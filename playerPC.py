@@ -49,21 +49,21 @@ CONFIG_FILE = 'config.json'
 config = {'DEBUG': False, 'primary': True, 'background_music': True, 'show_fps': False, 'show_score': True,
 		  'high_scores': [0, 0, 0, 0, 0, 0, 0, 0, 0]}
 
-def save_config():
-	with open(CONFIG_FILE, 'w') as fp:
-		json.dump(config, fp, indent=4)
+# def save_config():
+# 	with open(CONFIG_FILE, 'w') as fp:
+# 		json.dump(config, fp, indent=4)
 
 
-try:
-	with open(CONFIG_FILE) as f:
-		_config = json.load(f)
-except FileNotFoundError: _config = {}
-save_file = False
-for k, v in config.items():
-	try: config[k] = _config[k]
-	except KeyError: save_file = True
-if save_file: save_config()
-DEBUG = config['DEBUG']
+# try:
+# 	with open(CONFIG_FILE) as f:
+# 		_config = json.load(f)
+# except FileNotFoundError: _config = {}
+# save_file = False
+# for k, v in config.items():
+# 	try: config[k] = _config[k]
+# 	except KeyError: save_file = True
+# if save_file: save_config()
+# DEBUG = config['DEBUG']
 
 
 cameraWorking = True
@@ -248,7 +248,56 @@ class PlayerPC:
 			SCREEN.blit(text_surf, text_rect)
 		return x < mouse[0] < x + w and y < mouse[1] < y + h and click and pygame.time.get_ticks() > 100
 
-	# def oncePrimarySetting(self):
+	def oncePrimarySettings(self):
+		try:
+			SCREEN.fill(WHITE)
+			text_surf, text_rect = self.text_objects('Customization:', MENU_TEXT)
+			text_rect.center = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 4))
+			SCREEN.blit(text_surf, text_rect)
+			pygame.display.update()
+			first_run = draw_bg_toggle = draw_primary_toggle = True
+			while True:
+				click = False
+				pressed_keys = pygame.key.get_pressed()
+				for event in pygame.event.get():
+					alt_f4 = (event.type == KEYDOWN and 
+					(event.key == K_F4 and (pressed_keys[K_LALT] or pressed_keys[K_RALT]) or event.key == K_q))
+					if event.type == QUIT or alt_f4: sys.exit()
+					elif event.type == KEYDOWN and event.key == K_ESCAPE: return
+					elif event.type == MOUSEBUTTONDOWN: click = True
+				# change config[''] to setting you want to use
+				# if self.toggle_btn('Background Music', *button_layout_4[0], click, enabled=config['background_music'],
+				# 			  draw_toggle=draw_bg_toggle, blit_text=first_run):
+				# 	# code to change settings
+				# 	config['background_music'] = not config['background_music']
+				# 	# save_config()
+				# 	draw_bg_toggle = True
+				# change config[''] to setting you want to use
+				if self.toggle_btn('Infinite?', *button_layout_4[1], click, enabled=config['primary'],
+								draw_toggle=draw_primary_toggle, blit_text=first_run):
+					# code to change settings
+					config['primary'] = not config['primary']
+					# save_config()
+					print(config['primary'])
+					draw_primary_toggle = True
+				# # change config[''] to setting you want to use
+				# elif self.toggle_btn('Show FPS', *button_layout_4[2], click, enabled=config['show_fps'],
+				# 				draw_toggle=draw_show_fps, blit_text=first_run):
+				# 	# code to change settings
+				# 	config['show_fps'] = not config['show_fps']
+				# 	save_config()
+				# 	draw_show_fps = True
+				elif self.button('N E X T', *button_layout_4[3], click): return
+					# if config['primary'] == True:
+
+				else: draw_bg_toggle = draw_primary_toggle = False
+				first_run = False
+				pygame.display.update(button_layout_4)
+				clock.tick(60)
+		except:
+			print("An error occurred getting settings", flush=True)
+			traceback.print_exc()
+
 
 
 	def settings(self):
@@ -392,14 +441,14 @@ class PlayerPC:
 								  draw_toggle=draw_bg_toggle, blit_text=first_run):
 						# code to change settings
 						config['background_music'] = not config['background_music']
-						save_config()
+						# save_config()
 						draw_bg_toggle = True
 					# change config[''] to setting you want to use
 					elif self.toggle_btn('Primary?', *button_layout_4[1], click, enabled=config['primary'],
 									draw_toggle=draw_primary_toggle, blit_text=first_run):
 						# code to change settings
 						config['primary'] = not config['primary']
-						save_config()
+						# save_config()
 						print(config['primary'])
 						draw_primary_toggle = True
 					# # change config[''] to setting you want to use
@@ -409,7 +458,12 @@ class PlayerPC:
 					# 	config['show_fps'] = not config['show_fps']
 					# 	save_config()
 					# 	draw_show_fps = True
-					elif self.button('N E X T', *button_layout_4[3], click): return
+					elif self.button('N E X T', *button_layout_4[3], click):
+						if config['primary'] == True:
+							self.oncePrimarySettings()
+							return
+						else: return
+
 					else: draw_bg_toggle = draw_primary_toggle = False
 					first_run = False
 					pygame.display.update(button_layout_4)
