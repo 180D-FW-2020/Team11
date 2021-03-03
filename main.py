@@ -713,37 +713,165 @@ def pcProcess():
                     traceback.print_exc()
                 abort = True
     
-    delay = datetime.datetime.now()
+    if not abort:
+        try:
+            delay = datetime.datetime.now()
+        except:
+            log = "An error occurred in the delay"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+    
+    
     #cv2.startWindowThread()
     if breakEarly: stop[0] = True
         
-    while not pc.gameOver and not stop[0] and not breakEarly:
-        direction = pc.getDirection(frameCapture)
-        #cv2.imshow('frame',pc.cameraImage)
-        pc.updateDisplay()
+    while not abort and not pc.gameOver and not stop[0]:
+        try:
+            direction = pc.getDirection(frameCapture)
+        except:
+            log = "An error occurred in getting the direction"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+        
+        try:
+            #cv2.imshow('frame',pc.cameraImage)
+            pc.updateDisplay()
+        except:
+            log = "An error occurred updating the display"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
 
-        if direction and datetime.datetime.now()>delay:
-            package = pc.pack(direction)
-            transmitter.transmit(comms.direction, package)
-            delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
+        if not abort and direction and datetime.datetime.now()>delay:
+            try:
+                package = pc.pack(direction)
+            except:
+                log = "An error occurred packaging direction"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+            if not abort:
+                try:
+                    transmitter.transmit(comms.direction, package)
+                except:
+                    log = "An error occurred transmitting direction"
+                    logging.error(log, exc_info = True)
+                    if settings.verbose:
+                        print(log, flush=True)
+                        traceback.print_exc()
+                    abort = True
+            if not abort:
+                try:
+                    delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
+                except:
+                    log = "An error occurred when delaying position reading"
+                    logging.error(log, exc_info = True)
+                    if settings.verbose:
+                        print(log, flush=True)
+                        traceback.print_exc()
+                    abort = True
             
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if not abort and cv2.waitKey(1) & 0xFF == ord('q'):
             break
+    
+    if not abort and not abortPygame:
+        try:
+            pygame.mixer.music.stop()
+        except:
+            log = "An error occurred stopping pygame music"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
         
-    pygame.mixer.music.stop()
-        
-    if frameCapture:
-        frameCapture.release()
-    cv2.destroyAllWindows()
+    if not abort and frameCapture:
+        try:
+            frameCapture.release()
+        except:
+            log = "An error occurred releasing the frame"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+    if not abort:
+        try:
+            cv2.destroyAllWindows()
+        except:
+            log = "An error occurred destroying the window"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
     stop[0] = True
-    if command:
-        command.join()
-    if isPrimary:
-        stopCentral.value = True
-        central.join()
-    packageReceipt.join()
-    receiver.stop()
+    if not abort:
+        try:
+            command.join()
+        except:
+            log = "An error occurred joining the command thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+    if not abort and isPrimary:
+        try:
+            stopCentral.value = True
+        except:
+            log = "An error occurred stopping central"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+            
+        if not abort:
+            try:
+                central.join()
+            except:
+                log = "An error occurred joining central thread"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+    
+    if not abort:
+        try:
+            packageReceipt.join()
+        except:
+            log = "An error occurred joining thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
+        
+        if not abort:
+            try:
+                receiver.stop()
+            except:
+                log = "An error occurred stopping receiver"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
 
 def pcBlink(pc, stop):
     '''
