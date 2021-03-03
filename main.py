@@ -557,7 +557,7 @@ def pcProcess():
         try:
             command.start()
         except:
-            log = "An error occurred "
+            log = "An error occurred starting the command thread"
             logging.error(log, exc_info = True)
             if settings.verbose:
                 print(log, flush=True)
@@ -578,37 +578,140 @@ def pcProcess():
             abort = True
     
     readySent = False
-    while not pc.launch and not breakEarly:
-        if not readySent and pc.ready:
-            pc.loading("You are ready! Waiting for other players to be ready...")
-            readySent = True
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
-            
-    pygame.mixer.music.stop()
-    cv2.destroyAllWindows()
-    cv2.waitKey(1)
+    if not abort:
+        while not pc.launch:
+            if not readySent and pc.ready:
+                try:
+                    pc.loading("You are ready! Waiting for other players to be ready...")
+                    readySent = True
+                except:
+                    log = "An error occurred triggering ready message"
+                    logging.error(log, exc_info = True)
+                    if settings.verbose:
+                        print(log, flush=True)
+                        traceback.print_exc()
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    abort = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+
+    if not abort and not abortPygame:
+        try:
+            pygame.mixer.music.stop()
+        except:
+            log = "An error occurred stopping settings music"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
+
+    if not abort:
+        try:
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        except:
+            log = "An error occurred destroying settings windows"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abort = True
     
-    # Start game soundtrack
-    pygame.mixer.music.load('SoundEffects/Run.wav')
-    pygame.mixer.music.set_volume(0.1)
-    pygame.mixer.music.play(-1)
-        
-    blink = Thread(target=pcBlink, args = (pc, stop,))
-    blink.daemon = True
-    blink.start()
+    if not abort and not abortPygame:
+        try:
+            # Start game soundtrack
+            pygame.mixer.music.load('SoundEffects/Run.wav')
+            pygame.mixer.music.set_volume(0.1)
+        except:
+            log = "An error occurred loading run theme"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
     
-    # launch display and show feed while blink thread blinks players before
-    # letting people start
-    while not pc.start and not breakEarly:
-        direction = pc.getDirection(frameCapture)        
-        pc.updateDisplay()
+    if not abort and not abortPygame:
+        try:
+            pygame.mixer.music.play(-1)
+        except:
+            log = "An error occurred playing run theme"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
+    
+    if not abort:
+        try:
+            blink = Thread(target=pcBlink, args = (pc, stop,))
+            blink.daemon = True
+        except:
+            log = "An error occurred sending blink to separate thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+    
+    if not abort:
+        try:
+            blink.start()
+        except:
+            log = "An error occurred starting the blink"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+    
+    if not abort:
+        # launch display and show feed while blink thread blinks players before
+        # letting people start
+        while not abort and not pc.start:
+            try:
+                direction = pc.getDirection(frameCapture)
+            except:
+                log = "An error occurred geting direction"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+            try:
+                pc.updateDisplay()
+            except:
+                log = "An error occurred updating the display"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    abort = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out during blink"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
-    blink.join()
+        if not abort:
+            try:
+                blink.join()
+            except:
+                log = "An error occurred joining the blink thread"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
     
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
