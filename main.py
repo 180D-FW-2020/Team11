@@ -38,7 +38,7 @@ if 'arm' not in platform.machine().lower():
 
 MOTION_DELAY = 500
 
-testWithoutPi = False
+testWithoutPi = True
             
 def piProcess():
     '''
@@ -301,7 +301,8 @@ def pcProcess():
                                comms.coolDown,
                                comms.pickup,
                                comms.activePower,
-                               comms.timerOver),
+                               comms.timerOver,
+                               comms.dropped),
                               clientId)
     transmitter = comms.Transmitter()
     receiver.start()
@@ -477,6 +478,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                                comms.ready,
                                comms.powerUp,
                                comms.rotation,
+                               comms.drop,
                                comms.pickup),
                               clientId)
     transmitter = comms.Transmitter()

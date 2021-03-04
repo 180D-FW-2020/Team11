@@ -725,13 +725,13 @@ class PlayerPC:
         
         if self.powerUp == 1 and self.playerId == message['playerId']:
             cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
-            cv2.putText(display, "Speed powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(display, "Speed powerup ready", (550,1000), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         elif self.powerUp == 2 and self.playerId == message['playerId']:
             cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
-            cv2.putText(display, "Freeze powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(display, "Freeze powerup ready", (550,1000), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         elif self.powerUp == 3 and self.playerId == message['playerId']:
             cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
-            cv2.putText(display, "Swap powerup ready", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(display, "Swap powerup ready", (550,1000), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Move player, which also sets the display
         self.setMove(message, passDisplay = display)
