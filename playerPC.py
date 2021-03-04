@@ -8,7 +8,6 @@ Created on Fri Nov  6 22:58:30 2020
 import logging
 import gamePlay as g
 import numpy as np
-import cv2
 import traceback
 import copy
 import comms
@@ -20,6 +19,7 @@ import platform
 if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
     import pygame
+    import cv2
 
 cameraWorking = True
 
