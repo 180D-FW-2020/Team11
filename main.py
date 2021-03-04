@@ -26,7 +26,6 @@ import playerPi
 import playerPC
 import comms
 from threading import Thread
-import cv2
 import multiprocessing
 import random
 import time
@@ -35,6 +34,7 @@ import numpy as np
 import platform
 if 'arm' not in platform.machine().lower():
     import pygame
+    import cv2
 
 MOTION_DELAY = 500
 
