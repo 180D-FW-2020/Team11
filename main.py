@@ -602,28 +602,26 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
 
-    if not abort and not abortPygame:
-        try:
-            pygame.mixer.music.stop()
-        except:
-            log = "An error occurred stopping settings music"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abortPygame = True
+    try:
+        pygame.mixer.music.stop()
+    except:
+        log = "An error occurred stopping settings music"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abortPygame = True
 
-    if not abort:
-        try:
-            cv2.destroyAllWindows()
-            cv2.waitKey(1)
-        except:
-            log = "An error occurred destroying settings windows"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abort = True
+    try:
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+    except:
+        log = "An error occurred destroying settings windows"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
             
     if not abort:
         try:
@@ -716,19 +714,17 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
         
-        try:
-            blink.join()
-        except:
-            log = "An error occurred joining the blink thread"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abort = True
+    try:
+        blink.join()
+    except:
+        log = "An error occurred joining the blink thread"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
     
-    if not abort:
-        delay = datetime.datetime.now()
-
+    delay = datetime.datetime.now()
         
     while not abort and not pc.gameOver:
         try:
@@ -748,7 +744,6 @@ def pcProcess():
             if settings.verbose:
                 print(log, flush=True)
                 traceback.print_exc()
-
 
         if direction and datetime.datetime.now()>delay:
             try:
@@ -782,29 +777,26 @@ def pcProcess():
                 print(log, flush=True)
                 traceback.print_exc()
     
-    if not abort and not abortPygame:
-        try:
-            pygame.mixer.music.stop()
-        except:
-            log = "An error occurred stopping pygame music"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abortPygame = True
+    try:
+        pygame.mixer.music.stop()
+    except:
+        log = "An error occurred stopping pygame music"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abortPygame = True
         
-    if not abort:
-        try:
-            frameCapture.release()
-        except:
-            log = "An error occurred releasing the frame"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abort = True
-            
-
+    try:
+        frameCapture.release()
+    except:
+        log = "An error occurred releasing the frame"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
+        
     try:
         cv2.destroyAllWindows()
     except:
@@ -816,16 +808,15 @@ def pcProcess():
         abort = True
     
     stop[0] = True
-    if not abort:
-        try:
-            command.join()
-        except:
-            log = "An error occurred joining the command thread"
-            logging.error(log, exc_info = True)
-            if settings.verbose:
-                print(log, flush=True)
-                traceback.print_exc()
-            abort = True
+    try:
+        command.join()
+    except:
+        log = "An error occurred joining the command thread"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
             
     if isPrimary:
         try:
