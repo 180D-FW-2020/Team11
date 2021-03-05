@@ -32,7 +32,17 @@ class PlayerPi:
         self.clientId = clientId
         
         self.initialReceived = False
-        self.imu = BerryIMU()
+        
+        self.noIMU = False
+        try:
+            self.imu = BerryIMU()
+        except:
+            log = "An error occurred initializing the BerryIMU. Player can continue but will not be able to rotate"
+            logging.error(log)
+            if settings.verbose: print(log, flush=True)
+            traceback.print_exc()
+            self.noIMU = True
+            
         self.gameOver = False
         self.coolDown = False
         self.start = False
@@ -41,7 +51,7 @@ class PlayerPi:
         '''
         Gets rotation information from the BerryIMU.
         '''
-        if not self.coolDown and not stop[0]:
+        if not self.coolDown and not stop[0] and not self.noIMU:
             rotation = self.imu.getRotation(stop)
             return rotation
         else: return False

@@ -61,6 +61,7 @@ def piProcess():
         traceback.print_exc()
         abort = True
     
+    
     if not abort:
         try:
             receiver = comms.Receiver((comms.initial,
