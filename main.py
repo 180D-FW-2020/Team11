@@ -387,7 +387,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             # Send receiver to separate thread
             packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
@@ -400,7 +400,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
         
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             packageReceipt.start()
         except:
@@ -411,7 +411,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             # Get settings. If not isPrimary, other returned variables are all 0. If
             # primary, spawn primary player stuff
@@ -424,7 +424,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort and isPrimary:
+    if not abort and isPrimary and not pc.gameOver:
         try:
             stopCentral = multiprocessing.Value('i', False)
         except:
@@ -435,7 +435,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             
-        if not abort:
+        if not abort and not pc.gameOver:
             try:
                 central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
                 central.daemon = True
@@ -447,7 +447,7 @@ def pcProcess():
                     traceback.print_exc()
                 abort = True
                 
-        if not abort:
+        if not abort and not pc.gameOver:
             try:
                 central.start()
             except:
@@ -458,7 +458,7 @@ def pcProcess():
                     traceback.print_exc()
                 abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             pc.loading("Waiting for initial game state...")
         except:
@@ -469,7 +469,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         #First, get initial load with full playspace info
         while not pc.initialReceived and not pc.gameOver:
             try:
@@ -483,7 +483,7 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             pc.loading("Initial game state received. Waiting for player ID assignment...")
         except:
@@ -504,7 +504,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             transmitter.transmit(comms.pcConfirmation, package)
         except:
@@ -515,7 +515,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             
-    if not abort:
+    if not abort and not pc.gameOver:
         # Check for assignment of a player ID
         while not pc.playerId and not pc.gameOver:
             try:
@@ -540,7 +540,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
         
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             # Send command thread to separate loop
             command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
@@ -553,7 +553,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             command.start()
         except:
@@ -611,7 +611,7 @@ def pcProcess():
             traceback.print_exc()
         abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             frameCapture = cv2.VideoCapture(settings.camera)
             frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -625,7 +625,7 @@ def pcProcess():
             abort = True
             
     # Start game soundtrack
-    if not abortPygame:
+    if not abortPygame and not abort and not pc.gameOver:
         try:
             pygame.mixer.music.load('SoundEffects/Run.wav')
             pygame.mixer.music.set_volume(0.1)
@@ -637,7 +637,7 @@ def pcProcess():
                 traceback.print_exc()
             abortPygame = True
         
-    if not abortPygame:
+    if not abortPygame and not abort and not pc.gameOver:
         try:
             pygame.mixer.music.play(-1)
         except:
@@ -648,7 +648,7 @@ def pcProcess():
                 traceback.print_exc()
             abortPygame = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             blink = Thread(target=pcBlink, args = (pc, stop,))
             blink.daemon = True
@@ -662,7 +662,7 @@ def pcProcess():
             # has worked so far, no need to abort -- this should just mean the
             # player won't blink at start of game
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             blink.start()
         except:
