@@ -515,8 +515,8 @@ class PlayerPC:
         display = copy.deepcopy(self.display)
         self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
         if self.playerId == message['playerId']:
-                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
-                self.display = cv2.putText(self.display, "No powerups held!", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+                cv2.putText(display, "No powerups held!", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         self.display = display
     def setRotation(self, message):
         '''
@@ -560,13 +560,14 @@ class PlayerPC:
         self.display = display
 
     def setPowerUp(self, message):
+        display = copy.deepcopy(self.display)
         if settings.verbose:
             print("powerup held was", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
         if message['powerUp'] == 0:
             self.playSpace.players[message['playerId']-1]['powerUpHeld'] = 0
             if self.playerId == message['playerId']:
-                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
-                self.display = cv2.putText(self.display, "No powerups held!", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+                cv2.putText(display, "No powerups held!", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
                 
@@ -578,9 +579,11 @@ class PlayerPC:
             self.playSpace.players[message['playerId'] - 1]['powerUpTimer'] = message['speedTimer']
             self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
             self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 1
+            if settings.verbose:
+                print("player", message['playerId'], "registered as", self.playerId, "has activated speed")
             if self.playerId == message['playerId']:
-                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
-                self.display = cv2.putText(self.display, "RUN! - Speed powerup is active", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+                cv2.putText(display, "RUN! - Speed powerup is active", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
                 
@@ -592,12 +595,14 @@ class PlayerPC:
             self.playSpace.freezeTimer = message['freezeTimer']
             self.playSpace.players[message['playerId'] - 1]['powerUpActive'] = 2
             self.playSpace.players[message['playerId'] - 1]['powerUpHeld'] = 0
+            if settings.verbose:
+                print("player", message['playerId'], "registered as", self.playerId, "has activated freeze")
             if self.playerId == message['playerId']:
-                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
-                self.display = cv2.putText(self.display, "RUN! - Everyone else is frozen", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+                cv2.putText(display, "RUN! - Everyone else is frozen", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             else:
-                cv2.rectangle(self.display, (540,0), (1500, 40), (0,0,0), -1)
-                self.display = cv2.putText(self.display, "FREEZE! - Someone activated freeze powerup", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
+                cv2.putText(display, "FREEZE! - Someone activated freeze powerup", (550,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             if settings.verbose:
                 print("powerup held is", self.playSpace.players[message['playerId']-1]['powerUpHeld'])
                 
@@ -662,7 +667,7 @@ class PlayerPC:
                 display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),
                                 int(self.dist/3), self.playSpace.players[message['swap'] - 1]['itColor'], 10)
             
-            self.display = display
+        self.display = display
 
 
     def setTimer(self,message):
@@ -724,14 +729,14 @@ class PlayerPC:
         # Set display message
         
         if self.powerUp == 1 and self.playerId == message['playerId']:
-            cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
-            cv2.putText(display, "Speed powerup ready", (550,1000), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+            cv2.putText(display, "Speed powerup ready", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         elif self.powerUp == 2 and self.playerId == message['playerId']:
-            cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
-            cv2.putText(display, "Freeze powerup ready", (550,1000), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+            cv2.putText(display, "Freeze powerup ready", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         elif self.powerUp == 3 and self.playerId == message['playerId']:
-            cv2.rectangle(display, (540,0), (1500, 40), (0,0,0), -1)
-            cv2.putText(display, "Swap powerup ready", (550,1000), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+            cv2.putText(display, "Swap powerup ready", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Move player, which also sets the display
         self.setMove(message, passDisplay = display)
