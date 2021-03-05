@@ -471,7 +471,7 @@ def pcProcess():
     
     if not abort:
         #First, get initial load with full playspace info
-        while not pc.initialReceived:
+        while not pc.initialReceived and not pc.gameOver:
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     abort = True
@@ -517,7 +517,7 @@ def pcProcess():
             
     if not abort:
         # Check for assignment of a player ID
-        while not pc.playerId:
+        while not pc.playerId and not pc.gameOver:
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     abort = True
@@ -529,7 +529,7 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
         except:
@@ -565,7 +565,7 @@ def pcProcess():
             abort = True
     
     readySent = False
-    while not abort and not pc.launch:
+    while not abort and not pc.launch and not pc.gameOver:
         if not readySent and pc.ready:
             try:
                 pc.loading("You are ready! Waiting for other players to be ready...")
@@ -674,7 +674,7 @@ def pcProcess():
     
     # launch display and show feed while blink thread blinks players before
     # letting people start
-    while not pc.start and not abort:
+    while not pc.start and not abort and not pc.gameOver:
         try:
             direction = pc.getDirection(frameCapture)
         except:
