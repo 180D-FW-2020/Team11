@@ -224,7 +224,7 @@ def piTransmit(transmitter, pi, stop):
     central.
     '''
     # Hold until receive start message
-    while not pi.start:
+    while not pi.start and not pi.gameOver:
         pass
     
     # Get rotation information and transmit it
@@ -387,7 +387,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             # Send receiver to separate thread
             packageReceipt = Thread(target=pcPackageReceipt, args = (receiver, pc, stop,))
@@ -400,7 +400,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
         
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             packageReceipt.start()
         except:
@@ -411,7 +411,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             # Get settings. If not isPrimary, other returned variables are all 0. If
             # primary, spawn primary player stuff
@@ -424,7 +424,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort and isPrimary:
+    if not abort and isPrimary and not pc.gameOver:
         try:
             stopCentral = multiprocessing.Value('i', False)
         except:
@@ -435,7 +435,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             
-        if not abort:
+        if not abort and not pc.gameOver:
             try:
                 central = multiprocessing.Process(target=centralNodeProcess, args = (stopCentral, playMode, numPlayers, edgeLength, numObstacles, numPowerups, ))
                 central.daemon = True
@@ -447,7 +447,7 @@ def pcProcess():
                     traceback.print_exc()
                 abort = True
                 
-        if not abort:
+        if not abort and not pc.gameOver:
             try:
                 central.start()
             except:
@@ -458,7 +458,7 @@ def pcProcess():
                     traceback.print_exc()
                 abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             pc.loading("Waiting for initial game state...")
         except:
@@ -469,9 +469,9 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         #First, get initial load with full playspace info
-        while not pc.initialReceived:
+        while not pc.initialReceived and not pc.gameOver:
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     abort = True
@@ -483,7 +483,7 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             pc.loading("Initial game state received. Waiting for player ID assignment...")
         except:
@@ -504,7 +504,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             transmitter.transmit(comms.pcConfirmation, package)
         except:
@@ -515,9 +515,9 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             
-    if not abort:
+    if not abort and not pc.gameOver:
         # Check for assignment of a player ID
-        while not pc.playerId:
+        while not pc.playerId and not pc.gameOver:
             try:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     abort = True
@@ -529,7 +529,7 @@ def pcProcess():
                     print(log, flush=True)
                     traceback.print_exc()
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             pc.loading(f"You are player {pc.playerId}. Say ""ready"" when you're ready to join...")
         except:
@@ -540,7 +540,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
         
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             # Send command thread to separate loop
             command = Thread(target=pcCommand, args = (transmitter, pc, stop,))
@@ -553,7 +553,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    if not abort and not pc.gameOver:
         try:
             command.start()
         except:
@@ -564,7 +564,54 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
     
-    if not abort:
+    readySent = False
+    while not abort and not pc.launch and not pc.gameOver:
+        if not readySent and pc.ready:
+            try:
+                pc.loading("You are ready! Waiting for other players to be ready...")
+                readySent = True
+            except:
+                log = "An error occurred displaying ready instructions"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+        
+        if not abort:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    abort = True
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+
+    try:
+        pygame.mixer.music.stop()
+    except:
+        log = "An error occurred stopping settings music"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abortPygame = True
+    
+    try:
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+    except:
+        log = "An error occurred closing settings display"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abort = True
+    
+    if not abort and not pc.gameOver:
         try:
             frameCapture = cv2.VideoCapture(settings.camera)
             frameCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -576,71 +623,217 @@ def pcProcess():
                 print(log, flush=True)
                 traceback.print_exc()
             abort = True
-    
-    readySent = False
-    while not pc.launch and not breakEarly:
-        if not readySent and pc.ready:
-            pc.loading("You are ready! Waiting for other players to be ready...")
-            readySent = True
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
             
-    pygame.mixer.music.stop()
-    cv2.destroyAllWindows()
-    cv2.waitKey(1)
-    
     # Start game soundtrack
-    pygame.mixer.music.load('SoundEffects/Run.wav')
-    pygame.mixer.music.set_volume(0.1)
-    pygame.mixer.music.play(-1)
+    if not abortPygame and not abort and not pc.gameOver:
+        try:
+            pygame.mixer.music.load('SoundEffects/Run.wav')
+            pygame.mixer.music.set_volume(0.1)
+        except:
+            log = "An error occurred loading gameplay music"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
         
-    blink = Thread(target=pcBlink, args = (pc, stop,))
-    blink.daemon = True
-    blink.start()
+    if not abortPygame and not abort and not pc.gameOver:
+        try:
+            pygame.mixer.music.play(-1)
+        except:
+            log = "An error occurred starting gameplay music"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            abortPygame = True
+    
+    if not abort and not pc.gameOver:
+        try:
+            blink = Thread(target=pcBlink, args = (pc, stop,))
+            blink.daemon = True
+        except:
+            log = "An error occurred creating blink thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+            # If blink thread doesn't work for some reason but display stuff
+            # has worked so far, no need to abort -- this should just mean the
+            # player won't blink at start of game
+    
+    if not abort and not pc.gameOver:
+        try:
+            blink.start()
+        except:
+            log = "An error occurred starting blink thread"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
     
     # launch display and show feed while blink thread blinks players before
     # letting people start
-    while not pc.start and not breakEarly:
-        direction = pc.getDirection(frameCapture)        
-        pc.updateDisplay()
+    while not pc.start and not abort and not pc.gameOver:
+        try:
+            direction = pc.getDirection(frameCapture)
+        except:
+            log = "An error occurred getting camera feed"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            breakEarly = True
-            break
-    blink.join()
+        try:
+            pc.updateDisplay()
+        except:
+            log = "An error occurred updating display"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+        
+        try:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                abort = True
+                break
+        except:
+            log = "An error occurred evaluating display close out"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+    
+    try:
+        blink.join()
+    except:
+        log = "An error occurred joining blink thread"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
     
     delay = datetime.datetime.now()
     #cv2.startWindowThread()
-    if breakEarly: stop[0] = True
+    if abort: stop[0] = True
+    
+    while not pc.gameOver and not stop[0]:
+        try:
+            direction = pc.getDirection(frameCapture)
+        except:
+            log = "An error occurred getting camera feed"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
         
-    while not pc.gameOver and not stop[0] and not breakEarly:
-        direction = pc.getDirection(frameCapture)
-        #cv2.imshow('frame',pc.cameraImage)
-        pc.updateDisplay()
+        try:
+            pc.updateDisplay()
+        except:
+            log = "An error occurred updating display"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
 
         if direction and datetime.datetime.now()>delay:
-            package = pc.pack(direction)
-            transmitter.transmit(comms.direction, package)
-            delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
+            try:
+                package = pc.pack(direction)
+            except:
+                log = "An error occurred packaging the direction"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                    package = 0
             
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if package:
+                try:
+                    transmitter.transmit(comms.direction, package)
+                    delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
+                except:
+                    log = "An error occurred transmitting the direction"
+                    logging.error(log, exc_info = True)
+                    if settings.verbose:
+                        print(log, flush=True)
+                        traceback.print_exc()
+        try:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        except:
+            log = "An error occurred evaluating display close out"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
         
-    pygame.mixer.music.stop()
+    try:
+        pygame.mixer.music.stop()
+    except:
+        log = "An error occurred ending gameplay music"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+        abortPygame = True
         
-    if frameCapture:
+    try:
         frameCapture.release()
-    cv2.destroyAllWindows()
+    except:
+        log = "An error occurred releasing the camera feed"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+    
+    try:
+        cv2.destroyAllWindows()
+    except:
+        log = "An error occurred closing the display"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
     
     stop[0] = True
-    if command:
+    
+    try:
         command.join()
+    except:
+        log = "An error occurred joining the command thread"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+    
     if isPrimary:
         stopCentral.value = True
-        central.join()
-    packageReceipt.join()
-    receiver.stop()
+        try:
+            central.join()
+        except:
+            log = "An error occurred joining the central multiprocess"
+            logging.error(log, exc_info = True)
+            if settings.verbose:
+                print(log, flush=True)
+                traceback.print_exc()
+    
+    try:
+        packageReceipt.join()
+    except:
+        log = "An error occurred joining the package receipt thread"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
+    
+    try:
+        receiver.stop()
+    except:
+        log = "An error occurred stopping the receiver"
+        logging.error(log, exc_info = True)
+        if settings.verbose:
+            print(log, flush=True)
+            traceback.print_exc()
 
 def pcBlink(pc, stop):
     '''
@@ -723,7 +916,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
     
     readies = [i for i in range(1, game.numPlayers+1)]
     
-    while devicesPending:
+    while devicesPending and not stop.value:
         
         # Transmit the initial playspace info
         transmitter.transmit(comms.initial, initialPackage)
@@ -761,14 +954,15 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             print("Pending ready pcs:", readiesPC, flush=True)
         time.sleep(1)
     
-    game.start = True
-    if settings.verbose: print("All player devices connected", flush=True)
-    package = game.pack(game.start)
-    transmitter.transmit(comms.launch, package)
-    
-    # Let players blink on screen a moment before playing
-    time.sleep(5)
-    transmitter.transmit(comms.start, package)
+    if not stop.value:
+        game.start = True
+        if settings.verbose: print("All player devices connected", flush=True)
+        package = game.pack(game.start)
+        transmitter.transmit(comms.launch, package)
+        
+        # Let players blink on screen a moment before playing
+        time.sleep(5)
+        transmitter.transmit(comms.start, package)
     
     # Then start the game
     while not game.isGameOver() and not stop.value:
