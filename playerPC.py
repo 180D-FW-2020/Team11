@@ -420,7 +420,7 @@ class PlayerPC:
             cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
                      (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), POWERUP_COLOR, int(self.dist/6))
         
-        if self.playSpace[self.playerId-1]['powerUpHeld'] == 0:
+        if self.playSpace.players[self.playerId-1]['powerUpHeld'] == 0:
             cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
             cv2.putText(display, "No powerups held!", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
