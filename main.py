@@ -565,32 +565,31 @@ def pcProcess():
             abort = True
     
     readySent = False
-    if not abort:
-        while not pc.launch:
-            if not readySent and pc.ready:
-                try:
-                    pc.loading("You are ready! Waiting for other players to be ready...")
-                    readySent = True
-                except:
-                    log = "An error occurred displaying ready instructions"
-                    logging.error(log, exc_info = True)
-                    if settings.verbose:
-                        print(log, flush=True)
-                        traceback.print_exc()
+    while not abort and not pc.launch:
+        if not readySent and pc.ready:
+            try:
+                pc.loading("You are ready! Waiting for other players to be ready...")
+                readySent = True
+            except:
+                log = "An error occurred displaying ready instructions"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+                abort = True
+        
+        if not abort:
+            try:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
                     abort = True
-            
-            if not abort:
-                try:
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        abort = True
-                        break
-                except:
-                    log = "An error occurred evaluating display close out"
-                    logging.error(log, exc_info = True)
-                    if settings.verbose:
-                        print(log, flush=True)
-                        traceback.print_exc()
-    
+                    break
+            except:
+                log = "An error occurred evaluating display close out"
+                logging.error(log, exc_info = True)
+                if settings.verbose:
+                    print(log, flush=True)
+                    traceback.print_exc()
+
     try:
         pygame.mixer.music.stop()
     except:
