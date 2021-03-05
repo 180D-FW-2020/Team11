@@ -224,7 +224,7 @@ def piTransmit(transmitter, pi, stop):
     central.
     '''
     # Hold until receive start message
-    while not pi.start:
+    while not pi.start and not pi.gameOver:
         pass
     
     # Get rotation information and transmit it
