@@ -38,7 +38,7 @@ if 'arm' not in platform.machine().lower():
 
 MOTION_DELAY = 500
 
-testWithoutPi = True
+testWithoutPi = False
             
 def piProcess():
     '''
