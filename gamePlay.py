@@ -10,7 +10,6 @@ import random as r
 import numpy as np
 import traceback
 import comms
-import playerPC as pc
 import datetime
 import settings
 import copy
@@ -201,9 +200,18 @@ class PlaySpace:
                     it = False
                     playersNotIt.append(i)
                 
-                bp = r.randrange(0, 256)
-                gp = r.randrange(0, 256)
-                rp = r.randrange(0, 256)
+                unique = False
+                while not unique:
+                    brightEnough = False
+                    while not brightEnough:
+                        bp = r.randrange(0, 256)
+                        gp = r.randrange(0, 256)
+                        rp = r.randrange(0, 256)
+                        if bp+gp+rp>200: brightEnough = True
+                    unique = True
+                    for p in players:
+                        if unique and (abs(bp - p['color'][0]) + abs(gp - p['color'][1]) + abs(rp - p['color'][2])) < 200:
+                            unique = False
                 
                 bi = min(bp + 70, 255)
                 gi = min(gp + 70, 255)
