@@ -723,8 +723,10 @@ class PlayerPC:
         vpos = -1*np.dot(self.playSpace.verticalAxis, oldpos)
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
-        cv2.rectangle(display, (self.dist*hpos + int(self.dist/8), self.dist*vpos + int(self.dist/8)),
-                          (self.dist*hpos + int(self.dist*7/8), self.dist*vpos + int(self.dist*7/8)), (0,0,0), -1)
+        cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist/4)),
+                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist*3/4)), (0,0,0), int(self.dist/6))
+        cv2.line(display, (self.dist*hpos + int(self.dist/4), self.dist*vpos + int(self.dist*3/4)),
+                 (self.dist*hpos + int(self.dist*3/4), self.dist*vpos + int(self.dist/4)), (0,0,0), int(self.dist/6))
         
         # Play's pick up sound
         self.pickupSound.play()
