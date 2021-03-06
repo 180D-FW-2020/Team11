@@ -423,6 +423,12 @@ class PlayerPC:
         if self.playSpace.players[self.playerId-1]['powerUpHeld'] == 0:
             cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
             cv2.putText(display, "No powerups held!", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        if self.playSpace.players[self.playerId-1]['powerUpHeld'] == 1:
+            cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+            cv2.putText(display, "Speed powerup ready", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        if self.playSpace.players[self.playerId-1]['powerUpHeld'] == 2:
+            cv2.rectangle(display, (540,920), (1500, 1000), (0,0,0), -1)
+            cv2.putText(display, "Freeze powerup ready", (550,960), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         self.display = display
         
