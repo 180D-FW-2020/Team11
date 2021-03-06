@@ -8,7 +8,6 @@ Created on Fri Nov  6 22:58:30 2020
 import logging
 import gamePlay as g
 import numpy as np
-import cv2
 import traceback
 import copy
 import comms
@@ -20,6 +19,7 @@ import platform
 if 'arm' not in platform.machine().lower():
     import speech_recognition as sr
     import pygame
+    import cv2
 
 cameraWorking = True
 
@@ -42,6 +42,8 @@ FRAME_CLEAR_UPPERLEFT = (950, 80)
 FRAME_CLEAR_LOWERRIGHT = (1650, 620)
 FRAME_UPPERLEFT = (960, 90)
 FRAME_LOWERRIGHT = (1640, 610)
+
+START_TEXT_POSITION = (250,500)
 
 IT_TEXT_POSITION = (990, 650)
 IT_TEXT_CLEAR_UPPERLEFT = (960, 620)
@@ -332,7 +334,8 @@ class PlayerPC:
                 elif topic == comms.start:
                     on = False
                     self.blinkPlayer(on)
-                    self.start = True                    
+                    self.start = True   
+                    self.announceStart()
             return False
         except:
             print("Error getting package from primary node", flush=True)
@@ -471,6 +474,17 @@ class PlayerPC:
             
         self.display = display
     
+    def announceStart(self):
+        '''
+        Shows "start" text on screen.
+        '''
+        display = copy.deepcopy(self.display)
+        
+        cv2.putText(self.display, "START!", START_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, 6, (255, 255, 255), 20, cv2.LINE_AA)
+        time.sleep(1)
+        self.display = display
+        
+        
     def setMove(self, message, passDisplay = None):
         '''
         Moves a player on the display, based on the input message. This can also
@@ -1026,7 +1040,7 @@ class Microphone:
                     
                     print("######## Please say something... #########", flush=True)
                     
-                    audio = self.recognizer.listen(source, phrase_time_limit=2)
+                    audio = self.recognizer.listen(source, phrase_time_limit=3)
                     
                     try:
                         #command = self.recognizer.recognize_google_cloud(audio, credentials_json=json.dumps(googlecloud_json))
