@@ -37,6 +37,8 @@ pcConfirmation = settings.uniqueComms + "ece180d/team11/pcconf"
 pickup = settings.uniqueComms + "ece180d/team11/pickup"
 activePower = settings.uniqueComms + "ece180d/team11/activePower"
 timerOver = settings.uniqueComms + "ece180d/team11/timer"
+drop = settings.uniqueComms + "ece180d/team11/drop"
+dropped = settings.uniqueComms + "ece180d/team11/dropped"
 
 
 class Transmitter:

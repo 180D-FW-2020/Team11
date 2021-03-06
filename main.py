@@ -61,6 +61,7 @@ def piProcess():
         traceback.print_exc()
         abort = True
     
+    
     if not abort:
         try:
             receiver = comms.Receiver((comms.initial,
@@ -341,6 +342,7 @@ def pcProcess():
     
     stop = [0]
     
+
     if not abort:
         try:
             receiver = comms.Receiver((comms.initial,
@@ -354,7 +356,8 @@ def pcProcess():
                                        comms.coolDown,
                                        comms.pickup,
                                        comms.activePower,
-                                       comms.timerOver),
+                                       comms.timerOver,
+                                       comms.dropped),
                                       clientId)
         except:
             log = "An error occurred initializing PC process reciever"
@@ -364,6 +367,7 @@ def pcProcess():
                 traceback.print_exc()
             abort = True
             receiver = 0
+
     
     if not abort:
         try:
@@ -891,6 +895,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                                comms.ready,
                                comms.powerUp,
                                comms.rotation,
+                               comms.drop,
                                comms.pickup),
                               clientId)
     transmitter = comms.Transmitter()
