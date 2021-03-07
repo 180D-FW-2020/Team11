@@ -59,7 +59,7 @@ class Transmitter:
         
         self.client = mqtt_client.Client()
         self.client.on_connect = self.on_connect
-        self.client.connect(broker, port)
+        self.client.connect(broker, port, keepalive=1800)
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:

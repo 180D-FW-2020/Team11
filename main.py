@@ -227,43 +227,39 @@ def piTransmit(transmitter, pi, stop):
     while not pi.start and not pi.gameOver:
         pass
     
+    delay = datetime.datetime.now()
     # Get rotation information and transmit it
     while not pi.gameOver:
-        try:
-            rotation = pi.getRotation(stop)
-        except:
-            log = "An error occurred getting a rotation"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
-            rotation = 0
-            
-        if rotation:
+        
+        if datetime.datetime.now()>delay:
             try:
-                package = pi.pack(rotation)
+                rotation = pi.getRotation(stop)
             except:
-                log = "An error occurred packing a rotation"
+                log = "An error occurred getting a rotation"
                 logging.error(log)
                 if settings.verbose: print(log, flush=True)
                 traceback.print_exc()
-                package = 0
-            
-            if package:
+                rotation = 0
+                
+            if rotation:
                 try:
-                    transmitter.transmit(comms.rotation, package)
-                    transmitted = True
+                    package = pi.pack(rotation)
                 except:
-                    log = "An error occurred transmitting a rotation"
+                    log = "An error occurred packing a rotation"
                     logging.error(log)
                     if settings.verbose: print(log, flush=True)
                     traceback.print_exc()
-                    transmitted = False
-            
-            # The cooldown will also be set by a message returned from central,
-            # but this is here to ensure the pi doesn't send new rotation info
-            # before that return message is received
-            if transmitted:
-                pi.coolDown = True
+                    package = 0
+                
+                if package:
+                    try:
+                        transmitter.transmit(comms.rotation, package)
+                        delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
+                    except:
+                        log = "An error occurred transmitting a rotation"
+                        logging.error(log)
+                        if settings.verbose: print(log, flush=True)
+                        traceback.print_exc()
 
 def pcProcess():
     '''
