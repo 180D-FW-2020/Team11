@@ -307,7 +307,7 @@ def pcProcess():
         try:
             # Start settings soundtrack
             pygame.mixer.music.load('SoundEffects/ready_two_run.wav')
-            pygame.mixer.music.set_volume(0.3)
+            pygame.mixer.music.set_volume(0.1)
         except:
             log = "An error occurred loading settings music"
             logging.error(log, exc_info = True)

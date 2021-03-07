@@ -16,7 +16,7 @@ Values configured on a player/device level
 camera = 0 # default 
 verbose = True
 
-uniqueComms = "Zefyr0303"
+uniqueComms = "Finley"
 
 
 # Modes:
