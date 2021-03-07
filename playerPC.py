@@ -535,6 +535,7 @@ class PlayerPC:
                 cv2.rectangle(display, (540,966), (1500, 1000), (0,0,0), -1)
                 cv2.putText(display, "No powerups held!", (550,994), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         self.display = display
+        
     def setRotation(self, message):
         '''
         Updates the axes, updates the display accordingly, writes the cooldown
@@ -546,6 +547,7 @@ class PlayerPC:
         self.playSpace.verticalAxis = message['verticalAxis']
         self.playSpace.horizontalAxis = message['horizontalAxis']
         self.playSpace.rotationCoolDownTime = message['coolDown']
+        if message['players']: self.playSpace.players = message['players']
         
         # Reload the playspace according to new axes
         self.setPlayspace()
