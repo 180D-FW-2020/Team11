@@ -300,7 +300,7 @@ class PlaySpace:
         message = {'playerId': playerId}
         return comms.dropped, message
 
-    def movePlayer(self, playerId, direction):
+    def movePlayer(self, playerId, direction, spacesOverride = 0):
         '''
         Takes a player ID and direction and checks if a move is possible. If yes,
         makes the move and returns info about the move.
@@ -335,11 +335,14 @@ class PlaySpace:
             # Otherwise move. If there's a powerup there, pick it up
             
             else:
-                if self.players[playerId - 1]['it']: speed = ITSPEED
-                else: speed = 1
-
-                if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
-                    speed *= 2
+                if spacesOverride:
+                    speed = spacesOverride
+                else:
+                    if self.players[playerId - 1]['it']: speed = ITSPEED
+                    else: speed = 1
+        
+                    if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
+                        speed *= 2                
                 
                 if (powerUp != 0):
                     self.players[playerId-1]['powerUpHeld'] = powerUp
@@ -403,10 +406,10 @@ class PlaySpace:
                     self.horizontalAxis = newAxis
                 elif rotation == '>':
                     self.horizontalAxis = -1 * newAxis
-                displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
-                                      'verticalAxis': self.verticalAxis.tolist(),
-                                      'coolDown': ROTATION_COOLDOWN}
-                self.setRotationCoolDown()
+                # displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
+                #                       'verticalAxis': self.verticalAxis.tolist(),
+                #                       'coolDown': ROTATION_COOLDOWN}
+                # self.setRotationCoolDown()
 
                 #check that no collisions occur on rotation
                 for i in range(len(self.verticalAxis)):
@@ -415,60 +418,83 @@ class PlaySpace:
                 for i in range(len(self.horizontalAxis)):
                     if abs(self.horizontalAxis[i]) == 1:
                         horizontalindex = i
-
+                
+                movePlayer = False
                 for i in range(len(self.players)):
                     for j in range(len(self.players)):
                         if j > i:
                             if (self.players[i]['position'][verticalindex] == self.players[j]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.players[j]['position'][horizontalindex]):
-                                collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, '<')
-                                if overlap > 1:
-                                    self.movePlayer(j+1, '<')
-                                else:
-                                    collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, '^')
-                                    if overlap > 1:
-                                        self.movePlayer(j+1, '^')
-                                    else:
-                                        collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, '>')
-                                        if overlap > 1:
-                                            self.movePlayer(j+1, '>')
-                                        else:
-                                            collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, 'v')
-                                            if overlap > 1:
-                                                self.movePlayer(j+1, 'v')
-                    for p in range(len(self.powerUps)):
-                        if (self.players[i]['position'][verticalindex] == self.powerUps[p]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.powerUps[p]['position'][horizontalindex]):
-                            collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '<')
-                            if overlap > 1:
-                                self.movePlayer(i+1, '<')
-                            else:
-                                collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '^')
-                                if overlap > 1:
-                                    self.movePlayer(i+1, '^')
-                                else:
-                                    collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '>')
-                                    if overlap > 1:
-                                        self.movePlayer(i+1, '>')
-                                    else:
-                                        collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, 'v')
-                                        if overlap > 1:
-                                            self.movePlayer(i+1, 'v')
-                    for o in range(len(self.obstacles)):
-                        if (self.players[i]['position'][verticalindex] == self.obstacles[o]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.obstacles[o]['position'][horizontalindex]):
-                            collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '<')
-                            if overlap > 1:
-                                self.movePlayer(i+1, '<')
-                            else:
-                                collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '^')
-                                if overlap > 1:
-                                    self.movePlayer(i+1, '^')
-                                else:
-                                    collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '>')
-                                    if overlap > 1:
-                                        self.movePlayer(i+1, '>')
-                                    else:
-                                        collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, 'v')
-                                        if overlap > 1:
-                                            self.movePlayer(i+1, 'v')
+                                movePlayer = True
+                                # collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, '<')
+                                # if overlap > 1:
+                                #     self.movePlayer(j+1, '<')
+                                # else:
+                                #     collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, '^')
+                                #     if overlap > 1:
+                                #         self.movePlayer(j+1, '^')
+                                #     else:
+                                #         collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, '>')
+                                #         if overlap > 1:
+                                #             self.movePlayer(j+1, '>')
+                                #         else:
+                                #             collision, tag, powerUp, overlap, replacement = self.checkCollision(j+1, 'v')
+                                #             if overlap > 1:
+                                #                 self.movePlayer(j+1, 'v')
+                    if not movePlayer:
+                        for p in range(len(self.powerUps)):
+                            if (self.players[i]['position'][verticalindex] == self.powerUps[p]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.powerUps[p]['position'][horizontalindex]):
+                                movePlayer = True
+                            # collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '<')
+                            # if overlap > 1:
+                            #     self.movePlayer(i+1, '<')
+                            # else:
+                            #     collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '^')
+                            #     if overlap > 1:
+                            #         self.movePlayer(i+1, '^')
+                            #     else:
+                            #         collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '>')
+                            #         if overlap > 1:
+                            #             self.movePlayer(i+1, '>')
+                            #         else:
+                            #             collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, 'v')
+                            #             if overlap > 1:
+                            #                 self.movePlayer(i+1, 'v')
+                    if not movePlayer:
+                        for o in range(len(self.obstacles)):
+                            if (self.players[i]['position'][verticalindex] == self.obstacles[o]['position'][verticalindex]) and (self.players[i]['position'][horizontalindex] == self.obstacles[o]['position'][horizontalindex]):
+                                movePlayer = True
+                            # collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '<')
+                            # if overlap > 1:
+                            #     self.movePlayer(i+1, '<')
+                            # else:
+                            #     collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '^')
+                            #     if overlap > 1:
+                            #         self.movePlayer(i+1, '^')
+                            #     else:
+                            #         collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, '>')
+                            #         if overlap > 1:
+                            #             self.movePlayer(i+1, '>')
+                            #         else:
+                            #             collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, 'v')
+                            #             if overlap > 1:
+                            #                 self.movePlayer(i+1, 'v')
+                    if movePlayer:
+                        for j in range(3):
+                            _, moveUpdates = self.movePlayer(i+1, '<', spacesOverride = j)
+                            if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '^', spacesOverride = j)
+                            if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '>', spacesOverride = j)
+                            if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, 'v', spacesOverride = j)
+                    
+                    displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
+                                      'verticalAxis': self.verticalAxis.tolist(),
+                                      'coolDown': ROTATION_COOLDOWN,
+                                      'players': self.players}
+                    for p in displayUpdates['players']:
+                        # Somewhere position is getting stored as list instead of numpy array, should find and fix
+                        if type(p['position']) is not list:
+                            p['position'] = p['position'].tolist()
+                    
+                    self.setRotationCoolDown()
                 return comms.axes, displayUpdates
             else:
                 return 0, 0
