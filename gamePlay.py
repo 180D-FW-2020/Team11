@@ -16,7 +16,7 @@ import copy
 
 ITSPEED = 2 #spaces
 ROTATION_COOLDOWN = 10 #seconds
-POWERUP_TIMER = 15 # seconds
+POWERUP_TIMER = 5 # seconds
 
 class GamePlay:
     def __init__(self, playMode, numPlayers, edgeLength, numObstacles, numPowerups):
