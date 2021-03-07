@@ -254,7 +254,8 @@ class PlayerPC:
             return direction
         except:
             print("Error getting direction information from the camera", flush=True)
-            traceback.print_exc() 
+            traceback.print_exc()
+            return 0
 
     def getCommand(self, stop):
         ''' 
