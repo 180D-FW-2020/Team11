@@ -59,8 +59,7 @@ def piProcess():
         logging.error(log)
         if settings.verbose: print(log, flush=True)
         traceback.print_exc()
-        abort = True
-    
+        abort = True    
     
     if not abort:
         try:
@@ -211,7 +210,7 @@ def piProcess():
     try:
         transmit.join()
     except:
-        log = f"Unable to join transmit thread. Possible it was not instantiated, if game aborted early."
+        log = "Unable to join transmit thread. Possible it was not instantiated, if game aborted early."
         logging.error(log)
         if settings.verbose: print(log, flush=True)
         traceback.print_exc()
