@@ -64,7 +64,6 @@ IT_STATS_MAXBORDER = int(35/10)
 phrases = {
     "ready" : comms.ready,
     "start" : comms.start,
-    "stop" : comms.stop,
     "powerup" : comms.powerUp,
     "power up" : comms.powerUp,
     "drop" : comms.drop
