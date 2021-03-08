@@ -194,10 +194,10 @@ def piProcess():
                 try:
                     pi.unpack(receiver.packages.pop(0))
                 except:
-                        log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
-                        logging.error(log)
-                        if settings.verbose: print(log, flush=True)
-                        traceback.print_exc()
+                    log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
     if abort:
         log = "pi processes aborted due to unresolvable errors"
     else:
@@ -972,14 +972,23 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            print("Central attempting unpack:", receiver.packages, flush=True)
-            package = receiver.packages.pop(0)
-            topic, message = game.unpack(package)
-            #topic, message = game.unpack(receiver.packages.pop(0))
+            try:
+                topic, message = game.unpack(receiver.packages.pop(0))
+            except:
+                log = f"An error occurred unpacking a message on the central queue. Current queue: `{receiver.packages}`"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
                         
             # Generally this should result in some outbound message
             if message:
-                transmitter.transmit(topic, message)
+                try:
+                    transmitter.transmit(topic, message)
+                except:
+                    log = f"Unable to transmit message: {message}"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
             else:
                 if settings.verbose:
                     print("No outbound message to send", flush=True)
@@ -989,12 +998,24 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             
             # If yes, check if it's now ended, in which case a message should
             # be sent.
-            cooldown, topic, message = game.playSpace.rotationCoolDownRemaining()
+            try:
+                cooldown, topic, message = game.playSpace.rotationCoolDownRemaining()
+            except:
+                log = f"Unable to transmit message: {message}"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
             
             if not cooldown and message:
                 
                 # If it's now ended, send a message to announce it
-                transmitter.transmit(topic, message)
+                try:
+                    transmitter.transmit(topic, message)
+                except:
+                    log = f"Unable to transmit message: {message}"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
 
         #check if there is a freeze timer in place
         if game.playSpace.freezeTimer:
@@ -1007,7 +1028,13 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                 
                 # If it's now ended, send a message to announce it
         #        self.game.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
-                transmitter.transmit(topic, message)
+                try:
+                    transmitter.transmit(topic, message)
+                except:
+                    log = f"Unable to transmit message: {message}"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
         
         for i, player in enumerate(game.playSpace.players):
             if player['powerUpTimer']:
@@ -1017,7 +1044,13 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                     
                     # If it's now ended, send a message to announce it
               #      self.game.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
-                    transmitter.transmit(topic, message)
+                    try:
+                        transmitter.transmit(topic, message)
+                    except:
+                        log = f"Unable to transmit message: {message}"
+                        logging.error(log)
+                        if settings.verbose: print(log, flush=True)
+                        traceback.print_exc()
     
     message = game.pack(stop.value)
     transmitter.transmit(comms.stop, message)
