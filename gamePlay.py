@@ -503,6 +503,7 @@ class PlaySpace:
                         # Somewhere position is getting stored as list instead of numpy array, should find and fix
                         if type(p['position']) is not list:
                             p['position'] = p['position'].tolist()
+                        p['powerUpTimer'] = 0
                     
                     self.setRotationCoolDown()
                 return comms.axes, displayUpdates
