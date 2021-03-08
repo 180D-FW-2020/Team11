@@ -1005,6 +1005,7 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
                 logging.error(log)
                 if settings.verbose: print(log, flush=True)
                 traceback.print_exc()
+                cooldown, topic, message = 0, 0, 0
             
             if not cooldown and message:
                 
@@ -1022,8 +1023,15 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             
             # If yes, check if it's now ended, in which case a message should
             # be sent.
-            freeze, topic, message = game.playSpace.powerUpTimerRemaining(0)
-            
+            try:
+                freeze, topic, message = game.playSpace.powerUpTimerRemaining(0)
+            except:
+                log = "Error getting freeze powerup time remaining"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
+                freeze, topic, message = 0, 0, 0
+
             if not freeze and message:
                 
                 # If it's now ended, send a message to announce it
@@ -1038,7 +1046,14 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
         
         for i, player in enumerate(game.playSpace.players):
             if player['powerUpTimer']:
-                speed, topic, message = game.playSpace.powerUpTimerRemaining(player['playerId'])
+                try:
+                    speed, topic, message = game.playSpace.powerUpTimerRemaining(player['playerId'])
+                except:
+                    log = "Error getting speed powerup time remaining"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
+                    freeze, topic, message = 0, 0, 0
             
                 if not speed and message:
                     
