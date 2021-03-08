@@ -321,8 +321,10 @@ class PlaySpace:
                     displayUpdates = 0
                     return topic, displayUpdates
             if settings.verbose: print("start of move: ", self.players[playerId-1])
+            
+            sOverride = spacesOverride
             # First check for collision
-            collision, tag, powerUp, overlap, replacement = self.checkCollision(playerId, direction)
+            collision, tag, powerUp, overlap, replacement = self.checkCollision(playerId, direction, spacesOverride = sOverride)
             if settings.verbose: print("collision info: ", collision, tag, powerUp, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
@@ -539,7 +541,7 @@ class PlaySpace:
                                   'positionpower': position.tolist()}
         return displayUpdates
 
-    def checkCollision(self, playerId, direction):
+    def checkCollision(self, playerId, direction, spacesOverride = 0):
         '''
         Takes a player and direction, figures out if they are going to run into 
         stuff.
@@ -553,10 +555,13 @@ class PlaySpace:
          - overlap: the number of spaces that can be moved until player overlaps with object colliding into
         '''
         try:
-            if self.players[playerId - 1]['it']: speed = ITSPEED
-            else: speed = 1
-            if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
-                    speed *= 2
+            if spacesOverride:
+                speed = spacesOverride
+            else:
+                if self.players[playerId - 1]['it']: speed = ITSPEED
+                else: speed = 1
+                if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
+                        speed *= 2
             collision = 0
             tag = 0
             powerup = 0
