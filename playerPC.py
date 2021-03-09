@@ -708,6 +708,8 @@ class PlayerPC:
         Removes the powerup that was picked up, places a new one, and moves the
         player.
         '''
+        if settings.verbose: print("Powerup pickup: ", message)
+        if settings.verbose: print("Original powerup list: ", self.playSpace.powerUps)
         display = copy.deepcopy(self.display)
         # Update powerups list
         oldPowerUp = self.playSpace.powerUps.pop(message['index'])
@@ -718,7 +720,9 @@ class PlayerPC:
                     'position': message['positionpower']}
         self.playSpace.powerUps.append(newPower)
         self.playSpace.players[message['playerId']-1]['powerUpHeld'] = self.powerUp
-        
+        if settings.verbose:
+            print("Updated powerup list: ", self.playSpace.powerUps)
+            print("Axes (h/v): ", self.playSpace.horizontalAxis, self.playSpace.verticalAxis)
         # Clear existing powerup
         hpos = np.dot(self.playSpace.horizontalAxis, oldpos)
         if hpos<0:

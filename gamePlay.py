@@ -402,6 +402,7 @@ class PlaySpace:
                     replacement = self.replacePowerUp(powerupIndex)
                     displayUpdates.update(replacement)
                     topic = comms.pickup
+                    if settings.verbose: print("powerup picked up: ", displayUpdates)
             
             if settings.verbose: print("end of move: ", self.players[playerId-1])
             
