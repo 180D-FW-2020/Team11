@@ -546,10 +546,10 @@ class PlaySpace:
 
         for j in range(len(self.players)):
             if (self.players[j]['position'][horizontalindex] == position[horizontalindex]) and (self.players[j]['position'][verticalindex] == position[verticalindex]):
-                if position[0] != 1:
-                    position[0] -= 1
+                if position[horizontalindex] != 1:
+                    position[horizontalindex] -= 1
                 else:
-                   position[0] += 1
+                   position[horizontalindex] += 1
         for j in range(len(self.obstacles)):
             if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][1] == position[1]):
                 if position[0] != 1:
