@@ -292,6 +292,16 @@ class PlaySpace:
                                 position[0] -= 1
                             else:
                                 position[0] += 1
+                        if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][2] == position[2]):
+                            if position[0] != 1:
+                                position[0] -= 1
+                            else:
+                                position[0] += 1         
+                        if (self.obstacles[j]['position'][1] == position[1]) and (self.obstacles[j]['position'][2] == position[2]):
+                            if position[2] != 1:
+                                position[2] -= 1
+                            else:
+                                position[2] += 1     
                 else: position = np.array([0, 0, 0])
                 
                 
@@ -530,7 +540,17 @@ class PlaySpace:
                 if position[0] != 1:
                     position[0] -= 1
                 else:
-                    position[0] += 1          
+                    position[0] += 1
+            if (self.obstacles[j]['position'][0] == position[0]) and (self.obstacles[j]['position'][2] == position[2]):
+                if position[0] != 1:
+                    position[0] -= 1
+                else:
+                    position[0] += 1         
+            if (self.obstacles[j]['position'][1] == position[1]) and (self.obstacles[j]['position'][2] == position[2]):
+                if position[2] != 1:
+                    position[2] -= 1
+                else:
+                    position[2] += 1       
         
         self.powerUps.pop(index)
         newPower = {'powerUp' : powerupID,
@@ -779,7 +799,7 @@ class PlaySpace:
         except:
             print("An error occurred checking collision")
             traceback.print_exc() 
-            
+
     def activatePowerUp(self, playerId):
         try:
             message = {'powerUp': 0}
