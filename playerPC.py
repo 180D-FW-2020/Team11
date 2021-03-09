@@ -64,7 +64,6 @@ IT_STATS_MAXBORDER = int(35/10)
 phrases = {
     "ready" : comms.ready,
     "start" : comms.start,
-    "stop" : comms.stop,
     "powerup" : comms.powerUp,
     "power up" : comms.powerUp,
     "drop" : comms.drop
@@ -714,6 +713,7 @@ class PlayerPC:
         oldPowerUp = self.playSpace.powerUps.pop(message['index'])
         self.powerUp = oldPowerUp['powerUp']
         oldpos = oldPowerUp['position']
+        newpos = message['positionpower']
         newPower = {'powerUp': message['powerUp'],
                     'position': message['positionpower']}
         self.playSpace.powerUps.append(newPower)
@@ -735,10 +735,10 @@ class PlayerPC:
         self.pickupSound.play()
         
         # Place in new position
-        hpos = np.dot(self.playSpace.horizontalAxis, self.playSpace.powerUps[-1]['position'])
+        hpos = np.dot(self.playSpace.horizontalAxis, newpos)
         if hpos<0:
             hpos = self.playSpace.edgeLength + hpos + 1
-        vpos = -1*np.dot(self.playSpace.verticalAxis, self.playSpace.powerUps[-1]['position'])
+        vpos = -1*np.dot(self.playSpace.verticalAxis, newpos)
         if vpos<0:
             vpos = self.playSpace.edgeLength + vpos + 1
         # display = cv2.circle(display,(self.dist*hpos + int(self.dist/2), self.dist*vpos + int(self.dist/2)),

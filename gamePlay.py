@@ -321,8 +321,10 @@ class PlaySpace:
                     displayUpdates = 0
                     return topic, displayUpdates
             if settings.verbose: print("start of move: ", self.players[playerId-1])
+            
+            sOverride = spacesOverride
             # First check for collision
-            collision, tag, powerUp, overlap, replacement = self.checkCollision(playerId, direction)
+            collision, tag, powerUp, overlap, replacement = self.checkCollision(playerId, direction, spacesOverride = sOverride)
             if settings.verbose: print("collision info: ", collision, tag, powerUp, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
@@ -501,6 +503,7 @@ class PlaySpace:
                         # Somewhere position is getting stored as list instead of numpy array, should find and fix
                         if type(p['position']) is not list:
                             p['position'] = p['position'].tolist()
+                        p['powerUpTimer'] = 0
                     
                     self.setRotationCoolDown()
                 return comms.axes, displayUpdates
@@ -539,7 +542,7 @@ class PlaySpace:
                                   'positionpower': position.tolist()}
         return displayUpdates
 
-    def checkCollision(self, playerId, direction):
+    def checkCollision(self, playerId, direction, spacesOverride = 0):
         '''
         Takes a player and direction, figures out if they are going to run into 
         stuff.
@@ -553,10 +556,13 @@ class PlaySpace:
          - overlap: the number of spaces that can be moved until player overlaps with object colliding into
         '''
         try:
-            if self.players[playerId - 1]['it']: speed = ITSPEED
-            else: speed = 1
-            if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
-                    speed *= 2
+            if spacesOverride:
+                speed = spacesOverride
+            else:
+                if self.players[playerId - 1]['it']: speed = ITSPEED
+                else: speed = 1
+                if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
+                        speed *= 2
             collision = 0
             tag = 0
             powerup = 0
@@ -566,6 +572,7 @@ class PlaySpace:
             posHorizontal = np.abs(self.horizontalAxis)
             playArea = np.add(posVertical, posHorizontal)
             initloc = self.players[playerId-1]['position']*playArea
+            overlapChanges = 0
 
             #set future location                
             if direction == '^':
@@ -602,19 +609,34 @@ class PlaySpace:
             # check if collision with edges of playspace
             if (abs(location[index]) > (self.edgeLength)):
                 collision = True
-                overlap = int(abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1)))
+                myoverlap = int(abs(np.linalg.norm(initloc*axis) - (self.edgeLength+1)))
+                if myoverlap <= abs(overlap) or overlapChanges == 0:
+                    overlapChanges += 1
+                    overlap = myoverlap
             elif (location[index] == 0):
                 collision = True
                 if (self.players[playerId - 1]['it']):
-                    overlap = int(2)
+                    myoverlap = int(2)
+                    if myoverlap <= abs(overlap) or overlapChanges == 0:
+                        overlapChanges += 1
+                        overlap = myoverlap
                 else:
-                    overlap = 1
+                    myoverlap = 1
+                    if myoverlap <= abs(overlap) or overlapChanges == 0:
+                        overlapChanges += 1
+                        overlap = myoverlap
             elif (self.players[playerId - 1]['it']) and (abs(self.players[playerId - 1]['position'][index]) == 1) and (abs(location[index]) == 1):
                 collision = True
-                overlap = int(1)
+                myoverlap = int(1)
+                if myoverlap <= abs(overlap) or overlapChanges == 0:
+                    overlapChanges += 1
+                    overlap = myoverlap
             elif np.linalg.norm((np.linalg.norm(location[index]))-(np.linalg.norm(initloc[index]))) < speed:
                 collision = True
-                overlap = int(np.linalg.norm(initloc[index]))
+                myoverlap = int(np.linalg.norm(initloc[index]))
+                if myoverlap <= abs(overlap) or overlapChanges == 0:
+                    overlapChanges += 1
+                    overlap = myoverlap
 
 
             #check to see if tag by it
@@ -650,14 +672,23 @@ class PlaySpace:
                     movement = np.subtract(difference, distance)
                     if (np.linalg.norm(distance) < 1):
                         collision = True
-                        overlap = int(np.linalg.norm(difference))
+                        myoverlap = int(np.linalg.norm(difference))
+                        if myoverlap <= abs(overlap) or overlapChanges == 0:
+                            overlapChanges += 1
+                            overlap = myoverlap
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
                         collision = True
-                        overlap = int(np.linalg.norm(difference))
+                        myoverlap = int(np.linalg.norm(difference))
+                        if myoverlap <= abs(overlap) or overlapChanges == 0:
+                            overlapChanges += 1
+                            overlap = myoverlap
                     elif (initloc[inverseindex] == yourloc[inverseindex]):
                         if ((np.linalg.norm(location[index]) <  np.linalg.norm(self.obstacles[i]['position'][index])) and (np.linalg.norm(initloc[index]) >  np.linalg.norm(self.obstacles[i]['position'][index]))) or ((np.linalg.norm(location[index]) >  np.linalg.norm(self.obstacles[i]['position'][index])) and (np.linalg.norm(initloc[index]) <  np.linalg.norm(self.obstacles[i]['position'][index]))):
                                 collision = True
-                                overlap = int(np.linalg.norm(difference))
+                                myoverlap = int(np.linalg.norm(difference))
+                                if myoverlap <= abs(overlap) or overlapChanges == 0:
+                                    overlapChanges += 1
+                                    overlap = myoverlap
 
             #check to see collision with powerup
                 for i in range(len(self.powerUps)):
@@ -674,7 +705,10 @@ class PlaySpace:
                 
                         else:
                             collision = True
-                            overlap = int(np.linalg.norm(difference))
+                            myoverlap = int(np.linalg.norm(difference))
+                            if myoverlap <= abs(overlap) or overlapChanges == 0:
+                                overlapChanges += 1
+                                overlap = myoverlap
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
                         if self.players[playerId - 1]['powerUpHeld'] == 0:
                             powerup = self.powerUps[i]['powerUp']
@@ -682,7 +716,10 @@ class PlaySpace:
            
                         else:
                             collision = True
-                            overlap = int(np.linalg.norm(difference))
+                            myoverlap = int(np.linalg.norm(difference))
+                            if myoverlap <= abs(overlap) or overlapChanges == 0:
+                                overlapChanges += 1
+                                overlap = myoverlap
                     elif (initloc[inverseindex] == yourloc[inverseindex]):
                         if ((np.linalg.norm(location[index]) <  np.linalg.norm(self.powerUps[i]['position'][index])) and (np.linalg.norm(initloc[index]) >  np.linalg.norm(self.powerUps[i]['position'][index]))) or ((np.linalg.norm(location[index]) >  np.linalg.norm(self.powerUps[i]['position'][index])) and (np.linalg.norm(initloc[index]) <  np.linalg.norm(self.powerUps[i]['position'][index]))):
                             if self.players[playerId - 1]['powerUpHeld'] == 0:
@@ -691,7 +728,10 @@ class PlaySpace:
             
                             else:
                                 collision = True
-                                overlap = int(np.linalg.norm(difference))
+                                myoverlap = int(np.linalg.norm(difference))
+                                if myoverlap <= abs(overlap) or overlapChanges == 0:
+                                    overlapChanges += 1
+                                    overlap = myoverlap
 
             #check to see if not it players collide with each other or if collide with it resulting in tag
 
@@ -739,7 +779,7 @@ class PlaySpace:
         except:
             print("An error occurred checking collision")
             traceback.print_exc() 
-    
+            
     def activatePowerUp(self, playerId):
         try:
             message = {'powerUp': 0}

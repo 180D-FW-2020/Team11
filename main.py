@@ -194,10 +194,10 @@ def piProcess():
                 try:
                     pi.unpack(receiver.packages.pop(0))
                 except:
-                        log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
-                        logging.error(log)
-                        if settings.verbose: print(log, flush=True)
-                        traceback.print_exc()
+                    log = f"An error occurred unpacking a message on the pi queue. Current queue: `{receiver.packages}`"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
     if abort:
         log = "pi processes aborted due to unresolvable errors"
     else:
@@ -227,43 +227,39 @@ def piTransmit(transmitter, pi, stop):
     while not pi.start and not pi.gameOver:
         pass
     
+    delay = datetime.datetime.now()
     # Get rotation information and transmit it
     while not pi.gameOver:
-        try:
-            rotation = pi.getRotation(stop)
-        except:
-            log = "An error occurred getting a rotation"
-            logging.error(log)
-            if settings.verbose: print(log, flush=True)
-            traceback.print_exc()
-            rotation = 0
-            
-        if rotation:
+        
+        if datetime.datetime.now()>delay:
             try:
-                package = pi.pack(rotation)
+                rotation = pi.getRotation(stop)
             except:
-                log = "An error occurred packing a rotation"
+                log = "An error occurred getting a rotation"
                 logging.error(log)
                 if settings.verbose: print(log, flush=True)
                 traceback.print_exc()
-                package = 0
-            
-            if package:
+                rotation = 0
+                
+            if rotation:
                 try:
-                    transmitter.transmit(comms.rotation, package)
-                    transmitted = True
+                    package = pi.pack(rotation)
                 except:
-                    log = "An error occurred transmitting a rotation"
+                    log = "An error occurred packing a rotation"
                     logging.error(log)
                     if settings.verbose: print(log, flush=True)
                     traceback.print_exc()
-                    transmitted = False
-            
-            # The cooldown will also be set by a message returned from central,
-            # but this is here to ensure the pi doesn't send new rotation info
-            # before that return message is received
-            if transmitted:
-                pi.coolDown = True
+                    package = 0
+                
+                if package:
+                    try:
+                        transmitter.transmit(comms.rotation, package)
+                        delay = datetime.datetime.now() + datetime.timedelta(milliseconds = MOTION_DELAY)
+                    except:
+                        log = "An error occurred transmitting a rotation"
+                        logging.error(log)
+                        if settings.verbose: print(log, flush=True)
+                        traceback.print_exc()
 
 def pcProcess():
     '''
@@ -976,14 +972,23 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             
             # On receipt, get the first message and do stuff relevant to the
             # message topic
-            print("Central attempting unpack:", receiver.packages, flush=True)
-            package = receiver.packages.pop(0)
-            topic, message = game.unpack(package)
-            #topic, message = game.unpack(receiver.packages.pop(0))
+            try:
+                topic, message = game.unpack(receiver.packages.pop(0))
+            except:
+                log = f"An error occurred unpacking a message on the central queue. Current queue: `{receiver.packages}`"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
                         
             # Generally this should result in some outbound message
             if message:
-                transmitter.transmit(topic, message)
+                try:
+                    transmitter.transmit(topic, message)
+                except:
+                    log = f"Unable to transmit message: {message}"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
             else:
                 if settings.verbose:
                     print("No outbound message to send", flush=True)
@@ -993,35 +998,74 @@ def centralNodeProcess(stop, playMode, numPlayers, edgeLength, numObstacles, num
             
             # If yes, check if it's now ended, in which case a message should
             # be sent.
-            cooldown, topic, message = game.playSpace.rotationCoolDownRemaining()
+            try:
+                cooldown, topic, message = game.playSpace.rotationCoolDownRemaining()
+            except:
+                log = f"Unable to transmit message: {message}"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
+                cooldown, topic, message = 0, 0, 0
             
             if not cooldown and message:
                 
                 # If it's now ended, send a message to announce it
-                transmitter.transmit(topic, message)
+                try:
+                    transmitter.transmit(topic, message)
+                except:
+                    log = f"Unable to transmit message: {message}"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
 
         #check if there is a freeze timer in place
         if game.playSpace.freezeTimer:
             
             # If yes, check if it's now ended, in which case a message should
             # be sent.
-            freeze, topic, message = game.playSpace.powerUpTimerRemaining(0)
-            
+            try:
+                freeze, topic, message = game.playSpace.powerUpTimerRemaining(0)
+            except:
+                log = "Error getting freeze powerup time remaining"
+                logging.error(log)
+                if settings.verbose: print(log, flush=True)
+                traceback.print_exc()
+                freeze, topic, message = 0, 0, 0
+
             if not freeze and message:
                 
                 # If it's now ended, send a message to announce it
         #        self.game.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
-                transmitter.transmit(topic, message)
+                try:
+                    transmitter.transmit(topic, message)
+                except:
+                    log = f"Unable to transmit message: {message}"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
         
         for i, player in enumerate(game.playSpace.players):
             if player['powerUpTimer']:
-                speed, topic, message = game.playSpace.powerUpTimerRemaining(player['playerId'])
+                try:
+                    speed, topic, message = game.playSpace.powerUpTimerRemaining(player['playerId'])
+                except:
+                    log = "Error getting speed powerup time remaining"
+                    logging.error(log)
+                    if settings.verbose: print(log, flush=True)
+                    traceback.print_exc()
+                    freeze, topic, message = 0, 0, 0
             
                 if not speed and message:
                     
                     # If it's now ended, send a message to announce it
               #      self.game.playSpace.players[message['playerId']-1]['activePowerUp'] = 0
-                    transmitter.transmit(topic, message)
+                    try:
+                        transmitter.transmit(topic, message)
+                    except:
+                        log = f"Unable to transmit message: {message}"
+                        logging.error(log)
+                        if settings.verbose: print(log, flush=True)
+                        traceback.print_exc()
     
     message = game.pack(stop.value)
     transmitter.transmit(comms.stop, message)
