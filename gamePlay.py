@@ -499,11 +499,15 @@ class PlaySpace:
                             #             if overlap > 1:
                             #                 self.movePlayer(i+1, 'v')
                     if movePlayer:
-                        for j in range(3):
-                            _, moveUpdates = self.movePlayer(i+1, '<', spacesOverride = j)
-                            if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '^', spacesOverride = j)
-                            if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '>', spacesOverride = j)
-                            if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, 'v', spacesOverride = j)
+                        _, moveUpdates = self.movePlayer(i+1, '<')
+                        if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '^')
+                        if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '>')
+                        if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, 'v')
+                        # for j in range(3):
+                        #     _, moveUpdates = self.movePlayer(i+1, '<', spacesOverride = j)
+                        #     if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '^', spacesOverride = j)
+                        #     if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '>', spacesOverride = j)
+                        #     if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, 'v', spacesOverride = j)
                     
                     displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
                                       'verticalAxis': self.verticalAxis.tolist(),
