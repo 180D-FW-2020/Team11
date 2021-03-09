@@ -318,7 +318,7 @@ class PlaySpace:
         message = {'playerId': playerId}
         return comms.dropped, message
 
-    def movePlayer(self, playerId, direction, spacesOverride = 0):
+    def movePlayer(self, playerId, direction, spacesOverride = 0, pickUpPowerups = True):
         '''
         Takes a player ID and direction and checks if a move is possible. If yes,
         makes the move and returns info about the move.
@@ -333,8 +333,9 @@ class PlaySpace:
             if settings.verbose: print("start of move: ", self.players[playerId-1])
             
             sOverride = spacesOverride
+            pUpPowerups = pickUpPowerups
             # First check for collision
-            collision, tag, powerUp, overlap, replacement = self.checkCollision(playerId, direction, spacesOverride = sOverride)
+            collision, tag, powerUp, overlap, powerupIndex = self.checkCollision(playerId, direction, spacesOverride = sOverride, pickUpPowerups = pUpPowerups)
             if settings.verbose: print("collision info: ", collision, tag, powerUp, overlap)
             # If collision is a tag, do the tagging stuff but don't move player
             if tag:
@@ -363,9 +364,6 @@ class PlaySpace:
         
                     if self.powerUpTimerRemaining(playerId) and (self.players[playerId - 1]['powerUpActive'] == 1):
                         speed *= 2                
-                
-                if (powerUp != 0):
-                    self.players[playerId-1]['powerUpHeld'] = powerUp
 
                 if direction == '^':
                     if collision and (overlap > 1):
@@ -399,7 +397,9 @@ class PlaySpace:
                 displayUpdates = {'playerId': playerId,
                                 'position': self.players[playerId - 1]['position'].tolist()}
                 
-                if bool(replacement): 
+                if (powerUp != 0):
+                    self.players[playerId-1]['powerUpHeld'] = powerUp
+                    replacement = self.replacePowerUp(powerupIndex)
                     displayUpdates.update(replacement)
                     topic = comms.pickup
             
@@ -498,6 +498,7 @@ class PlaySpace:
                             #             collision, tag, powerUp, overlap, replacement = self.checkCollision(i+1, 'v')
                             #             if overlap > 1:
                             #                 self.movePlayer(i+1, 'v')
+                            
                     if movePlayer:
                         _, moveUpdates = self.movePlayer(i+1, '<')
                         if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '^')
@@ -508,6 +509,7 @@ class PlaySpace:
                         #     if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '^', spacesOverride = j)
                         #     if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, '>', spacesOverride = j)
                         #     if not moveUpdates: _, moveUpdates = self.movePlayer(i+1, 'v', spacesOverride = j)
+
                     
                     displayUpdates = {'horizontalAxis': self.horizontalAxis.tolist(),
                                       'verticalAxis': self.verticalAxis.tolist(),
@@ -566,7 +568,7 @@ class PlaySpace:
                                   'positionpower': position.tolist()}
         return displayUpdates
 
-    def checkCollision(self, playerId, direction, spacesOverride = 0):
+    def checkCollision(self, playerId, direction, spacesOverride = 0, pickUpPowerups = True):
         '''
         Takes a player and direction, figures out if they are going to run into 
         stuff.
@@ -591,6 +593,7 @@ class PlaySpace:
             tag = 0
             powerup = 0
             overlap = int(-1)
+            powerupIndex = 0
             replacement = {}
             posVertical = np.abs(self.verticalAxis)
             posHorizontal = np.abs(self.horizontalAxis)
@@ -723,9 +726,10 @@ class PlaySpace:
                     difference = initloc - yourloc
                     movement = np.subtract(difference, distance)
                     if (np.linalg.norm(distance) < 1):
-                        if self.players[playerId - 1]['powerUpHeld'] == 0:
+                        if self.players[playerId - 1]['powerUpHeld'] == 0 and pickUpPowerups:
                             powerup = self.powerUps[i]['powerUp']
-                            replacement = self.replacePowerUp(i)
+                            #replacement = self.replacePowerUp(i)
+                            powerupIndex = i
                 
                         else:
                             collision = True
@@ -734,9 +738,10 @@ class PlaySpace:
                                 overlapChanges += 1
                                 overlap = myoverlap
                     elif (np.linalg.norm(difference) == 1) and (np.linalg.norm(distance) == 1) and ((initloc == myloc).all() == False):
-                        if self.players[playerId - 1]['powerUpHeld'] == 0:
+                        if self.players[playerId - 1]['powerUpHeld'] == 0 and pickUpPowerups:
                             powerup = self.powerUps[i]['powerUp']
-                            replacement = self.replacePowerUp(i)
+                            #replacement = self.replacePowerUp(i)
+                            powerupIndex = i
            
                         else:
                             collision = True
@@ -746,9 +751,10 @@ class PlaySpace:
                                 overlap = myoverlap
                     elif (initloc[inverseindex] == yourloc[inverseindex]):
                         if ((np.linalg.norm(location[index]) <  np.linalg.norm(self.powerUps[i]['position'][index])) and (np.linalg.norm(initloc[index]) >  np.linalg.norm(self.powerUps[i]['position'][index]))) or ((np.linalg.norm(location[index]) >  np.linalg.norm(self.powerUps[i]['position'][index])) and (np.linalg.norm(initloc[index]) <  np.linalg.norm(self.powerUps[i]['position'][index]))):
-                            if self.players[playerId - 1]['powerUpHeld'] == 0:
+                            if self.players[playerId - 1]['powerUpHeld'] == 0 and pickUpPowerups:
                                 powerup = self.powerUps[i]['powerUp']
-                                replacement = self.replacePowerUp(i)
+                                #replacement = self.replacePowerUp(i)
+                                powerupIndex = i
             
                             else:
                                 collision = True
@@ -786,9 +792,10 @@ class PlaySpace:
                     yourloc = (self.powerUps[j]['position']*playArea)
                     distance = myloc - yourloc
                     if (yourloc == myloc).all():
-                        if self.players[playerId - 1]['powerUpHeld'] == 0:
+                        if self.players[playerId - 1]['powerUpHeld'] == 0 and pickUpPowerups:
                             powerup = self.powerUps[j]['powerUp']
-                            replacement = self.replacePowerUp(j)
+                            #replacement = self.replacePowerUp(j)
+                            powerupIndex = j
           
                         else:
                             collision = True
@@ -799,7 +806,7 @@ class PlaySpace:
                      #       collision = True
                       #      overlap = 1
             
-            return collision, tag, powerup, overlap, replacement
+            return collision, tag, powerup, overlap, powerupIndex
         except:
             print("An error occurred checking collision")
             traceback.print_exc() 
