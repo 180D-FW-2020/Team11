@@ -536,8 +536,16 @@ class PlaySpace:
                     r.randrange(1, self.edgeLength + 1, 1),
                     r.randrange(1, self.edgeLength + 1, 1)])
         powerupID = r.randrange(1,3) #reminder
+        
+        for i in range(len(self.verticalAxis)):
+            if abs(self.verticalAxis[i]) == 1:
+                verticalindex = i
+        for i in range(len(self.horizontalAxis)):
+            if abs(self.horizontalAxis[i]) == 1:
+                horizontalindex = i
+
         for j in range(len(self.players)):
-            if (self.players[j]['position'][0] == position[0]) and (self.players[j]['position'][1] == position[1]):
+            if (self.players[j]['position'][horizontalindex] == position[horizontalindex]) and (self.players[j]['position'][verticalindex] == position[verticalindex]):
                 if position[0] != 1:
                     position[0] -= 1
                 else:
