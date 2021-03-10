@@ -356,10 +356,10 @@ class PlayerPC:
             self.displayBase = np.zeros((1000,1700,3), np.uint8)
             # set columns
             for i in range(self.playSpace.edgeLength + 1):
-                cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,1000-self.dist - 9),(0,255,0),int(self.dist/10))
+                cv2.line(self.displayBase, ((i+1)*self.dist,self.dist), ((i+1)*self.dist,(self.playSpace.edgeLength+1)*self.dist),(0,255,0),int(self.dist/10))
             # set rows
             for i in range(self.playSpace.edgeLength + 1):
-                cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), (1000-self.dist - 9,(i+1)*self.dist),(0,255,0),int(self.dist/10))
+                cv2.line(self.displayBase, (self.dist,(i+1)*self.dist), ((self.playSpace.edgeLength+1)*self.dist,(i+1)*self.dist),(0,255,0),int(self.dist/10))
             
         display = copy.deepcopy(self.displayBase)
         
